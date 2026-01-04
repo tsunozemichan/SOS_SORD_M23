@@ -2,20 +2,34 @@
 ; テープはサポートしません。
 ; #PRCNT（1F7AH）はサポートしません。
 
-
-
-;	各機種ディスクI／O
-DREAD	EQU	2B00H
-DWRITE	EQU	2B03H
-disk_unit_number	EQU	2B06H
-
-;	DOSモジュール内部エントリ
-ERROR	EQU	286CH
+; ;	ＤＯＳモジュール内部エントリ
+; ERROR	EQU	286CH
 
 ;	バッチ処理バッファ
 BATBF	EQU	2D00H	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
 BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
 
+
+;
+; CRTC ports
+;
+VRAM_TXT_TOP EQU 0F800H
+VRAM_ATR_TOP EQU 0F000H
+CRTC_ADD EQU 0F0H
+CRTC_VAL EQU 0F1H
+WIDTH_SCREEN EQU 50H ; 80文字モードの1行のバイト数
+CURSOL_XY_ADDR EQU 0FFF0H ; カーソルのX,Y座標を保存するアドレス
+
+; Ascii code Constants
+CR	EQU	0DH ; Carriage Return
+LF	EQU	0AH ; Line Feed
+BS	EQU	08H ; Back Space
+DEL	EQU	7FH ; Delete
+HT  EQU 09H ; Horizontal Tab
+VT  EQU 0BH ; Vertical Tab
+BEL EQU 07H ; Bell
+NP  EQU 0CH ; Formfeed (also: New page NP)
+ESC EQU 1BH ; Escape
 
 ;〈SLANGについて〉
 ; SLANGは、特殊ワークのサイズによっては動作しません。
@@ -30,13 +44,6 @@ BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
 	JP	START	;NMIでリスタート
 
 	ORG	0100H
-
-;-----------------------
-;テーブル･エリア
-;-----------------------
-
-
-;*******	256バイト境界	********
 
 
 ;=======================
@@ -103,7 +110,6 @@ LSXTBL:
 ;	0080H（128バイト）
 input_key_buffer:	DS	127	;キー入力バッファ（127文字分）
 pointer_for_write_key_buffer:	DS	1	;キーを書き込むポインタ（＝0でカラ、＝7FHでいっぱい）
-
 
 ;=======================================
 ;コントロール･コード･ジャンプ･テーブル
@@ -347,7 +353,7 @@ LINTTB:	DS	32
 ; 「RET」命令で、「_HOT」にジャンプします。
 ; キー入力バッファをカラにして、そのアドレスをDEで渡す。
 ; 固有の初期化ルーチンの cold_start_entity（全レジスタ破壊）を呼び出します。
-; 固有のメッセージ「TTLMSG」を参照します。
+; 固有のメッセージ「title_message」を参照します。
 COLD:
 ;	初期化
 	LD	SP,(_STKAD)
@@ -372,7 +378,7 @@ COLD:
 	LD	(_MXTRK),A
 
 ;	タイトル
-	LD	DE,TTLMSG
+	LD	DE,title_message
 	CALL _MSX
 
 ;	メモリの情報を表示
@@ -380,14 +386,14 @@ COLD:
 	DB	'MAIN 3000H-',00H
 	LD	HL,(_MEMAX)
 	DEC	HL
-	CALL _PRTHL
+	CALL _print_hex_4_digit
 	CALL _MPRNT
 	DB	'H',0DH,00H
 	CALL _MPRNT
 	DB	'WORK 0000H-',00H
 	LD	HL,(_WKSIZ)
 	DEC	HL
-	CALL _PRTHL
+	CALL _print_hex_4_digit
 	CALL _MPRNT
 	DB	'H',0DH,00H
 
@@ -589,11 +595,11 @@ MSX:
 MSXLP:	LD	A,(DE)
 	CP	20H
 	JR	C,MSXSKP
-	CALL	BPRNT
+	CALL BPRNT
 	JR	MSXLP
 MSXSKP:	OR	A
 	JR	Z,NLJMP	;#NL（1FEBH）の一部へジャンプします
-	CALL	_PRINT
+	CALL _PRINT
 	INC	DE
 	JR	MSXLP
 
@@ -636,12 +642,12 @@ MPRRET:	EX	DE,HL
 ;===============
 
 
-;#PRTHX（1FC1H）の本体
+;#print_hex_2_digit（1FC1H）の本体
 ; 16進2桁表示。
 ;入力	Acc←データ
 ;出力	なし
 ;破壊	AF
-PRTHX:
+print_hex_2_digit:
 	PUSH	AF
 	RLCA
 	RLCA
@@ -656,16 +662,16 @@ PRTHX:
 	RET
 
 
-;#PRTHL（1FBEH）の本体
+;#print_hex_4_digit（1FBEH）の本体
 ; 16進4桁表示。
 ;入力	HL←データ
 ;出力	なし
 ;破壊	AF
-PRTHL:
+print_hex_4_digit:
 	LD	A,H
-	CALL	_PRTHX
+	CALL	_print_hex_2_digit
 	LD	A,L
-	JP	_PRTHX
+	JP	_print_hex_2_digit
 
 
 ;#ASC（1FBBH）の本体
@@ -691,9 +697,9 @@ ASC:
 ;破壊	AF
 ;注：
 ; 小文字に対応。
-; 汎用ルーチンTOUPR（AF破壊）を呼び出します。
+; 汎用ルーチンconvert_lower_case_to_upper_case（AF破壊）を呼び出します。
 HEX:
-	CALL	TOUPR
+	CALL	convert_lower_case_to_upper_case
 	SUB	'0'
 	JR	C,HEXERR
 	CP	10
@@ -1216,7 +1222,7 @@ MGETDV:
 
 ;	デバイスが指定されています
 	LD	A,(DE)
-	CALL	TOUPR
+	CALL	convert_lower_case_to_upper_case
 	INC	DE
 	INC	DE
 	OR	A	;CY←0
@@ -1280,7 +1286,7 @@ GTFLTR:
 
 ;	通常終了
 	INC	DE	;DEのカウント･アップ
-	JP	TOUPR
+	JP	convert_lower_case_to_upper_case
 
 ;	「*」を発見しました
 GFLAST:	LD	A,0FFH
@@ -1697,7 +1703,6 @@ printer_output_mode_off_entity:
 ;1文字プリント前処理
 LPREB:
 	PUSH	HL
-	CALL	SETADR
 	LD	HL,PRINT
 	LD	(_PRINT+1),HL
 	LD	HL,BPRNT0
@@ -2146,8 +2151,7 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	IM	2
 	LD	HL,KEYINT	;キー入力割り込み処理エントリ
 	LD	(0052H),HL	;X1モニタと同じ
-	CALL CRTINI		;CRTCを初期化します
-	CALL PRIINI		;プライオリティを初期化します
+	CALL initialize_CRTC		;CRTCを初期化します
 	LD	A,00H		;割り込み処理ルーチンのテーブル
 	EI
 	LD	I,A
@@ -2193,13 +2197,6 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	LD	(BDR_color),A
 	CALL	change_color
 
-;	グラフィック、オフ
-	XOR	A
-	LD	(GRAFLG),A
-	DI
-	CALL	GRAONF	;グラフィック表示をオン、オフします
-	EI
-
 ;	ディスクI／O初期化
 	CALL	SOSSI
 
@@ -2212,7 +2209,8 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	DS	3
 
 ;コールド･スタート時のメッセージ
-TTLMSG:	DB	'<<<<< S-OS  SWORD >>>>>',0DH
+title_message:
+	DB	'<<<<< S-OS  SWORD >>>>>',0DH
 	DB	'SWX1TC V1.10  1994-06-29',0DH
 	DB	'Programmed by Takahiro Chikushi & Oh!X(Oh!MZ)',0DH
 	DB	'MAIN		(C)T.Chikushi	1994-06-29',0DH
@@ -2327,9 +2325,9 @@ get_cursol_XY_entity:
 ;出力	なし
 ;破壊	AF，HL，DE，BC
 move_cursol_XY_entity:
-	LD	DE,(CSRNXI)
+	LD	DE,(CSRNXI)	;256-桁数 '[CSRNX]の初期値
 	ADD	HL,DE
-	LD	(CSRNX),HL
+	LD	(CSRNX),HL ;ｘ座標-[_WIDTH]
 	JP	SETPRN
 
 ;指定座標の文字を読み込みます
@@ -2349,29 +2347,6 @@ get_character_XY_entity:
 ;BC	現在アトリビュートVRAMアドレス
 ;AD	高速ループ･カウンタ
 CLS:
-	RET
-
-;===============================
-;表示ルーチン前処理（機種依存）
-;===============================
-
-
-;表示ルーチンを初期化します
-;入力	なし
-;出力	なし
-;破壊	HL
-INIPRN:
-	RET
-
-
-;カーソル位置へ書き込める状態にする前処理
-;入力	[CSRADD]、[CSRNX]参照
-;出力	なし
-;破壊	F，HL
-; [#LPSW]がオンならプリンタにも出力。
-;注：
-; インサート･モードと論理改行は、1行入力ルーチンで制御します。
-SETADR:
 	RET
 
 
@@ -2409,8 +2384,6 @@ PRCRET:	CALL	SETPRN
 
 ;1文字プリント前処理
 PREPR:	PUSH	HL
-	CALL	SETADR
-	CALL	INIPRN
 	POP	HL
 
 ;#PRINT（1FF4H）本体
@@ -2473,7 +2446,6 @@ PRNLL:
 	PUSH	DE
 	PUSH	BC
 	CALL	control_code_ROLL_UP
-	CALL	SETADR
 	POP	BC
 	POP	DE
 	POP	HL
@@ -2484,12 +2456,6 @@ PRNLL:
 ;===============================
 ;文字列表示ルーチン（機種依存）
 ;===============================
-
-
-;ブロック表示ルーチン前処理
-PREBP:
-	CALL	SETADR
-	CALL	INIPRN
 
 ;文字のブロック表示（非コントロール･コードのみ表示します）
 ;入力	DE←文字列の先頭アドレス
@@ -2796,125 +2762,6 @@ CCLSUB:	CP	8
 
 
 
-;===============================
-;ジョイスティック（機種依存）
-;===============================
-
-
-;ジョイスティック1、2を読みます
-;入力	なし
-;出力	L←ジョイスティック1のフィジカル･データ（ビットが1でオン）、
-;	H←ジョイスティック2のフィジカル･データ（ビットが1でオン）、
-;破壊	AF，HL，DE，BC
-;〈出力のフォーマット（正論理）〉
-;0,0,B,A,→,←,↓,↑
-;〈X1の生データ（負論理）〉
-;0,B,A,0，→,←,↓,↑
-;注：割り込み禁止して実行してください。
-GETJXF:
-	RET
-
-;X1のフォーマットを、MSXのフォーマットに変換します
-; 負論理「?BA?RLDU」→正論理「00BARLDU」。
-;入力	Acc←X1フォーマットのジョイスティックの生データ（オン＝0）
-;出力	Acc←MSXフォーマットのジョイスティックのデータ（オン＝1）
-;破壊	AF，BC
-GJXFSB:
-	RET
-
-
-;===============================
-;グラフィック（機種依存）
-;===============================
-
-
-;グラフィック表示をオン、オフします
-;入力	[GRAFLG]参照
-;出力	なし
-;破壊	AF，HL，DE，BC
-;注：割り込み禁止して実行してください。
-GRAONF:
-	LD	A,(GRAFLG)
-	OR	A
-	JR	Z,GRAOFF
-;	JR	GRAON
-
-
-;グラフィック表示をオンします
-;入力	なし
-;出力	なし
-;破壊	AF，HL，DE，BC
-;注：割り込み禁止して実行してください。
-GRAON:
-	LD	BC,1000H
-	LD	A,10101010B
-	OUT	(C),A
-	INC	B	;BC←1100H
-	LD	A,11001100B
-	OUT	(C),A
-	INC	B	;BC←1200H
-	LD	A,11110000B
-	OUT	(C),A
-	RET
-
-
-;グラフィック表示をオフします
-;入力	なし
-;出力	なし
-;破壊	AF，HL，DE，BC
-;注：割り込み禁止して実行してください。
-GRAOFF:
-	LD	BC,1000H
-	LD	A,3
-
-GOFLP:	OUT	(C),C
-	INC	B
-	DEC	A
-	JR	NZ,GOFLP
-
-	RET
-
-
-;GRAMをクリアします
-;入力	なし
-;出力	なし
-;破壊	AF，HL，DE，BC
-;〈レジスタ･マップ〉
-;BC	現在GRAMアドレス
-;H	ループ･カウンタ
-;L	クリア･データ00H（定数）
-;注：割り込み禁止して実行してください。
-GRACLR:
-;	同時アクセス･モードにします
-	LD	BC,1A03H
-	LD	A,00001011B	;b5セット
-	OUT	(C),A
-	DEC	A	;b5リセット
-	OUT	(C),A
-
-;	GRAMをクリアします
-	LD	HL,4000H	;H←ループ･カウンタ，L←クリア･データ
-	LD	C,L
-	LD	B,L	;BC←0000H '同時アクセス･モードGRAM白先頭
-
-;	18.5ts／バイト
-GRCLP:	OUT	(C),L	;12ts
-	INC	C	; 4ts
-	OUT	(C),L	;12ts
-	INC	C	; 4ts
-	OUT	(C),L	;12ts
-	INC	C	; 4ts
-	OUT	(C),L	;12ts
-	INC	C	; 4ts
-	JP	NZ,GRCLP	;10ts
-	INC	B
-	DEC	H
-	JR	NZ,GRCLP
-
-;	同時アクセス･モードを解除します
-	IN	A,(C)
-	RET
-
 
 ;===============================
 ;特殊ルーチン（機種依存）
@@ -2973,7 +2820,7 @@ VBLLP:	DEC	BC	; 6ts
 ;入力	L←x座標、H←y座標
 ;出力	BC←テキストVRAMアドレス
 ;破壊	AF，HL，BC
-TEXADR:
+get_vram_address_from_cursol_XY:
 	CALL	get_offset_from_cursol_XY
 	LD	C,L
 	LD	A,30H	;テキストVRAM先頭（3000H）
@@ -2992,7 +2839,7 @@ TEXADR:
 ;出力	Dはカウント･アップされます
 ;破壊	AF，D
 ;注：割り込み禁止して実行してください。
-WRCRTC:
+write_data_to_CRTC:
 	PUSH	BC
 	LD	BC,1800H
 	OUT	(C),D	;レジスタ
@@ -3006,27 +2853,10 @@ WRCRTC:
 ;CRTCを初期化します
 ;破壊	AF，HL，DE，BC
 ;注：割り込み禁止して実行してください。
-CRTINI:
+initialize_CRTC:
 	DI
 	EI
 	RET
-
-;===============================
-;グラフィック（機種固有）
-;===============================
-
-
-;プライオリティを初期化します
-; プライオリティはテキスト優先になります。
-;入力	なし
-;出力	なし
-;破壊	AF，HL，DE，BC
-;注：割り込み禁止して実行してください。
-PRIINI:
-	LD	BC,1300H
-	OUT	(C),C
-	RET
-
 
 
 ;---------------
@@ -3040,13 +2870,13 @@ PRIINI:
 ;	DEはカウント･アップ
 ;破壊	AF，DE
 ;注：小文字を大文字に変換します。
-GETLTR:
+get_character_from_line:
 	CALL	SPSKIP
 	LD	A,(DE)
 	OR	A
 	RET	Z	;文字列の終わりの達した
 	INC	DE
-	JP	TOUPR
+	JP	convert_lower_case_to_upper_case
 
 
 ;文字列のスペース･キャラをスキップします
@@ -3070,7 +2900,7 @@ SPSKIP:
 ;入力	Acc←アスキー･コード
 ;出力	Acc←変換したアスキー･コード
 ;破壊	AF
-TOUPR:
+convert_lower_case_to_upper_case:
 	CP	'a'
 	RET	C
 	CP	'z'+1
@@ -3079,14 +2909,14 @@ TOUPR:
 	RET
 
 
-;ASCNUM V1.00  Copyright (C) T.Chikushi  1994-06-18
+;convert_decimal_character_to_number V1.00  Copyright (C) T.Chikushi  1994-06-18
 ;10進文字を数値に変換します
 ;入力	Acc←文字
 ;出力	AL←数値、CY←変換状態
 ;CF=0	AL←数値（0～9）
 ;CF=1	10進文字ではなかった（ALは、呼び出し前の値）
 ;破壊	AF
-ASCNUM:
+convert_decimal_character_to_number:
 	CP	'0'
 	RET	C
 	CP	'9'+1
@@ -3176,69 +3006,64 @@ DIV263:	EXX
 ;#MON（1F8EH）の本体
 ;CY＝0でリターンします（ディスク･モジュールのため）
 MON:
-	LD	(MONRSP),SP
+	LD	(monitor_reserve_stack_pointer),SP
 	LD	HL,(_MEMAX)
 	LD	DE,3000H
 	OR	A
 	SBC	HL,DE
-	LD	(MONFRE),HL	;ユーザー･エリアのサイズ
+	LD	(monitor_size_of_user_area),HL	;ユーザー･エリアのサイズ
 
 ;	コマンド待ちループ
-MON1:	LD	SP,0100H	;オリジナル･モニタのスタック･トップ
+monitor_command_waiting_loop:
+	LD	SP,0100H	;オリジナル･モニタのスタック･トップ
 	LD	A,'*'
 	CALL	_PRINT
 	LD	DE,(_KBFAD)
 	CALL	_GETL
-	CALL	GETLTR
+	CALL	get_character_from_line
 
 ; コマンドを解析して、それぞれの処理ルーチンへ。
 ;出力	DE←次の文字のアドレス
 MON2:
 	CP	':'
-	JP	Z,MONEDT	;メモリ･エディト
+	JP	Z,monitor_memory_edit	;メモリ･エディト
 	CP	'*'
-	CALL Z,GETLTR
+	CALL Z,get_character_from_line
 	CP	'R'
-	JP	Z,MONRET	;モニタを終えます
+	JP	Z,terminate_monitor	;モニタを終えます
 	CP	'#'
-	JP	Z,MONDMP	;ダンプ
+	JP	Z,monitor_dump_memory	;ダンプ
 	CP	'F'
-	JP	Z,MONFIN	;サーチ
+	JP	Z,monitor_search_data	;サーチ
 	CP	'A'
-	JP	Z,MONGO		;ジャンプ
+	JP	Z,monitor_go_command		;ジャンプ
 	CP	'I'
-	JP	Z,MONIDS	;ディスク初期化
+	JP	Z,monitor_initialize_disk	;ディスク初期化
 	CP	'M'
-	JP	Z,MONMST	;メモリ･セット
-	CP	'L'
-	JP	Z,MONLD		;機種依存Lコマンド
-	CP	'S'
-	JP	Z,MONSV		;機種依存Sコマンド
-	CP	'C'
-	JP	Z,MONCOL	;機種依存Cコマンド
+	JP	Z,monitor_set_data_to_memory	;メモリ･セット
 	DS	4,00H	;ダミー
 	CALL _BELL
-	JP	MON1
+	JP	monitor_command_waiting_loop
 
 ;オリジナル･モニタを終えます
-MONRET:
+terminate_monitor:
 	XOR	A	;CY←0（Acc←0）
-	LD	SP,(MONRSP)
+	LD	SP,(monitor_reserve_stack_pointer)
 	RET
 
 
 ;オリジナル･モニタ サブルーチン･コール
-MONGO:
+monitor_go_command:
 	CALL SPSKIP
 	CALL _HLHEX
-	JR	C,MONGOE
-	LD	BC,MON1
-	PUSH	BC	;スタック←MON1
+	JR	C,monitor_go_commandE
+	LD	BC,monitor_command_waiting_loop
+	PUSH	BC	;スタック←monitor_command_waiting_loop
 	JP	(HL)
 
-MONGOE:
+monitor_go_commandE:
 	CALL _BELL
-	JP	MON1
+	JP	monitor_command_waiting_loop
 
 
 ;オリジナル･モニタ サーチ･ルーチン
@@ -3246,7 +3071,7 @@ MONGOE:
 ;「F 先頭アドレス 最終アドレス データ…」
 ;〈サーチするデータ列〉
 ;keyboard_buffer～
-MONFIN:
+monitor_search_data:
 ;	アドレス情報を取り出します
 	CALL SPSKIP
 	CALL _HLHEX
@@ -3306,7 +3131,7 @@ MONFES:
 	LD	A,0DH
 	CALL	_PRINT
 MONFRT:
-	JP	MON1
+	JP	monitor_command_waiting_loop
 
 MONFIE:
 	CALL	_BELL
@@ -3340,7 +3165,7 @@ MNFSBR:
 	CALL	_PRINT
 	POP	HL	;HL←比較されるアドレス＋1
 	DEC	HL
-	JP	PRTHL
+	JP	print_hex_4_digit
 
 MNFSBB:
 	POP	HL
@@ -3369,11 +3194,11 @@ MONFCT:	DS	1	;データ数
 ;C	横バイト数
 ;DE	縦表示数
 ;注：DIV26（インデックス･レジスタ以外破壊）を呼び出します。
-MONDMP:
+monitor_dump_memory:
 	CALL	SPSKIP
 	CALL	_HLHEX
 	JR	C,$+5
-	LD	(MONADR),HL
+	LD	(monitor_operation_address),HL
 	CALL	SPSKIP
 	CALL	_HLHEX
 	LD	(MONDE),HL
@@ -3381,15 +3206,15 @@ MONDMP:
 	SBC	A,A	;最終アドレスが指定されていたらAcc＝FFH
 	LD	(MONDF),A
 	CALL	MNDINI	;初期化
-	JP	C,MON1	;初期化失敗
+	JP	C,monitor_command_waiting_loop	;初期化失敗
 	CALL	MNDILC	;表示ライン数の設定
 	EX	DE,HL	;DE←縦ライン数
 	LD	A,(MONDX)
 	LD	C,A	;C←横バイト数
 
 ;入力	C←横バイト数、DE←縦ライン数
-;	[MONADR]参照
-;出力	[MONADR]更新
+;	[monitor_operation_address]参照
+;出力	[monitor_operation_address]更新
 ;破壊	AF，HL，DE，B
 ;〈レジスタ･マップ〉
 ;HL	現在メモリのアドレス
@@ -3398,9 +3223,9 @@ MONDMP:
 MDPLP1:
 	LD	A,':'
 	CALL	_PRINT
-	LD	HL,(MONADR)
+	LD	HL,(monitor_operation_address)
 	PUSH	HL	;スタック←アドレス（行頭）
-	CALL	_PRTHL
+	CALL	_print_hex_4_digit
 	LD	A,'='
 	CALL	_PRINT
 	LD	B,C	;B←横バイト数
@@ -3414,7 +3239,7 @@ MDPLP1:
 MDPL21:
 	LD	A,(HL)	;Acc←メモリのデータ
 	INC	HL
-	CALL	_PRTHX
+	CALL	_print_hex_2_digit
 	LD	A,' '
 	CALL	_PRINT
 	DJNZ	MDPL21
@@ -3441,16 +3266,16 @@ MDPL22:
 	CALL	_PRINT
 	DJNZ	MDPL22
 
-	LD	(MONADR),HL
+	LD	(monitor_operation_address),HL
 	CALL	_LTNL
 	CALL	_PAUSE
-	DW	MON1
+	DW	monitor_command_waiting_loop
 	DEC	DE
 	LD	A,E
 	OR	D
 	JR	NZ,MDPLP1
 
-	JP	MON1
+	JP	monitor_command_waiting_loop
 
 
 ;表示ライン数を得ます
@@ -3474,7 +3299,7 @@ MNDLC1:
 	LD	C,A
 	LD	B,0	;BC←横バイト数（2～）
 	LD	HL,(MONDE)
-	LD	DE,(MONADR)
+	LD	DE,(monitor_operation_address)
 	XOR	A
 	SBC	HL,DE	;HL←ダンプするバイト数－1
 	ADD	HL,BC
@@ -3546,20 +3371,20 @@ MONDY:	DS	1	;ダンプする縦バイト数（2～）
 
 
 ;オリジナル･モニタ メモリ･セット
-MONMST:
+monitor_set_data_to_memory:
 	CALL	SPSKIP
 	CALL	_HLHEX
 	JR	C,$+5
-	LD	(MONADR),HL
+	LD	(monitor_operation_address),HL
 
 MMSLP:	LD	A,':'
 	CALL	_PRINT
-	LD	HL,(MONADR)
-	CALL	_PRTHL
+	LD	HL,(monitor_operation_address)
+	CALL	_print_hex_4_digit
 	LD	A,'='
 	CALL	_PRINT
 	LD	A,(HL)
-	CALL	_PRTHX
+	CALL	_print_hex_2_digit
 	LD	A,1DH	;Acc←「←」
 	CALL	_PRINT
 	CALL	_PRINT
@@ -3569,9 +3394,9 @@ MMSLP:	LD	A,':'
 
 
 ;オリジナル･モニタ メモリ･エディト
-MONEDT:
+monitor_memory_edit:
 	CALL	MEMED1
-	JP	C,MON1
+	JP	C,monitor_command_waiting_loop
 
 MONELP:	CALL	MEMEDT
 	JP	C,MON2
@@ -3579,13 +3404,13 @@ MONELP:	CALL	MEMEDT
 
 
 ;1行メモリ･エディト･ルーチン
-;入力	[MONADR]参照
+;入力	[monitor_operation_address]参照
 ;出力	CY＝1ならエディトを終了しました
 ;破壊	AF，HL，DE
 MEMEDT:
 	LD	DE,(_KBFAD)
 	CALL	_GETL
-	CALL	GETLTR
+	CALL	get_character_from_line
 
 ;	既に先頭1文字を取り出した時のエントリ
 MEMED1:
@@ -3595,7 +3420,7 @@ MEMED1:
 	CALL	SPSKIP
 	CALL	_HLHEX
 	RET	C	;アドレスが不正
-	CALL	GETLTR
+	CALL	get_character_from_line
 	CP	'='
 	SCF
 	RET	NZ	;セパレータが不正
@@ -3610,7 +3435,7 @@ MEMELP:	CALL	SPSKIP
 	RET	NC	;入力終了
 	LD	(HL),A
 	INC	HL
-	LD	(MONADR),HL
+	LD	(monitor_operation_address),HL
 	JR	MEMELP
 
 
@@ -3620,13 +3445,16 @@ MEMELP:	CALL	SPSKIP
 
 
 ;処理が正常終了しました
-MONOK:	CALL	_MPRNT
+monitor_normal_end:
+	CALL	_MPRNT
 	DB	'Ok',0DH,00H
-MNOKRT:	JP	MON1
+MNOKRT:
+	JP	monitor_command_waiting_loop
 
 
 ;処理が異常終了しました
-MONERR:	CALL	_MPRNT
+monitor_error_termination:
+	CALL	_MPRNT
 	DB	'Error !',0DH,00H
 	JR	MNOKRT
 
@@ -3637,7 +3465,7 @@ MONERR:	CALL	_MPRNT
 
 
 ;S-OSディスク･イメージの初期化
-MONIDS:
+monitor_initialize_disk:
 	CALL	SPSKIP
 	CALL	MONDEV
 	OR	A
@@ -3645,8 +3473,8 @@ MONIDS:
 
 ;	S-OSディスク･イメージのクローズ
 	CALL SOSSF
-	JP	C,MONERR
-	JP	MONOK
+	JP	C,monitor_error_termination
+	JP	monitor_normal_end
 
 ;	論理フォーマット
 MONIDI:	DEC	A	;Acc←ユニット番号
@@ -3660,7 +3488,7 @@ MONIDI:	DEC	A	;Acc←ユニット番号
 	CALL	_MPRNT
 	DB	': ｦ ｼｮｷｶ ｼﾃ ﾖﾛｼｲ ﾃﾞｽｶ(Y/N)?',00H
 	CALL	_FLGET
-	CALL	TOUPR
+	CALL	convert_lower_case_to_upper_case
 	CP	'Y'
 	JR	Z,MONIDY
 
@@ -3669,7 +3497,7 @@ MONIDI:	DEC	A	;Acc←ユニット番号
 	CALL	_PRINT
 	LD	A,0DH
 	CALL	_PRINT
-	JP	MON1
+	JP	monitor_command_waiting_loop
 
 ;	初期化します
 MONIDY:
@@ -3678,14 +3506,14 @@ MONIDY:
 	CALL	_PRINT
 
 	CALL	SOSDI
-	JP	NC,MONOK
+	JP	NC,monitor_normal_end
 
 ;	物理的フォーマット（論理フォーマットに失敗しました）
 	CALL	SOSDF
-	JP	NC,MONOK
+	JP	NC,monitor_normal_end
 
 ;	物理的フォーマットにも失敗しました
-	JP	MONERR
+	JP	monitor_error_termination
 
 
 ;=======================================
@@ -3712,89 +3540,12 @@ MONDEV:
 
 ;	デバイスが指定されています
 	LD	A,(DE)
-	CALL	TOUPR
+	CALL	convert_lower_case_to_upper_case
 	SUB	'A'-1	;Acc←1～
 	INC	DE
 	INC	DE
 	RET
 
-
-;-------------------------------
-;オリジナル･モニタ 機種依存部分
-;-------------------------------
-
-;モニタ Lコマンド
-;入力	DE←コマンドの次の文字のアドレス
-;出力	なし
-;破壊	全レジスタ
-MONLD:
-	JP	MON1
-	DS	1
-
-
-;モニタ Sコマンド
-;入力	DE←コマンドの次の文字のアドレス
-;出力	なし
-;破壊	全レジスタ
-MONSV:
-	JP	MON1
-	DS	1
-
-
-;モニタ Cコマンド
-;オリジナル･モニタ 文字色変更処理
-;入力	DE←コマンドの次の文字のアドレス
-;出力	なし
-;破壊	全レジスタ
-;〈使用法〉
-;「Cmn」	カラーを（m，n）とします。
-;「Cm」		カラーを（m，）とします。
-;「C」		前景色と背景色を交換します。
-;〈レジスタ･マップ〉
-;DE	現在の文字列のアドレス
-;HL	foreground_colorまたはbackground_colorのアドレス
-;BC	ワーク
-MONCOL:
-	LD	HL,foreground_color
-;
-	CALL	SPSKIP
-	LD	A,(DE)
-	OR	A	;文字列の最後
-	JR	Z,MNCOXC	;前景色と背景色の交換
-	CALL	ASCNUM	;Acc←数値
-	JR	C,MNCOER	;数字ではなかった
-	LD	(HL),A	;前景色
-	INC	DE
-;
-	CALL	SPSKIP
-	LD	A,(DE)
-	OR	A
-	JR	Z,MNCOOK	;前景色のみ
-	CALL	ASCNUM	;Acc←数値
-	JR	C,MNCOER	;数字ではなかった
-	INC	L	;HL←background_color
-	LD	(HL),A	;後景色
-;
-MNCOOK:
-	CALL	change_color
-	LD	A,0CH
-	CALL	_PRINT
-MNCORT:
-	JP	MON1
-
-;	前景色と背景色を交換します
-MNCOXC:
-	LD	A,(HL)	;Acc←前景色
-	INC	L	;HL←background_color
-	LD	C,(HL)	;C←後景色
-	LD	(HL),A	;後景色←前景色
-	DEC	L	;HL←foreground_color
-	LD	(HL),C	;前景色←後景色
-	JR	MNCOOK
-
-MNCOER:
-	CALL	_BELL
-	JR	MNCORT
 
 
 ;-------------------------------
@@ -3802,9 +3553,9 @@ MNCOER:
 ;-------------------------------
 
 
-MONADR:	DW	0	;操作アドレス
-MONRSP:	DW	0	;SPの保存
-MONFRE:	DW	0	;ユーザー･エリアの大きさ
+monitor_operation_address:	DW	0	;操作アドレス
+monitor_reserve_stack_pointer:	DW	0	;SPの保存
+monitor_size_of_user_area:	DW	0	;ユーザー･エリアの大きさ
 
 
 ;---------------------------------------
@@ -3827,132 +3578,964 @@ DIOETP:
 ;	フィジカル･ディスクI／Oルーチン組み込み
 ;	INCLUDE	SWEMDIO2
 
-; RAM disk driver (SWXCRIO)
-
-;レコード番号は、0〜127
-
-;===============
-;パッチあて
-;===============
-
-;特殊ワークの一部をRAMディスクにさきます
-;_WKSIZ(1F68H)	C000H→4000H	48Kバイト→16Kバイト
-
-
-;RAMディスク（デバイスE:）のクラスタ数を設定します
-;[20FFH]	0→8	0クラスタ→8クラスタ
-
-
-;DOSモジュールをRAMディスク対応にします
-;[2596H]	'D'+1→'E'+1	デバイスD:まで→デバイスE:まで
-
-
-;DISK I／Oのっとり
-;[2B00H〜]	JP DRSUB→JP RDSUB（C3H，54H，29H）
-;[2B03H〜]	JP DWSUB→JP WTSUB（C3H，5DH，29H）
-
-	ORG	2954H
-
-DRSUB	EQU	2B07H
-DWSUB	EQU	2B5EH
-
-;DREADのっとり
-;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数、
-;	Acc'←ユニット番号
-;出力	CY＝0（Acc←0）なら成功、
-;	CY＝1（Acc←エラー･コード）なら失敗
-;破壊	AF，AF'
-RDSUB:
-	EX	AF,AF'
-	CP	4
-	JR	Z,RDRAM	;デバイス「E:」
-	EX	AF,AF'
-	JP	DRSUB	;本来のルーチンへ
-
-
-;DWRITEのっとり
-;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数、
-;	Acc'←ユニット番号
-;出力	CY＝0（Acc←0）なら成功、
-;	CY＝1（Acc←エラー･コード）なら失敗
-;破壊	AF，AF'
-WTSUB:
-	EX	AF,AF'
-	CP	4
-	JR	Z,WTRAM	;デバイス「E:」
-	EX	AF,AF'
-	JP	DWSUB	;本来のルーチンへ
-
-
-;RDSUB本体
-;注：EX AF,AF'で飛んできます。
-WTRAM:
-;	初期設定
-	PUSH	HL
-	LD	A,7EH	;7EH，EDH，79H
-	LD	HL,79EDH	;LD A,(HL)／OUT (C),A
-	JR	RDRAM0
-
-
-;WTSUB本体
-;注：EX AF,AF'で飛んできます。
-RDRAM:
-;	初期設定
-	PUSH	HL
-	LD	A,0EDH	;EDH，78H，77H
-	LD	HL,7778H	;IN A,(C)／LD (HL),A
-RDRAM0:	LD	(RDRAM2),A
-	LD	(RDRAM2+1),HL
-	EX	AF,AF'
-	POP	HL
-
-	PUSH	BC
-	PUSH	DE
-	PUSH	HL
-	DEC	D
-	INC	D
-	JR	NZ,BDREC	;エラー（レコード256〜）
-	LD	D,A	;D←レコード数
-	ADD	A,E	;Acc←最後のレコード＋1
-	JR	C,BDREC	;エラー（最後のレコードが255〜）
-	CP	128+1
-	JR	NC,BDREC	;エラー（最後のレコードが128〜）
-	SET	7,E
-	LD	B,E
-	LD	C,0	;BC←レコード番号×256＋8000H
-
-RDRAM1:	LD	E,0
-
-;	256バイトをブロック転送
-RDRAM2:	IN	A,(C)
-	LD	(HL),A
-	INC	BC
-	INC	HL
-	DEC	E
-	JR	NZ,RDRAM2
-
-	DEC	D
-	JR	NZ,RDRAM1
-
-	OR	A
-	JR	RAMRT
-BDREC:	LD	A,5	;Bad Record
-	SCF
-RAMRT:	POP	HL
-	POP	DE
-	POP	BC
-	RET
-
-
 
 ; Disk I/O Sub routine
 
 
 
+CRT_INIT:
+
+	LD HL,0F000H ; VRAMの左上のアトリビュートアドレス
+	LD BC,0800H
+
+; カーソル座標を00Hに設定する。
+; 注：画面左上がカーソル座標では0000Hになる。VRAMにおけるテキスト画面左上(F800H)ではないことに注意。
+	LD A,0EH ; R14 (cursor H)
+	OUT (CRTC_ADD),A
+	LD A,0H
+	OUT (CRTC_VAL),A
+	LD A,0FH ; R15 (cursor L)
+	OUT (CRTC_ADD),A
+	LD A,00H
+	OUT (CRTC_VAL),A
+
+; カーソルの形状と点滅の設定
+	LD A,0AH ; R10 (cursol start address)
+	OUT (CRTC_ADD),A
+;	LD A,C0H ; 点滅、豆腐カーソル
+	LD A,C7H ; 点滅、アンスコカーソル
+;	LD A,0H ; 表示せず。
+	OUT (CRTC_VAL),A
+	LD A,0BH ; R11 (cursol end address)
+	OUT (CRTC_ADD),A
+	LD A,0AH
+;	LD A,0H ; 表示せず。
+	OUT (CRTC_VAL),A
+
+;
+; 	一度画面全てを消す(スペースで埋める)。
+;
+	LD B,050H
+	LD DE,0FFFFH
+	LD A,20H ; 20Hはアスキーコードでスペース
+CLEAR_ALL_LINE:
+	OUT (0D2H),A ; D2Hポートになにか書くと次の命令は別のページ(この場合はVRAMのページ)に行う。
+	LD (HL),A ; F000H～FFFFHまで20Hで埋めている。アトリビュートに20H書いても問題ないみたい。
+	INC HL
+	SBC HL,DE
+	JR NZ,CLEAR_ALL_LINE
+
+	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
+	LD (CURSOL_LOCATE),DE
+	LD (TOP_VIEW),DE
+	LD DE, 0FFD0H
+	LD (NEED_DO_SCROLL_POINT),DE
+
+	RET ; 初期化処理終了
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; CRTCコントロールサブルーチン群
+;
+
+;
+; VRAM_TXT_TOP : VRAMテキストエリアの先頭(F800H)
+; CURSOL_LOCATE : 現在のカーソル位置
+; CR_NOW_CURSOL_LOCATE : CRコードが入った時のカーソル位置
+; TOP_VIEW : 画面左上端のアドレス(スクロールによって動的に変化する)
+; CR_BASE_ADDRESS : CR後のカーソル位置
+; CR_NEW_ORIGIN : FFFFHの境界を越え、更に画面右端を超えた時にCRアドレス計算の原点になるアドレス
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; １文字表示サブルーチン
+; A regに表示するアスキーコードが入っている。
+;
+
+PUTCHAR:
+	AND A
+	JR Z, PUTCHAR_RET ; NULL文字なら何もしないで戻る
+	LD DE,(CURSOL_LOCATE) ; 現在のカーソル位置をDEにロード
+	CP CR ; キャリッジリターンか？
+	JP Z, DO_CR ; CRの処理
+	CP LF ; ラインフィードか？
+	JP Z, DO_LF ; LFの処理
+	CP BS ; バックスペースか？
+	JP Z, DO_BS ; BSの処理
+	CP HT ; タブか？
+	JP Z, DO_HT ; HTの処理
+	CP ESC ; エスケープか？
+	JP Z, DO_ESC ; ESCの処理
+
+; 通常文字の表示処理
+DO_NORMAL:
+	OUT (0D2H),A ; access to RAM page 1
+	LD (DE),A ; put character
+;
+; 越境判定。FFFFHの次はF800Hになる
+;
+	PUSH AF
+	LD A,D ; DEの上位バイト
+	CP 0FFH
+	JR NZ,CURSOR_BOUNDARY_END ; オーバーフローしていなければジャンプ
+	LD A,E ; DEの下位バイト
+	CP 0FFH
+	JR NZ,CURSOR_BOUNDARY_END ; オーバーフローしていなければジャンプ
+	LD DE, VRAM_TXT_TOP-1	  ; 現在のカーソル位置 = F800H - 1 
+CURSOR_BOUNDARY_END:
+	POP AF
+	INC DE ; カーソル位置を1つ進める
+DO_CR_LF_BS_RETURN: ; CR,LF,BSの処理で戻ってくる
+	PUSH HL
+	PUSH AF
+	PUSH DE
+	CALL DO_SCROLL ; 1行スクロール処理
+	POP DE
+	POP AF
+	POP HL
+	LD (CURSOL_LOCATE),DE ; 現在のカーソル位置を更新。
+	CALL PRINT_CURSOL ; カーソル表示
+	CALL CALC_CURSOL_XY ; カーソルのX,Y座標計算
+PUTCHAR_RET:
+	RET
+
+;
+; カーソルをCURSOL_LOCATE=DEの位置に表示する(HD46505Sの機能)
+;
+PRINT_CURSOL:
+	PUSH AF
+	PUSH DE
+	PUSH HL
+	EX DE,HL ; HL=CURSOL_LOCATE
+	LD A,0EH ; R14 (cursor H)
+	OUT (CRTC_ADD),A
+	LD A,H
+	OUT (CRTC_VAL),A ; カーソルの上位アドレス設定
+	LD A,0FH ; R15 (cursor L)
+	OUT (CRTC_ADD),A
+	LD A,L
+	OUT (CRTC_VAL),A ; カーソルの下位アドレス設定
+	POP HL
+	POP DE
+	POP AF
+	RET
+
+;
+; CURSOL_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
+;
+CALC_CURSOL_XY:
+	PUSH AF
+	PUSH BC
+	PUSH DE
+	PUSH HL
+	LD HL,VRAM_TXT_TOP ; 画面左上端アドレスをHLにロード
+	EX DE,HL ; DEとHLを交換。HL=CURSOL_LOCATE, DE=VRAM_TXT_TOP
+	SBC HL,DE ; HL = CURSOL_LOCATE - VRAM_TXT_TOP
+	OR A ; フラグをクリア
+	LD BC,0 ; B=Y座標カウンタ初期化
+Y_CALC_LOOP:
+	LD DE,WIDTH_SCREEN ; 50H = 画面の桁数(80d)
+	SBC HL,DE ;	HL - 50H
+	JR C,Y_CALC_END ; HLが負ならループ終了
+	INC B ; Y座標カウンタをインクリメント
+	JR Y_CALC_LOOP
+Y_CALC_END:
+	ADD HL,DE ; 余り復元（これがX座標）
+    LD A,B
+    LD (CURSOL_XY_ADDR),A   ; Y座標保存
+    LD A,L
+    LD (CURSOL_XY_ADDR+2),A   ; X座標保存
+	POP HL
+	POP DE
+	POP BC
+	POP AF
+	RET
+
+;
+; 
+;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; CR処理ルーチン(スクロール処理対応版)
+;
+
+DO_CR:
+	PUSH HL
+	PUSH BC
+	XOR A ; A=0にする
+	LD (CR_NOW_CURSOL_LOCATE),DE ; 現在のカーソル位置保存
+	LD HL,(TOP_VIEW) ; 左上端をロード
+	EX DE,HL
+	SBC HL,DE ; 左上端アドレス - 現在のカーソル位置
+	JR NC,CONTINUE_CR ; オーバーフローしていないなら単純処理
+;
+;   TOP_VIEWがCR_NOW_CURSOL_LOCATEよりも大きいとき。
+;	この状況は、スクロールされた時に発生する。
+;	つまり、殆どの場合、この処理が実行される。
+;
+	LD HL,(TOP_VIEW)
+	LD DE,(CR_NOW_CURSOL_LOCATE) ; CRコードが入った時のカーソル位置
+	LD BC,WIDTH_SCREEN ;  50H =  画面の桁数(80d)
+	LD (CR_BASE_ADDRESS),HL ; 初期値は左上端アドレス
+CR_SCAN_0:
+	LD HL,(CR_BASE_ADDRESS)
+	LD (CR_BASE_ADDRESS_PRE),HL
+	ADD HL,BC ; 50H(80d)づつ足していく
+	LD (CR_BASE_ADDRESS),HL
+	JP NC,CR_SCAN_0 	; 越境をチェックしている。
+						; オーバーフローまでループする。
+	LD HL,(CR_BASE_ADDRESS_PRE) ; ループを抜けたときHLはオーバーフロー後の値になっている。
+								; 足し算前の値に戻す
+	; FFFFHを超えた値がいくつかを調べる。
+	; FFFFHまでの値と合わせて、それが1行の桁数50H(80d)を
+	; 超えたなら、CR後の現在カーソル位置は
+	; その新しい行の先頭アドレスにならなくてはならない。
+	; 
+	LD DE,0FFFFH ; 境界値
+	EX DE,HL
+	SBC HL,DE ; FFFFH - CR_BASE_ADDRESS_PRE = A
+			  ; オーバーフローする一つ前の値でFFFFHを引く
+	LD DE,WIDTH_SCREEN ; 50H(80d)
+	EX DE,HL
+	SBC HL,DE ; 50H(80d) - A = X ; Xは境界を越えた数
+	LD DE,VRAM_TXT_TOP ; VRAM_TXT_TOP = F800H
+	ADD HL,DE ; F800H + X ; この値が境界を含む行の右端のアドレス
+	DEC HL 	; -1する
+	DEC HL 	; この引き算二回の処理がないと正しい左端のアドレスが出ない。
+			; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
+	LD (CR_NEW_ORIGIN),HL ; 新しいCR評価位置になる
+	LD (CR_BASE_ADDRESS),HL ; CR_BASE_ADDRESSに新しい値を入れる
+	LD DE,(CR_NOW_CURSOL_LOCATE) ; CR命令を受けた時のカーソル位置
+
+	;
+	; 例えば現在カーソル位置がF819Hで新しいCR評価位置がF820Hのときに、
+	; CR_2_NEW_SCAN_0のループを通ると+50Hされてしまうので、バイパスする処理。
+	SBC HL,DE ; (CR_NEW_ORIGIN) > CR_NOW_CURSOL_LOCATE ?
+	JP P,CR_BOUNDARY_RETURN ; 正であれば、ジャンプ
+	;
+	;
+	LD HL,(CR_NEW_ORIGIN) ; 負であれば、そのまま処理を進める。
+	LD BC,WIDTH_SCREEN ;  50H(80d)
+CR_NEW_SCAN_0:
+	LD HL,(CR_BASE_ADDRESS)
+	LD (CR_BASE_ADDRESS_PRE),HL ; HL=CR_NEW_ORIGIN
+	ADD HL,BC ; CR_NEW_ORIGIN + 50H +...
+	LD (CR_BASE_ADDRESS),HL
+	SBC HL,DE ; (CR_NEW_ORIGIN + 50H +...) > CR_NOW_CURSOL_LOCATE ?
+	JP M, CR_NEW_SCAN_0 ; DEの方が大きければループ
+	JP Z, CR_NEW_SCAN_0 ; 完全に一致したときも1回ループを回す
+	LD HL,(CR_BASE_ADDRESS_PRE) ; HL>DE。50Hを足す一つ前の値をHLに入れる。
+	LD (CR_BASE_ADDRESS),HL
+	LD DE,(CR_BASE_ADDRESS) ; CR後のアドレスをDEに入れる。
+	JR CR_END
+;
+;	TOP_VIEWがCR_NOW_CURSOL_LOCATEよりも小さいとき
+;
+CONTINUE_CR:
+	LD HL,(TOP_VIEW)
+	LD DE,(CR_NOW_CURSOL_LOCATE)
+	LD BC,WIDTH_SCREEN ; 50H(80d) 
+	LD (CR_BASE_ADDRESS),HL
+CR_SCAN_1:
+	LD HL,(CR_BASE_ADDRESS)
+	LD (CR_BASE_ADDRESS_PRE),HL
+	ADD HL,BC ; 50H(80d)づつ足していく
+	LD (CR_BASE_ADDRESS),HL
+	SBC HL,DE	; HLが現在のカーソル位置を超えるかチェック
+	JP M,CR_SCAN_1 ; 超えていなければループ
+	JP Z,CR_SCAN_1 ; 完全に一致したときも1回ループを回す。
+	LD HL,(CR_BASE_ADDRESS_PRE) ; HLが現在のカーソル位置を超えたので、1つ前の値に戻す
+	LD (CR_BASE_ADDRESS),HL
+	LD DE,(CR_BASE_ADDRESS)
+CR_END:
+	POP BC
+	POP HL
+	JP DO_CR_LF_BS_RETURN; CR,LF,BSの処理の終了
+
+CR_BOUNDARY_RETURN:
+	LD DE,(CR_BASE_ADDRESS_PRE) ; DEに現在のカーソル位置を超える前の値(CR_BASE_ADDRESS_PRE)を戻す
+	JR CR_END
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; LINE_FEED 処理(スクロール処理対応版)
+;
+
+DO_LF:
+	PUSH HL
+	PUSH BC
+	EX DE,HL ; HL <-> DE DE=現在のカーソル位置
+	LD BC,WIDTH_SCREEN ; 50H(80d)
+	ADD HL,BC ; HL = DE + 50H
+	JR NC,CONTINUE_LF ; オーバーフローしていなければジャンプ
+;
+;	BEYOND FFFFH BOUNDARY
+;
+	LD HL,(CURSOL_LOCATE)
+	LD DE,0FFFFH
+	EX DE,HL ; HL - CURSOL_LOCATE
+	SBC HL,DE ; FFFFH - CURSOL_LOCATE = A
+	LD DE,50H ; 50H(80d)
+	EX DE,HL ; DE - A
+	SBC HL,DE ; 50H - A = X
+;
+	DEC HL ; この引き算二回の処理がないと正しい左端のアドレスが出ない。
+	DEC HL ; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
+;
+	LD DE,VRAM_TXT_TOP
+	ADD HL,DE
+CONTINUE_LF:
+	EX DE,HL ; DE <-> HL
+	POP BC
+	POP HL
+	JP DO_CR_LF_BS_RETURN
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; BACK SPACE 処理
+;
+DO_BS:
+	LD A, 20H ; 20H -> Space ASCII CODE
+	DEC DE ; カーソル位置を1つ戻す
+	OUT (0D2H),A ; access to RAM page 1
+	LD (DE),A ; 20H(スペース)を表示させる。
+	JP DO_CR_LF_BS_RETURN ; BSの為の復帰点に戻る。
+
+;
+; Horizontal Tab
+;
+DO_HT:
+	PUSH AF
+	PUSH HL
+	PUSH BC
+
+	; PUTCHARルーチンを4回呼び出してスペースを表示させる。
+	LD A,20H ; 20H is Space CODE
+	LD B,04H	; 4回ループ
+HT_LOOP:
+		PUSH AF
+		CALL PUTCHAR
+		POP AF
+		DEC B
+		JR NZ, HT_LOOP
+	POP BC
+	POP HL
+	POP AF
+	RET
+
+DO_VT:
+	RET
+
+DO_NP:
+	RET
+
+DO_ESC:
+	RET
+
+DO_BEL:
+	RET
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; スクロール処理
+; SORD M23のCRTCであるHD4650SPはスクロール機能がある。
+; 具体的には表示したい画面左上端のアドレスを、R12、R13に上位、下位アドレスとして入れることで実行される。
+; SORD M23のVRAMのテキストエリアはF800H～FFFFHであるが、画面に表示される文字は80桁×25行の2000(7D0H)文字である。
+; よって、余りが生じるため、スクロール処理は殆どがこの余りの処理に費やされる。
+;
+
+DO_SCROLL:
+	LD (CURSOL_LOCATE),DE ; 現在のカーソル位置を更新
+	LD HL,(TOP_VIEW) ; 左上端アドレス
+	LD DE,7D0H ; 全画面文字数
+	ADD HL,DE ; TOP_VIEW + 7D0H ; 
+	JR C,SCROLL_POINT_BEYOND_FFFF ; 境界値をまたいでいる、オーバーフローしたらジャンプ
+	JR SCROLL_POINT ; スクロールすべきカーソル位置の更新へ
+SCROLL_POINT_BEYOND_FFFF:
+	LD HL,(TOP_VIEW)
+	LD DE,0FFFFH
+	EX DE,HL ; HL - TOP_VIEW
+	SBC HL,DE ; FFFFH - TOP_VIEW = A
+	LD DE,7CEH ; 7D0H - 2H = 7CEH
+	EX DE,HL ; DE - A
+	SBC HL,DE ; 7CEH - A = X
+	LD DE,VRAM_TXT_TOP
+	ADD HL,DE ; X + F800H = 新しいTOP_VIEW
+	;
+SCROLL_POINT:
+	; update need_do_scroll_point
+	LD (NEED_DO_SCROLL_POINT),HL ; need_do_scroll_point = 新しいTOP_VIEW
+	LD DE,(CURSOL_LOCATE) ; 現在のカーソル位置
+	LD A,D ; need_do_scroll_point == CURSOL_LOCATE?
+	CP H
+	RET NZ
+	LD A,E ; need_do_scroll_point == CURSOL_LOCATE?
+	CP L
+	RET NZ ; スクロール不要なら終了
+;
+; TOP_VIEWの更新
+;
+
+; スクロールから外れた行をスペースで埋める。
+	LD HL,(TOP_VIEW) ; スクロール直前の左上端アドレス
+	PUSH BC
+	PUSH DE
+	PUSH AF
+	LD B,04FH ; 4FH=79d
+	LD DE,0FFFFH ; 境界値
+	LD A,20H ; 20H is Space CODE
+CLEAR_1_LINE:
+	OUT (0D2H),A
+	LD (HL),A ; スペースで埋める
+	PUSH HL ; HL < FFFFHのとき、下の引き算はオーバーフローするが、
+			; HL=F800Hの時に実行すると、HL=F801となり、
+			; その後INC HLでF802Hになるため、スペースによる穴埋めがF801Hのみ実行されないことになる。
+			; なので、一度、HLを退避して、引き算してFFFFHでないか判定したのち、POPして戻している。
+			; このコードは遅いが、現状、これを採用する。20221229
+	SBC HL,DE ; HL - FFFFH = HL
+	POP HL
+	JR Z, CLEAR_BEYOND_BOUNDARY ; HL = FFFFHのときは境界を越えた
+	INC HL
+	DJNZ CLEAR_1_LINE
+	JR CLEAR_1_LINE_END
+	; 越境時の処理
+CLEAR_BEYOND_BOUNDARY:
+	LD HL,VRAM_TXT_TOP ; HLをVRAMの先頭(F800H)にセット
+CLEAR_1_LINE_BOUNDARY: ; B回ループする
+	OUT (0D2H),A
+	LD (HL),A
+	INC HL
+	DJNZ CLEAR_1_LINE_BOUNDARY
+CLEAR_1_LINE_END:
+	POP AF
+	POP DE
+	POP BC
+;
+;
+	LD HL,(TOP_VIEW) ; TOP_VIEWの更新
+	LD DE,50H ; 50H=80d
+	ADD HL,DE ; TOP_VIEW + 50H
+	JR NC,UPDATE_TOP_VIEW
+;
+;	BEYOND FFFFH BOUNDARY
+;
+	LD DE,0FFFFH ; 境界値
+	LD HL,(TOP_VIEW) ; TOP_VIEW
+	EX DE,HL
+	SBC HL,DE ; FFFFH - TOP_VIEW = A
+	LD DE,50H ; 50H(80d)
+	EX DE,HL ; DE - A
+	SBC HL,DE ; 50H - A = X
+	LD DE,VRAM_TXT_TOP ; VRAM_TXT_TOP
+	ADD HL,DE ; F800H + X = TOP_VIEW
+;
+	DEC HL ; この引き算二回の処理がないと正しい左端のアドレスが出ない。
+	DEC HL ; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
+;
+UPDATE_TOP_VIEW:
+	LD (TOP_VIEW),HL
+	;
+	; 1行スクロール
+	;
+	PUSH AF
+	LD A,0CH ; START ADDRESS HIGH
+	OUT (CRTC_ADD),A
+	LD A,H ; スクロールしたときに左隅になるVRAMの上位アドレス
+	OUT (CRTC_VAL),A
+	LD A,0DH ; START ADDRESS LOW
+	OUT (CRTC_ADD),A
+	LD A,L ; スクロールしたときに左隅になるVRAMの下位アドレス
+	OUT (CRTC_VAL),A
+	POP AF
+SCROLL_END:
+	RET
+
+
+
+;
+; for CRT control
+;
+
+CURSOL_LOCATE: ; カーソル位置を保存する変数
+	DS 02H
+
+TOP_VIEW: ; 画面左上端のアドレスを保存する変数
+	DS 02H
+
+NEED_DO_SCROLL_POINT: ;	スクロールすべきポイントアドレスを保存する変数
+	DS 02H
+
+CR_BASE_ADDRESS: ; CRTコントローラのベースアドレス保存変数
+	DS 02H
+
+CR_BASE_ADDRESS_PRE: ; CRTコントローラのベースアドレス保存変数（前回値）
+	DS 02H
+
+CR_NOW_CURSOL_LOCATE: ; 現在のカーソル位置保存変数
+	DS 02H
+
+CR_NEW_ORIGIN: ; 新しい表示開始アドレス保存変数
+	DS 02H
+
+
 	ORG	2B00H
 
-	; JP	RDSUB	;RAMディスク･ドライバ用パッチ
-	; JP	WTSUB	;RAMディスク･ドライバ用パッチ
+;===============
+;エントリ
+;===============
+
+
+DREAD:	JP	read_disk_entity	;ディスク読み込み
+DWRITE:	JP	write_disk_entity	;ディスク書き込み
+disk_unit_number:	DS	1	;0～
+
+
+;===============
+;サブルーチン
+;===============
+
+
+;DREAD本体
+;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
+read_disk_entity:
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	CALL	DRDSB	;ディスクから読み込みます
+	POP	HL
+	POP	DE
+	POP	BC
+	RET
+
+
+;ディスクから読み込みます
+;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，HL，DE，BC，AF'
+DRDSB:
+	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
+	CALL	get_track_number_and_sector_number_from_record_number	;レコード番号より、トラック番号とセクタ番号を得ます
+	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
+AGNRDY:
+	CALL	SEEK	;目的のシリンダへシークします（V1，20ms） '0msに改
+REDAGN:
+	LD	A,5	;リトライ･カウンタ
+REDRTY:
+	PUSH	AF
+	PUSH	HL
+	LD	A,10000000B	;リード･データ（サイド比較なし）
+	CALL	set_sector_number_and_execute_FDC_coomand	;FDCにセクタ番号をセットして、FDCコマンドを実行します
+	PUSH	DE
+	LD	DE,0F8FBH
+	LD	C,E	;BC←0FFBH 'データ･レジスタ
+	IN	A,(C)
+	LD	C,D	;BC←0FF8H
+
+MPNYMI:	IN	A,(C)
+	RRCA		;BUSY
+	JR	NC,ENDRED
+	RRCA		;DATA REQUEST
+	JR	NC,MPNYMI
+	LD	C,E	;BC←0FFBH 'データ･レジスタ
+	IN	A,(C)	;FDより1バイト読みます
+	LD	(HL),A	;メモリに書き込みます
+	INC	HL
+	LD	C,D	;BC←0FF8H
+	JR	MPNYMI
+
+;	NOT READY，RECORD NOT FOUND，CRC ERROR，LOST DATA
+ENDRED:	AND	01001110B	;10011100B
+	POP	DE
+	JR	Z,CNTRED
+;	エラー
+	POP	HL	;HL←読み込み先頭アドレス
+	POP	AF	;Acc←リトライ･カウンタ
+	DEC	A
+	JP	Z,device_io_error	;リトライでも回復不能
+	CALL	restore_and_seek	;リストアして、目的のシリンダへシークします
+	JR	REDRTY	;リトライします
+
+;	ノー･エラー
+CNTRED:	POP	AF	;読み込み先頭アドレスを捨てます
+	POP	AF	;リトライ･カウンタを捨てます
+	EX	AF,AF'	;Acc←レコード数
+	DEC	A
+	JP	Z,fdd_motor_off	;モータをオフします
+	EX	AF,AF'
+	CALL	count_up_sector	;セクタ番号のカウント･アップ
+	JR	NC,REDAGN
+	JR	AGNRDY
+
+
+;DWRITE本体
+;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
+write_disk_entity:
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	CALL	DWTSB	;ディスクへ書き込みます
+	POP	HL
+	POP	DE
+	POP	BC
+	RET
+
+
+;ディスクへ書き込みます
+;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，HL，DE，BC，AF'
+DWTSB:
+	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
+	CALL	get_track_number_and_sector_number_from_record_number	;レコード番号より、トラック番号とセクタ番号を得ます
+	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
+AGNWRT:
+	CALL	SEEK	;目的のシリンダへシークします（V1，20ms） '0msに改
+WRTAGN:
+	LD	A,5	;リトライ･カウンタ
+WRTRTY:
+	PUSH	AF
+	PUSH	HL
+	LD	A,10100000B	;ライト･データ（サイド比較なし）
+	CALL	set_sector_number_and_execute_FDC_coomand	;FDCにセクタ番号をセットして、FDCコマンドを実行します
+	PUSH	DE
+	LD	DE,0F8FBH
+
+MPNWRT:	IN	A,(C)
+	RRCA		;BUSY
+	JR	NC,ENDWRT
+	RRCA		;DATA REQUEST
+	JR	NC,MPNWRT
+	LD	A,(HL)	;メモリから読みます
+	LD	C,E	;BC←0FFBH 'データ･レジスタ
+	OUT	(C),A	;FDに1バイト書き込みます
+	INC	HL
+	LD	C,D	;BC←0FF8H
+	JR	MPNWRT
+
+ENDWRT:
+	BIT	5,A	;b6 WRITE PROTECT
+	JP	NZ,write_protect_error	;エラー
+;	NOT READY，WRITE PROTECT，WRITE FAULT，RECORD NOT FOUND，CRC ERROR，LOST DATA
+	AND	01111110B	;11111100B
+	POP	DE
+	JR	Z,CNTWRT
+;	エラー
+	POP	HL	;HL←読み込み先頭アドレス
+	POP	AF	;Acc←リトライ･カウンタ
+	DEC	A
+	JR	NZ,WTRTYL
+	JP	device_io_error	;リトライでも回復不能
+WTRTYL:
+	CALL restore_and_seek	;リストアして、目的のシリンダへシークします
+	JR	WRTRTY	;リトライします
+
+;	ノー･エラー
+CNTWRT:
+	POP	AF	;読み込み先頭アドレスを捨てます
+	POP	AF	;リトライ･カウンタを捨てます
+	EX	AF,AF'	;Acc←レコード数
+	DEC	A
+	JP	Z,fdd_motor_off	;モータをオフします
+	EX	AF,AF'
+	CALL	count_up_sector	;セクタ番号のカウント･アップ
+	JR	NC,WRTAGN
+	JR	AGNWRT
+
+
+;レコード番号より、トラック番号とセクタ番号を得ます
+;入力	DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	D←トラック番号、E←セクタ番号、Acc'←レコード数
+;破壊	AF，DE，AF'
+get_track_number_and_sector_number_from_record_number:
+	PUSH HL
+	LD	L,A	;L←レコード数
+	EX	AF,AF'	;AF'
+	LD	H,4
+	LD	A,0FFH	;H A'←04FFH
+	DEC	L	;L←レコード数－1
+	SUB	L	;H A'←04FFH－（レコード数－1）
+	LD	L,A	;HL←0500H－レコード数
+	OR	A
+	SBC	HL,DE	;（0500H－レコード数）－レコード番号
+	POP	HL
+	JP	C,bad_sector_error
+	LD	A,E
+RLLOP:
+	RLCA
+	RL	D
+	RLCA
+	RL	D
+	RLCA
+	RL	D
+	RLCA
+	RL	D	;D←トラック番号
+	LD	A,E
+	AND	0FH
+	INC	A
+	LD	E,A	;E←セクタ番号
+	RET
+
+
+;ディスクをアクセス可能にします
+;入力	D←トラック番号
+;出力	D←シリンダ番号、[disk_unit_number b4]←サイド、B←0FH
+;破壊	AF，BC
+get_ready_to_access_disk:
+	PUSH	HL
+	DI
+	CALL check_FDC	;FDCをチェックします
+	LD	A,(disk_unit_number)
+	AND	00000011B
+	SRL	D	;D←シリンダ番号
+	JR	NC,J1
+	OR	00010000B
+J1:	OR	10000000B
+	LD	(disk_unit_number),A	;[disk_unit_number]←I／O 0FFCHに書き込む値
+	LD	C,0FCH	;BC←0FFCH
+	OUT	(C),A	;モータ･オン
+	PUSH	DE
+DBSY:	LD	E,3
+	LD	HL,0
+	LD	BC,0FF8H
+
+;	ディスクが正常回転するまで、196,608ループまで待ちます
+RDYWT1:
+	IN	A,(C)
+	AND	10000001B
+	JR	Z,RTRDYS	;POPリターン
+	DEC	HL
+	LD	A,H
+	OR	L
+	JR	NZ,RDYWT1
+	DEC	E
+	JR	NZ,RDYWT1
+	JP	device_offline_error
+
+
+;目的のシリンダへシークします（V1，20ms） '0msに改
+;入力	D←シリンダ番号、B←0FH
+;出力	なし
+;破壊	AF，C
+SEEK:
+	LD	C,0FBH	;BC←0FFBH 'データ･レジスタ
+	OUT	(C),D	;FDCデータ･レジスタ←シリンダ番号
+	PUSH HL
+	CALL get_cylinder_buffer_address	;シリンダ･バッファのアドレスを得ます
+	LD	A,(HL)
+	LD	C,0F9H	;BC←0FF9H 'トラック･レジスタ
+	OUT	(C),A	;FDCシリンダ･レジスタ←現在シリンダ番号
+	LD	(HL),D	;シリンダ･バッファの更新
+	POP	HL
+	LD	C,0F8H	;BC←0FF8H
+;	LD	A,00011110B	;シーク（V1，20ms）
+	LD	A,00011100B	;シーク（V1， 0ms）
+	OUT	(C),A
+
+
+;FDCレディ待ち
+;出力	なし
+;破壊	AF，BC
+wait_for_FDC_ready:
+;	115.5μs（462ts）待ちます
+	PUSH	HL	;11ts
+	PUSH	DE	;11ts
+	LD	B,32	; 7ts
+SELF:
+	DJNZ	SELF	;411ts
+	LD	BC,0FF8H	;10ts
+
+BSYLP1:
+	IN	A,(C)	;12ts
+	RRCA		;BUSY
+	JR	C,BSYLP1
+
+RTRDYS:
+	POP	DE
+	POP	HL
+	RET
+
+
+;FDCをチェックします
+;出力	B←0FH
+;破壊	AF，BC
+check_FDC:
+	PUSH	DE
+	LD	D,255
+
+check_FDCL:	LD	BC,0FFBH	;データ･レジスタ
+	LD	A,0A5H
+	OUT	(C),A
+;	139.5μs待ちます
+	LD	A,16
+	CALL wait_8usec	;8μs単位で待ちます
+	IN	A,(C)
+	CP	0A5H
+	JR	NZ,J2
+	POP	DE
+	RET		;FDCが正常動作
+J2:	DEC	D
+	JR	NZ,check_FDCL
+
+;	FDCが正常でない
+	POP	DE
+	JP	device_offline_error
+
+
+;8μs単位で待ちます
+;入力	Acc←カウンタ
+;出力	32×Acc＋10ts待ちます
+;破壊	AF
+wait_8usec:
+;	1ループ32ts
+	DEC	A	; 4ts
+	LD	HL,(1234H)	;16ts
+	JR	NZ,wait_8usec	;12ts
+	RET		;10ts
+
+
+;シリンダ･バッファのアドレスを得ます
+;入力	[disk_unit_number b3～b0]←ユニット番号（0～3）
+;出力	HL←対応するシリンダ･バッファのアドレス
+;破壊	AF，HL
+get_cylinder_buffer_address:
+	LD	HL,DSKTRK	;シリンダ･バッファ
+	PUSH	DE
+	LD	A,(disk_unit_number)
+	AND	00001111B
+	LD	E,A
+	LD	D,0
+	ADD	HL,DE
+	POP	DE
+	RET
+
+
+;FDCにセクタ番号をセットして、FDCコマンドを実行します
+;入力	E←セクタ番号、Acc←FDCコマンド、B←0FH
+;出力	C←F8H
+;破壊	AF，C
+set_sector_number_and_execute_FDC_coomand:
+	EI
+	LD	C,0FAH	;BC←0FFAH 'セクタ･レジスタ
+	DI
+	OUT	(C),E	;FDCセクタ･レジスタ←セクタ番号
+	LD	C,0F8H	;BC←0FF8H
+	OUT	(C),A
+;	31μs（124ts）待ちます
+	LD	A,7	;7ts
+J3:	DEC	A	;---ts
+	JR	NZ,J3	;107ts
+	RET		;10ts
+
+
+;モータをオフします
+;出力	CY＝0
+fdd_motor_off:
+	PUSH	AF
+	LD	BC,0FFCH
+	LD	A,(disk_unit_number)
+	AND	00000011B
+	OUT	(C),A
+	POP	AF
+	EI
+	OR	A
+	RET
+
+
+;リストアして、目的のシリンダへシークします
+;出力	D←シリンダ番号、B←0FH
+;破壊	BC
+restore_and_seek:
+	PUSH	AF
+	PUSH	HL
+	PUSH	DE
+	CALL	get_cylinder_buffer_address	;シリンダ･バッファのアドレスを得ます
+	LD	(HL),0
+	XOR	A
+	LD	BC,0FF9H	;トラック･レジスタ
+	OUT	(C),A	;FDCシリンダ･レジスタ←0
+	DEC	C	;BC←0FF8H
+;	LD	A,00000010B	;リストア（V0，20ms）
+	LD	A,00000000B	;リストア（V0， 0ms）
+	OUT	(C),A
+	CALL	wait_for_FDC_ready	;FDCレディ待ち
+	POP	DE
+	CALL	SEEK	;目的のシリンダへシークします（V1，20ms） '0msに改
+	POP	HL
+	POP	AF
+	RET
+
+
+;セクタ番号のカウント･アップ
+;入力	E←セクタ番号、D←シリンダ番号、B←0FH
+;出力	CY＝1ならシリンダの更新が必要
+;破壊	AF，DE，C
+count_up_sector:
+	INC	E
+	LD	A,16
+	CP	E
+	RET	NC	;セクタ番号2～16
+
+;	トラックのカウント･アップ
+	LD	E,1
+	PUSH	HL
+	LD	HL,disk_unit_number
+	LD	A,(HL)
+	XOR	00010000B
+	LD	(HL),A
+	AND	00010000B
+	JR	NZ,BFIOST	;サイド0へ
+	INC	D	;シリンダ番号のカウント･アップ
+	SCF
+BFIOST:
+	LD	C,0FCH	;BC←0FFCH
+	LD	A,(HL)
+	OUT	(C),A	;サイドの更新
+	POP	HL
+	RET
+
+
+;=======================
+;エラー･ジャンプ
+;=======================
+
+
+bad_sector_error:	LD	A,5	;Bad Record
+	DB	01H	;「LD BC,」
+device_offline_error:	LD	A,2	;Device Offline
+	DB	01H	;「LD BC,」
+write_protect_error:	LD	A,4	;Write Protected
+	DB	01H	;「LD BC,」
+device_io_error:	LD	A,1	;Device I/O Error
+	CALL	fdd_motor_off	;モータをオフします
+	LD	SP,(SPBUFF)	;リターン･スタック･ポインタ
+	SCF
+	RET
+
+
+;===============
+;内部ワーク
+;===============
+
+
+DSERJP:	DS	2	;未使用
+SPBUFF:	DS	2	;リターン･スタック･ポインタ
+DSKTRK:	DS	4	;各ユニットのシリンダ･バッファ
 
 
 ;	RUN＆SUBMITルーチン組み込み
@@ -3968,7 +4551,7 @@ RAMRT:	POP	HL
 
 
 ;DOSモジュール、2152H番地よりジャンプしてきます（コマンドの拡張）
-EXCOM:
+execute_expanded_command:
 	CP	';'	;REMコマンド
 	RET	Z
 	CP	'P'	;ポーズ･コマンド
@@ -4100,7 +4683,7 @@ SET2:
 
 
 ;AUTOEXEC.BATの自動実行
-AUTOEX:
+run_auto_execute_batch:
 	LD	HL,_HOT
 	LD	(_USR),HL
 	LD	DE,AUTNAM
@@ -4460,7 +5043,7 @@ BGETL0:	CALL	BGET	;バッチ･ファイルから1文字を得ます
 	JP	_GETL
 
 ;
-BGETL1:	CALL	RSPRNT	;画面に1文字表示します（プリンタには出力しません）
+BGETL1:	CALL	print_one_character	;画面に1文字表示します（プリンタには出力しません）
 	CP	0DH	;RET
 	JR	Z,BGETL2
 	LD	(DE),A	;1行入力バッファ←キャラ
@@ -4479,7 +5062,7 @@ BGETL2:	XOR	A	;Acc←ターミネータ
 ;入力	Acc←キャラ
 ;出力	なし
 ;破壊	F，AF'
-RSPRNT:
+print_one_character:
 	EX	AF,AF'
 	LD	A,(_LPSW)
 	EX	AF,AF'
@@ -4570,28 +5153,28 @@ PAU1:	CALL	_GETKY
 
 
 	ORG	1F5BH
-_MXLIN:	DB	24	;1F5BH
-_WIDTH:	DB	80	;1F5CH
-_DSK:	DB	'A'	;1F5DH
-_FATPS:	DW	000EH	;1F5EH
-_DIRPS:	DW	0010H	;1F60H
-_FATBF:	DW	2E00H	;1F62H '2E00H～2EFFH
-_DTBUF:	DW	2F00H	;1F64H '2F00H～2FFFH
-_MXTRK:	DB	80	;1F66H '80トラック
-_DIRNO:	DS	1	;1F67H
-_WKSIZ:	DW	0	;1F68H '256バイト単位
-_MEMAX:	DS	2	;1F6AH 'メモリの上限
-_STKAD:	DW	0100H	;1F6CH '通常のスタック
-_EXADR:	DS	2	;1F6EH
-_DTADR:	DS	2	;1F70H
-_SIZE:	DS	2	;1F72H
-_IBFAD:	DW	fcb_buffer	;1F74H
-_KBFAD:	DW	keyboard_buffer	;1F76H
-_XYADR:	DW	display_cursol_XY_not_use	;1F78H 'ダミー
-_PRCNT:	DW	number_of_character_after_CR	;1F7AH '未使用
-_LPSW:	DB	0	;1F7CH
-_DVSW:	DB	0	;1F7CH 'S-OS 2400bps 'ダミー
-_USR:	DW	_HOT;1F7EH '通常_HOTが入ります
+_MXLIN:	DB	25	;1F5BH 画面の行数。SORD M23版では25。
+_WIDTH:	DB	80	;1F5CH 画面の桁数。SOR M23版では80。
+_DSK:	DB	'A'	;1F5DH アクセスしようとするデバイス名
+_FATPS:	DW	000EH	;1F5EH FATのあるレコード番号。デフォルトは000Eh (トラック0セクタ15)。
+_DIRPS:	DW	0010H	;1F60H ディレクトリの始まるレコード番号。デフォルトは0010h(1Dではトラック1セクタ1)。
+_FATBF:	DW	2E00H	;1F62H '2E00H～2EFFH FATリード用バッファ(256Byte)の先頭アドレス。デフォルトは2E00h。
+_DTBUF:	DW	2F00H	;1F64H '2F00H～2FFFH ディスクリード用バッファ(256Byte)の先頭アドレス。デフォルトは2F00h。
+_MXTRK:	DB	80	;1F66H 80トラック
+_DIRNO:	DS	1	;1F67H _FCBで使用するワーク。何番目のファイルか。
+_WKSIZ:	DW	0	;1F68H 256バイト単位 特殊ワークのサイズ。P6版では2800hがデフォルト。
+_MEMAX:	DS	2	;1F6AH メモリの上限 	ユーザエリアの上限 (最終アドレス+1)。P6版ではD000hがデフォルト。
+_STKAD:	DW	0100H	;1F6CH '通常のスタック スタックの初期値。P6版ではF900hがデフォルト。
+_EXADR:	DS	2	;1F6EH ファイルの実行アドレス。
+_DTADR:	DS	2	;1F70H ファイルの先頭アドレス。
+_SIZE:	DS	2	;1F72H ファイルサイズ。
+_IBFAD:	DW	fcb_buffer	;1F74H ファイルのインフォメーションブロックの先頭アドレス。同時にファイル属性のアドレスでもある。
+_KBFAD:	DW	keyboard_buffer	;1F76H キー入力に使えるバッファのアドレス。LD DE,(#KBFAD) CALL #GETLなどとする。P6版では内部ワークに81バイトの領域を確保してある。
+_XYADR:	DW	display_cursol_XY_not_use	;1F78H 'ダミー カーソル座標が格納してあるアドレス。
+_PRCNT:	DW	number_of_character_after_CR	;1F7AH '未使用 改行後に表示した文字数を格納してあるアドレス。
+_LPSW:	DB	0	;1F7CH 0以外なら、表示ルーチンを呼ぶとプリンタにも出力する。
+_DVSW:	DB	0	;1F7CH 'S-OS 2400bps 'ダミー テープフォーマット。0:共通 1:各機種 3:QD。P6版では1がデフォルト。
+_USR:	DW	_HOT;1F7EH '通常_HOTが入ります コールドスタート後にジャンプするアドレス。デフォルトは#HOT。
 ;NEXT	1F82H
 
 
@@ -4624,8 +5207,8 @@ _HLHEX:			JP	HLHEX	;1FB2H
 _2HEX:			JP	AHEX	;1FB5H
 _HEX:			JP	HEX		;1FB8H
 _ASC:			JP	ASC		;1FBBH
-_PRTHL:			JP	PRTHL	;1FBEH
-_PRTHX:			JP	PRTHX	;1FC1H
+_print_hex_4_digit:			JP	print_hex_4_digit	;1FBEH
+_print_hex_2_digit:			JP	print_hex_2_digit	;1FC1H
 _BELL:			JP	BELL	;1FC4H
 _PAUSE:			JP	PAUSE	;1FC7H
 _INKEY:			JP	INKEY	;1FCAH
@@ -4644,7 +5227,7 @@ _LTNL:			JP	LTNL	;1FEEH
 _PRNTS:			JP	PRNTS	;1FF1H
 _PRINT:			JP	PRINT	;1FF4H
 _VER:			JP	VER		;1FF7H 
-_HOT:			JP	DOSHOT	;1FFAH SOSのモニタ
+_HOT:			JP	sos_monitor	;1FFAH SOSのモニタ
 _COLD:			JP	COLD	;1FFDH
 ;	SWORDで拡張された部分
 _DRDSB:			JP	read_disk	;2000H
@@ -4700,21 +5283,21 @@ _ETRK:	DS	1	;RAMディスクのクラスタ数
 ;===============
 
 
-DOSHOT:
+sos_monitor:
 	LD	SP,(_STKAD)
 	CALL	_LPTOF
 	LD	A,'#'
 	CALL	_PRINT
 	LD	DE,(_KBFAD)
 	CALL	_GETL
-	CALL	MCOM
+	CALL	sos_monitor_command_routine
 	CALL	C,_ERROR
-	JR	DOSHOT
+	JR	sos_monitor
 
 
 ;コマンド･ライン･ルーチン
 ;出力	CY＝1でエラー
-MCOM:
+sos_monitor_command_routine:
 	LD	A,(DE)
 	CP	'#'
 	JR	Z,$+4
@@ -4723,7 +5306,7 @@ MCOM:
 ;	INC	DE
 ;	LD	A,(DE)
 ;	INC	DE
-	CALL	MCOM1
+	CALL	sos_monitor_command_routine1
 	OR	A
 	RET	Z
 	CP	'!'
@@ -4747,14 +5330,14 @@ MCOM:
 ;	LD	A,13	;Syntax Error
 ;	SCF
 ;	RET
-	JP	EXCOM
+	JP	execute_expanded_command
 	DS	1
 
 
 ;モニタ Sxコマンド処理
 CMDSB1:
 	LD	A,(DE)
-	CALL	TOUPER	;小文字→大文字変換
+	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	INC	DE
 	CP	'T'
 	JP	Z,MSET	;モニタ STコマンド処理
@@ -4765,7 +5348,7 @@ CMDSB1:
 ;モニタ Dxコマンド処理
 CMDSB2:
 	LD	A,(DE)
-	CALL	TOUPER	;小文字→大文字変換
+	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	INC	DE
 	CP	'V'
 	JP	Z,DEVST	;モニタ DVコマンド処理
@@ -4781,15 +5364,15 @@ JUMP:	CALL	SPCUT	;文字列の空白を読み飛ばします
 ;	6バイト
 	; IF	0
 	; EX	DE,HL
-	; LD	HL,DOSHOT
+	; LD	HL,sos_monitor
 	; EX	(SP),HL
 	; EX	DE,HL
 	; JP	(HL)
 	; ENDIF
 ;	DE保存のための改定
 	EX	(SP),HL	;スタック←ジャンプ先
-	LD	HL,DOSHOT
-	EX	(SP),HL	;スタック←DOSHOT，HL←ジャンプ先
+	LD	HL,sos_monitor
+	EX	(SP),HL	;スタック←sos_monitor，HL←ジャンプ先
 	JP	(HL)
 	DS	1
 
@@ -4935,7 +5518,7 @@ MSET:
 DEVST:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	LD	A,(DE)
-	CALL	TOUPER	;小文字→大文字変換
+	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	CALL	_DVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	JR	NC,DEVST1
 	LD	A,3	;Bad File Descripter
@@ -5007,17 +5590,17 @@ GETDEV:
 	INC	DE
 
 
-;小文字→大文字変換
-;入力	Acc←アスキー･コード
-;出力	Acc←変換されたアスキー･コード
-;破壊	AF
-TOUPER:
-	CP	'a'
-	RET	C
-	CP	'z'+1
-	RET	NC
-	AND	11011111B	;b5リセット
-	RET
+; ;小文字→大文字変換
+; ;入力	Acc←アスキー･コード
+; ;出力	Acc←変換されたアスキー･コード
+; ;破壊	AF
+; convert_lower_case_to_upper_case:
+; 	CP	'a'
+; 	RET	C
+; 	CP	'z'+1
+; 	RET	NC
+; 	AND	11011111B	;b5リセット
+; 	RET
 
 
 ;#WOPEN（1FAFH）の本体
@@ -5029,12 +5612,12 @@ TOUPER:
 WOPEN:
 	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JP	Z,_WRI	;カセットにインフォメーション･ファイルをセーブします
 
 ;	テープ以外
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	JR	NC,WOPEN1
 	RET		;エラー（テープ，ディスク以外）
 
@@ -5045,7 +5628,7 @@ WOPEN1:	CALL	FATRED	;FATを読みます
 
 ;	同じファイル名のファイルがあった
 	LD	A,(HL)
-	CALL	WPCHK	;ファイルのライト･プロテクトのチェック
+	CALL	check_write_protect	;ファイルのライト･プロテクトのチェック
 	RET	C	;エラー
 	CALL	FMCHK	;属性をチェックします
 	RET	C	;エラー
@@ -5081,12 +5664,12 @@ WOPEN3:	LD	(DEBUF),DE	;アクセスするレコード番号の一時保存場所
 ROPEN:
 	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JP	Z,_TROPN	;テープのリード･オープン
 
 ;	テープ以外
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	JR	NC,ROPEN1
 	RET		;エラー（テープ，ディスク以外）
 
@@ -5122,7 +5705,7 @@ ROPEN2:	CALL	_PARSC	;機種依存のカセットのアドレス情報を、S-OS�
 ;　正常終了CY＝0（Acc←0）。
 WRD:
 	LD	A,(_DSK)
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JP	Z,_TWRD	;カセットにデータ･ファイルをセーブします
 
@@ -5135,7 +5718,7 @@ WRD:
 	RET		;オープンされてなかった
 WRD1:	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスクの場合
@@ -5150,7 +5733,7 @@ WRD1:	CALL	CLOSE	;[_OPNFG]←0
 ;　[_DIRNO]、[RETPOI]をクリアします。
 RDD:
 	LD	A,(_DSK)
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JP	Z,_TRDD	;カセットのデータ･ファイルをロードします
 
@@ -5166,7 +5749,7 @@ RDD:
 	RET		;オープンされてなかった
 RDD1:	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスクの場合
@@ -5189,7 +5772,7 @@ RDD1:	CALL	CLOSE	;[_OPNFG]←0
 GETFCB:
 	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JR	NZ,GETFC1	;テープ以外
 
@@ -5319,12 +5902,12 @@ RETPOI:	DB	0	;以前正しいFCBがロードされたかのフラグ
 ;注：仕様と違いAF'が破壊されます。
 DIR:
 	LD	A,(_DSK)
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;正しくなかった
 	JP	Z,_TDIR	;テープのディレクトリを表示します
 
 ;	テープ以外
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスク
@@ -5333,8 +5916,8 @@ DIR:
 	LD	A,'$'
 	CALL	_PRINT
 	CALL	FRECLU	;空きクラスタ数を得ます
-	CALL	_PRTHX
-	LD	DE,CSTMES	;「 Clusters Free」
+	CALL	_print_hex_2_digit
+	LD	DE,cluster_free_message	;「 Clusters Free」
 	CALL	_MSX
 	LD	B,16
 	LD	DE,(_DIRPS)
@@ -5388,7 +5971,7 @@ KILL:
 	LD	A,(_DSK)
 	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C
 
 ;	FATを読みます
@@ -5402,7 +5985,7 @@ KILL:
 	SCF
 	RET	NZ	;ファイルが見つからない
 	LD	A,(HL)
-	CALL	WPCHK	;ファイルのライト･プロテクトのチェック
+	CALL	check_write_protect	;ファイルのライト･プロテクトのチェック
 	RET	C	;エラー
 
 ;	ディレクトリ･バッファとFATバッファを書き換えます
@@ -5429,7 +6012,7 @@ NAME:
 	LD	A,(_DSK)
 	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C
 
 ;	変更前のファイル名を検索
@@ -5443,7 +6026,7 @@ NAME:
 	SCF
 	RET	NZ	;ファイルが見つからない
 	LD	A,(HL)
-	CALL	WPCHK	;ファイルのライト･プロテクトのチェック
+	CALL	check_write_protect	;ファイルのライト･プロテクトのチェック
 	RET	C	;エラー
 
 ;	変更後のファイル名を検索
@@ -5486,7 +6069,7 @@ SETP:
 	LD	A,(_DSK)
 	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C
 
 ;	ファイル名を検索
@@ -5512,7 +6095,7 @@ RESET:
 	LD	A,(_DSK)
 	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C
 
 ;	ファイル名を検索
@@ -5542,7 +6125,7 @@ read_disk:
 	LD	A,(_DSK)
 	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C
 	SUB	'A'
 	LD	(disk_unit_number),A	;ディスクのユニット番号（0～）
@@ -5561,7 +6144,7 @@ write_disk:
 	LD	A,(_DSK)
 	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET	C
 	SUB	'A'
 	LD	(disk_unit_number),A	;ディスクのユニット番号（0～）
@@ -5596,7 +6179,7 @@ CLOSE1:	LD	(_OPNFG),A
 ;入力	Acc←属性（b6）
 ;出力	CY＝1ならライト･プロテクト（Acc←4）
 ;破壊	F，（AF）
-WPCHK:
+check_write_protect:
 	OR	A	;CY←0
 	BIT	6,A
 	RET	Z
@@ -5626,7 +6209,7 @@ FMCHK:
 ;入力	Acc←デバイス名
 ;出力	CY＝1ならFDでない
 ;破壊	F（AF）
-DSKCHK:
+check_FD_device_name:
 	CP	'A'
 	JR	C,DSKCH1
 ;	CP	'D'+1
@@ -5643,21 +6226,21 @@ DSKCH1:	LD	A,11	;Reserved Feature
 ;破壊	F（AF）
 ;注：デバイス名が不正なら、Acc←エラー･コード。
 ALCHK:
-	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C
-	CALL	TPCHK	;デバイス名がテープ（QD）かチェックします
+	CALL	check_tape_device_name	;デバイス名がテープ（QD）かチェックします
 	JR	NZ,$+6
 	LD	A,3	;Bad File Descripter
 	SCF
 	RET
-	CALL	DSKCHK	;デバイス名がFDかチェックします
+	CALL	check_FD_device_name	;デバイス名がFDかチェックします
 	RET
 
 
 ;#RDVSW（2024H）の本体
 RDVSW:
 	LD	A,(_DFDV)	;デフォルト･デバイス
-	CALL	TPCHK	;デバイス名がテープ（QD）かチェックします
+	CALL	check_tape_device_name	;デバイス名がテープ（QD）かチェックします
 	RET	NZ	;テープ以外ならそのままリターン
 
 
@@ -6055,7 +6638,7 @@ FCBSC2:	LD	A,(HL)
 	PUSH	DE
 	LD	DE,(_IBFAD)
 ;	CALL	FCOMP	;ファイル名を比較します
-	CALL	FCOMPW	;ファイル名を比較します
+	CALL	compare_file_name	;ファイル名を比較します
 	POP	DE
 	JR	Z,FCBSC5	;一致した
 FCBSC3:	PUSH	DE
@@ -6138,17 +6721,17 @@ FRESC4:	XOR	A
 ; 	ENDIF
 
 
-;	FCOMPWの一部
+;	compare_file_nameの一部
 FCMPW2:	LD	A,(DE)
 	CP	C	;CP ' '
 	RET	Z
 FCMPW1:	LD	A,(DE)
 	CP	'?'	;ワイルド･カード
 	RET	Z
-	CALL	TOUPER	;小文字→大文字変換
+	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	LD	C,A
 	LD	A,(HL)
-	CALL	TOUPER	;小文字→大文字変換
+	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	CP	C	;ZF＝1なら一致
 	RET
 
@@ -6193,7 +6776,7 @@ ADRPRT:	CALL	_PARSC	;機種依存のカセットのアドレス情報を、S-OS�
 
 PHEX:	LD	A,':'
 	CALL	_PRINT
-	CALL	_PRTHL
+	CALL	_print_hex_4_digit
 	RET
 
 
@@ -6228,14 +6811,14 @@ ATRP2:	CALL	_PRINT
 	RET
 
 
-;%DEVCHK（2851H）の本体
+;%check_device_name（2851H）の本体
 ;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 ;入力	Acc←デバイス名（小文字不可）
 ;出力	ZF＝1ならテープ、CY＝1なら不正
 ;破壊	F（AF）
 ;注：デバイス名が不正なら、Acc←エラー･コード。
-DEVCHK:
-	CALL	TPCHK	;デバイス名がテープ（QD）かチェックします
+check_device_name:
+	CALL	check_tape_device_name	;デバイス名がテープ（QD）かチェックします
 	RET	Z
 	CP	'A'
 	JR	C,DEVCH1	;「A」未満
@@ -6250,12 +6833,12 @@ DEVCH1:	LD	A,3	;Bad File Descripter
 	RET
 
 
-;%TPCHK（2918H）の本体
+;%check_tape_device_name（2918H）の本体
 ;デバイス名がテープ（QD）かチェックします
 ;入力	Acc←デバイス名（小文字不可）
 ;出力	ZF＝1ならテープ
 ;破壊	F
-TPCHK:
+check_tape_device_name:
 	CP	'T'
 	RET	Z
 	CP	'S'
@@ -6264,39 +6847,40 @@ TPCHK:
 	RET
 
 
-; ;#ERROR（2033H）の本体
-; ERROR:
-; 	DEC	A
-; 	CP	14
-; 	JR	C,ERROR1
-; 	INC	A
-; 	LD	DE,ER15
-; 	PUSH	AF
-; 	CALL	_MSG
-; 	LD	A,'$'	;16進数ヘッダ
-; 	CALL	_PRINT
-; 	POP	AF
-; 	CALL	_PRTHX
-; 	JR	ERROR2
-; ERROR1:	LD	HL,MESTBL
-; 	ADD	A,A
-; 	LD	E,A
-; 	LD	D,0
-; 	ADD	HL,DE
-; 	LD	E,(HL)
-; 	INC	HL
-; 	LD	D,(HL)
-; 	CALL	_MSG
-; ERROR2:	CALL	_BELL
-; 	CALL	_NL
-; 	RET
+;#ERROR（2033H）の本体
+ERROR:
+	DEC	A
+	CP	14
+	JR	C,ERROR1
+	INC	A
+	LD	DE,ER15
+	PUSH	AF
+	CALL	_MSG
+	LD	A,'$'	;16進数ヘッダ
+	CALL	_PRINT
+	POP	AF
+	CALL	_print_hex_2_digit
+	JR	ERROR2
+ERROR1:	LD	HL,MESTBL
+	ADD	A,A
+	LD	E,A
+	LD	D,0
+	ADD	HL,DE
+	LD	E,(HL)
+	INC	HL
+	LD	D,(HL)
+	CALL	_MSG
+ERROR2:	CALL	_BELL
+	CALL	_NL
+	RET
 
 
 ;	空きクラスタ表示用メッセージ
-CSTMES:	DB	' Clusters Free',0DH,00H
+cluster_free_message:	DB	' Clusters Free',0DH,00H
 
 ;	属性メッセージ
-ATRMES:	DB	'Nul',00H	;000
+ATRMES:
+	DB	'Nul',00H	;000
 	DB	'Bin',00H	;001
 	DB	'Bas',00H	;010
 	DB	'???',00H	;011
@@ -6320,16 +6904,16 @@ GDVPAT:
 
 
 ;モニタ･コマンドで小文字を受け付けるため
-MCOM1:	INC	DE
+sos_monitor_command_routine1:	INC	DE
 	LD	A,(DE)
 	INC	DE
-	JP	TOUPER	;小文字→大文字変換
+	JP	convert_lower_case_to_upper_case	;小文字→大文字変換
 
 
 ;STコマンドで小文字を受け付けるため
 MSET1:	CALL	SPCUT	;文字列の空白を読み飛ばします
 	LD	A,(DE)
-	JP	TOUPER	;小文字→大文字変換
+	JP	convert_lower_case_to_upper_case	;小文字→大文字変換
 
 
 ;ファイル名を比較します（小文字、拡張子なしでも一致させるため）
@@ -6337,7 +6921,7 @@ MSET1:	CALL	SPCUT	;文字列の空白を読み飛ばします
 ;	DE←比較するFCBの先頭アドレス
 ;出力	ZF＝1なら一致した
 ;破壊	AF
-FCOMPW:
+compare_file_name:
 	PUSH	BC
 	PUSH	DE
 	PUSH	HL
@@ -6365,7 +6949,8 @@ FCMPWE:	POP	HL
 
 
 	ORG	2A00H
-MESTBL:	DW	ER1,ER2,ER3,ER4,ER5,ER6,ER7,ER8
+MESTBL:
+	DW	ER1,ER2,ER3,ER4,ER5,ER6,ER7,ER8
 	DW	ER9,ER10,ER11,ER12,ER13,ER14
 
 ER1:	DB	'Device I/O Error',0DH
@@ -6458,15 +7043,15 @@ _PFNAM:	JP	PFNAM
 ;出力	ZF＝1ならテープ
 ;	CY＝1なら不正（Acc←エラー･コード）
 ;破壊	AF
-_DVCHK:	JP	DEVCHK
+_DVCHK:	JP	check_device_name
 
 
-;%TPCHK（2918H）
+;%check_tape_device_name（2918H）
 ;デバイス名がテープ（QD）かチェックします
 ;入力	Acc←デバイス名（小文字不可）
 ;出力	ZF＝1ならテープ
 ;破壊	F
-_TPCHK:	JP	TPCHK
+_check_tape_device_name:	JP	check_tape_device_name
 
 
 ;	291BH～291DHは未使用
@@ -6546,7 +7131,7 @@ START:
 	LD	SP,0100H	;仮スタック
 
 ;	vram_address_of_topの初期化
-	LD	HL,3000H
+	LD	HL,F800H ; SORD M23のTXT VRAMの先頭アドレス
 	LD	(vram_address_of_top),HL
 
 ;	デフォルト･ドライブの設定
@@ -6561,31 +7146,31 @@ STADVS:
 ;	[vram_size]の設定（VRAMのサイズ÷100H）
 ;〈VRAMのサイズ〉
 ;00C000Hバイト
-	LD	HL,00C0H	;00C000H
+	LD	HL,0020H	;002000H
 	LD	(vram_size),HL
 
 ;	[top_of_special_work_of_vram]の設定（VRAM上の特殊ワークの先頭÷100H）
 ;〈VRAM特殊ワークの先頭アドレス〉
 ;004000H番地
-	LD	HL,0040H	;004000H
+	LD	HL,0000H	;004000H
 	LD	(top_of_special_work_of_vram),HL
 
 ;	[size_of_special_work_of_vram]の設定（VRAM上の特殊ワークのサイズ÷100H）
 ;〈VRAM特殊ワークのサイズ〉
 ;4000Hバイト
-	LD	A,40H	;4000H
+	LD	A,00H	;4000H
 	LD	(size_of_special_work_of_vram),A
 
 ;	[top_of_ram_disk_of_vram]の設定（VRAM上のRAMディスクの先頭÷100H）
 ;〈VRAM上のRAMディスクの先頭〉
 ;008000H番地
-	LD	HL,0080H	;008000H
+	LD	HL,0000H	;008000H
 	LD	(top_of_ram_disk_of_vram),HL
 
 ;	[size_of_ram_disk_of_vram]の設定（VRAM上のRAMディスクのサイズ÷100H）
 ;〈VRAM上のRAMディスクのサイズ〉
 ;008000Hバイト
-	LD	HL,0080H	;008000H
+	LD	HL,0000H	;008000H
 	LD	(size_of_ram_disk_of_vram),HL
 
 ;	[top_of_special_work_of_memory]、[size_of_special_work_of_memory]の設定
