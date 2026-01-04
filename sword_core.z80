@@ -4,10 +4,17 @@
 
 
 
-;	各機種ディスクＩ／Ｏ
+;	各機種ディスクI／O
 DREAD	EQU	2B00H
 DWRITE	EQU	2B03H
 disk_unit_number	EQU	2B06H
+
+;	DOSモジュール内部エントリ
+ERROR	EQU	286CH
+
+;	バッチ処理バッファ
+BATBF	EQU	2D00H	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
+BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
 
 
 ;〈SLANGについて〉
@@ -66,7 +73,8 @@ keyboard_buffer:	DS	256
 ;7BHと87H	「{」「■」
 ;7DHとF0H	「}」「チェッカー■」
 ;7FH		「π」
-LSXTBL:	DB	 00H, 01H, 02H, 03H, 04H, 05H, 06H, 07H, 08H, 09H, 0AH, 0BH, 0CH, 0DH, 0EH, 0FH	;00
+LSXTBL:
+	DB	 00H, 01H, 02H, 03H, 04H, 05H, 06H, 07H, 08H, 09H, 0AH, 0BH, 0CH, 0DH, 0EH, 0FH	;00
 	DB	 10H, 11H, 12H, 13H, 14H, 15H, 16H, 17H, 18H, 19H, 1AH, 1BH, 1CH, 1DH, 1EH, 1FH	;10
 	DB	 20H, 21H, 22H, 23H, 24H, 25H, 26H, 27H, 28H, 29H, 2AH, 2BH, 2CH, 2DH, 2EH, 2FH	;20
 	DB	 30H, 31H, 32H, 33H, 34H, 35H, 36H, 37H, 38H, 39H, 3AH, 3BH, 3CH, 3DH, 3EH, 3FH	;30
@@ -103,38 +111,39 @@ pointer_for_write_key_buffer:	DS	1	;キーを書き込むポインタ（＝0で�
 
 
 ;	0040H（64バイト）
-CTLTBL:	DW	CTLNUL	;^＠
-	DW	CTL01	;^A 'カーソルを論理行頭へ（-^V）
-	DW	CTLNUL	;^B '前のワードの先頭へ（－^F） '非サポート
-	DW	CTLCAN	;^C ^STOP（論理改行＆インサート解除）
-	DW	CTLDEL	;^D '論理行のカーソル位置の文字の削除（DELキー）
-	DW	CTL05	;^E '論理行のカーソル以降削除（－^U）
-	DW	CTLNUL	;^F '次のワードの先頭へ（－^B） '非サポート
-	DW	BELL	;^G BELL
-	DW	CTLBS	;^H BS
-	DW	CTLTAB	;^I TAB
-	DW	CTLNUL	;^J LF
-	DW	CTLHOM	;^K HOME
-	DW	CTLCLS	;^L CLR
-	DW	CTLCR	;^M CR＋LF
-	DW	CTLNUL	;^N '論理行分割（－^W） '非サポート
-	DW	CTLNUL	;^O '物理行注入（－^Y） '非サポート
-	DW	CTLNUL	;^P
-	DW	CTLNUL	;^Q
-	DW	CTLINS	;^R INS
-	DW	ROLUP	;^S 'スクロール･アップ（－^S）
-	DW	ROLDWN	;^T 'スクロール･ダウン（－^T）
-	DW	CTLNUL	;^U '論理行のカーソルより前削除（－^E） '非サポート
-	DW	CTLNUL	;^V 'カーソルを論理行末へ（－^A、最後の文字の次のカーソル位置) '非サポート
-	DW	CTLNUL	;^W '次の行と連結（－^N、,論理行末と次の行の行頭をつなぐ) '非サポート
-	DW	CTLNUL	;^X SELECT
-	DW	CTLNUL	;^Y '物理行削除（－^O） '非サポート
-	DW	CTLNUL	;^Z
-	DW	CTLCAN	;^［ ESC
-	DW	CTLRHT	;^￥ →
-	DW	CTLLFT	;^］ ←
-	DW	CTLUP	;^＾ ↑
-	DW	CTLDWN	;^＿ ↓
+control_code_jump_tabel:
+	DW	control_code_NULL	;^＠
+	DW	CTL01				;^A 'カーソルを論理行頭へ（-^V）
+	DW	control_code_NULL	;^B '前のワードの先頭へ（－^F） '非サポート
+	DW	CTLCAN				;^C ^STOP（論理改行＆インサート解除）
+	DW	control_code_DELETEL;^D '論理行のカーソル位置の文字の削除（DELキー）
+	DW	CTL05				;^E '論理行のカーソル以降削除（－^U）
+	DW	control_code_NULL	;^F '次のワードの先頭へ（－^B） '非サポート
+	DW	BELL				;^G BELL
+	DW	control_code_BS		;^H BS
+	DW	control_code_TAB	;^I TAB
+	DW	control_code_NULL	;^J LF
+	DW	control_code_HOME	;^K HOME
+	DW	control_code_CLS	;^L CLR
+	DW	CTLCR				;^M CR＋LF
+	DW	control_code_NULL	;^N '論理行分割（－^W） '非サポート
+	DW	control_code_NULL	;^O '物理行注入（－^Y） '非サポート
+	DW	control_code_NULL	;^P
+	DW	control_code_NULL	;^Q
+	DW	control_code_INS	;^R INS
+	DW	control_code_ROLL_UP	;^S 'スクロール･アップ（－^S）
+	DW	control_code_ROLL_DOWN	;^T 'スクロール･ダウン（－^T）
+	DW	control_code_NULL	;^U '論理行のカーソルより前削除（－^E） '非サポート
+	DW	control_code_NULL	;^V 'カーソルを論理行末へ（－^A、最後の文字の次のカーソル位置) '非サポート
+	DW	control_code_NULL	;^W '次の行と連結（－^N、,論理行末と次の行の行頭をつなぐ) '非サポート
+	DW	control_code_NULL	;^X SELECT
+	DW	control_code_NULL	;^Y '物理行削除（－^O） '非サポート
+	DW	control_code_NULL	;^Z
+	DW	CTLCAN				;^［ ESC
+	DW	control_code_Right	;^￥ →
+	DW	control_code_Left	;^］ ←
+	DW	control_code_Up		;^＾ ↑
+	DW	control_code_Down	;^＿ ↓
 
 
 ;===============================
@@ -211,21 +220,14 @@ number_of_character_after_CR:	DS	1	;改行してからの文字数（未使用�
 insert_mode_flag:	DS	1	;＝00Hで通常、＝FFHでインサート･モード
 foreground_color:	DS	1	;前景色
 background_color:	DS	1	;背景色
-BDRCLR:	DS	1	;周辺色
+BDR_color:	DS	1	;周辺色
 attribute_data:	DS	1	;画面のアトリビュートRAMへ書き込むデータ
-
 real_time_key:	DS	1	;リアル･タイム･キー（未使用の場合あり）
-	DS	1
-CLKFLG:	DS	1	;＝FFHで、クリック音を鳴らします（無効の場合あり）
-JOYFLG:	DS	1	;＝FFHでジョイスティックをサポート
-
 GRAFLG:	DS	1	;＝FFHでグラフィック表示（未使用の場合あり）
-KNJFLG:	DS	1	;＝FFHで漢字モード（未使用の場合あり）
 
 vram_size:	DS	2	;VRAMのサイズ÷100H
 top_of_special_work_of_vram:	DS	2	;VRAM上の特殊ワークの先頭÷100H
 size_of_special_work_of_vram:	DS	1	;VRAM上の特殊ワークのサイズ÷100H
-	DS	1
 top_of_ram_disk_of_vram:	DS	2	;VRAM上のRAMディスクの先頭÷100H
 size_of_ram_disk_of_vram:	DS	2	;VRAM上のRAMディスクのサイズ÷100H
 top_of_special_work_of_memory:	DS	1	;メモリ上の特殊ワークの先頭÷100H
@@ -233,10 +235,7 @@ size_of_special_work_of_memory:	DS	1	;メモリ上の特殊ワークのサイズ
 
 ;	機種独自（6バイト）
 KEYDAT:	DS	2	;ファンクション、アスキー･コードの生データ
-X1TFLG:	DS	1	;＝FFHでX1turbo
 IO1FD0:	DS	1	;I／O 1FD0Hのバッファ
-RESMOD:	DS	1	;0：スイッチに従います，1：低解像度，2：高解像度，3：疑似高解像度
-RESFLG:	DS	1	;＝FFHで24kHzモード
 
 
 	ORG	(($+7FH) & 0FF80H)
@@ -276,7 +275,6 @@ KYISKP:
 	LD	A,(real_time_key)	;Acc←入力文字
 	CALL	write_one_character_to_key_buffer
 	JR	C,KYIRET	;バッファがいっぱいだった
-	CALL	CLICK	;クリック音を鳴らします
 
 KYIRET:
 	POP	BC
@@ -308,12 +306,15 @@ write_one_character_to_key_buffer:
 	LD	(HL),E	;[pointer_for_write_key_buffer]のカウント･アップ
 	OR	A	;CY←0
 	RET
-PKYBRK:	LD	(HL),L	;[pointer_for_write_key_buffer]を元に戻します
+PKYBRK:
+	LD	(HL),L	;[pointer_for_write_key_buffer]を元に戻します
 	SCF
 	RET
 
 
 	ORG	(($+0FFH) & 0FF00H)
+
+
 ;*******	256バイト境界	********
 
 
@@ -333,8 +334,6 @@ LINTTB:	DS	32
 ;S-OSルーチン
 ;-----------------------
 
-
-;	ORG	$+7FH and 0FF80H
 ;=======================
 ;システム･ルーチン
 ;=======================
@@ -352,13 +351,13 @@ LINTTB:	DS	32
 COLD:
 ;	初期化
 	LD	SP,(_STKAD)
-	CALL	 cold_start_entity	;固有の初期化
+	CALL cold_start_entity	;固有の初期化
 	LD	SP,(_STKAD)
-	CALL	_LPTOF
+	CALL _LPTOF
 	LD	A,255
-	CALL	_WIDCH	;表示幅の初期化 'LINCHを先に呼び出すように改良
+	CALL _WIDCH	;表示幅の初期化 'LINCHを先に呼び出すように改良
 	LD	A,255
-	CALL	LINCH	;表示行数の初期化
+	CALL LINCH	;表示行数の初期化
 
 ;	ディスクのパラメータの初期化
 	LD	HL,000EH
@@ -374,22 +373,22 @@ COLD:
 
 ;	タイトル
 	LD	DE,TTLMSG
-	CALL	_MSX
+	CALL _MSX
 
 ;	メモリの情報を表示
-	CALL	_MPRNT
+	CALL _MPRNT
 	DB	'MAIN 3000H-',00H
 	LD	HL,(_MEMAX)
 	DEC	HL
-	CALL	_PRTHL
-	CALL	_MPRNT
+	CALL _PRTHL
+	CALL _MPRNT
 	DB	'H',0DH,00H
-	CALL	_MPRNT
+	CALL _MPRNT
 	DB	'WORK 0000H-',00H
 	LD	HL,(_WKSIZ)
 	DEC	HL
-	CALL	_PRTHL
-	CALL	_MPRNT
+	CALL _PRTHL
+	CALL _MPRNT
 	DB	'H',0DH,00H
 
 ;	文字列入力バッファの80バイトをクリア
@@ -405,13 +404,12 @@ COLD:
 	LD	HL,(_USR)
 	EX	DE,HL	;DE←ジャンプ先
 	LD	HL,_HOT
-	PUSH	HL	;戻りアドレス（_HOT）
+	PUSH HL	;戻りアドレス（_HOT）
 	LD	(_USR),HL	;[_USR]の再設定
 	EX	DE,HL	;HL←ジャンプ先
 	LD	DE,(_KBFAD)	;DE←[_KBFAD]
 	XOR	A
 	JP	(HL)	;旧[_USR]の内容にジャンプ
-
 
 ;#BOOT（2036H）の本体
 ; S-OSを終えます。
@@ -423,7 +421,6 @@ BOOT:
 ;===============================
 ;バージョン･ナンバーの取り出し
 ;===============================
-
 
 ;#VER（1FF7H）の本体
 ; Hに機種別情報、LにS-OSのバージョンを返します。
@@ -1525,15 +1522,15 @@ GTINS:	CP	20H
 	LD	L,0
 	LD	H,A
 	LD	(final_plus_one_cursol_XY),HL
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	(offset_plus_one_cursol_XY),HL
-	CALL	GETLNL
+	CALL	get_Y_next_logical_line
 	LD	(next_cursol_XY_top_of_next_logical_line),HL
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	(next_cursol_offset_top_of_next_logical_line),HL
 	CALL	_CSR
 	LD	(now_cursol_XY),HL
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	(now_cursol_offset),HL
 	LD	HL,(next_cursol_offset_top_of_next_logical_line)
 	DEC	HL	;HL←行末のカーソル･オフセット
@@ -1572,7 +1569,7 @@ GTINS:	CP	20H
 	JR	Z,$+5
 	; CALL	VBTRNS
 	CALL	_CSR
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	A,' '
 	CALL	write_character_offset_address
 	LD	A,(cursol_line_end)
@@ -1634,7 +1631,7 @@ write_new_line_1:	LD	HL,next_cursol_XY_top_of_next_logical_line+1
 	RET
 
 ;	論理的に綱がっている最終物理行が、画面最終物理最終行と等しい場合
-GTIRU:	CALL	ROLUP
+GTIRU:	CALL	control_code_ROLL_UP
 	LD	HL,(now_cursol_XY)
 	DEC	H
 	JP	M,$+6
@@ -1642,7 +1639,7 @@ GTIRU:	CALL	ROLUP
 	LD	HL,(next_cursol_XY_top_of_next_logical_line)
 	DEC	H
 	LD	(next_cursol_XY_top_of_next_logical_line),HL
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	(next_cursol_offset_top_of_next_logical_line),HL
 	JR	write_new_line_1
 
@@ -1743,14 +1740,14 @@ INPUTL:
 
 ;	読み出しアドレスの設定
 ;出力	DE←現在行の行頭のカーソル･オフセット、BC←現在行の最大文字数
-	CALL	GETLHD	;論理行頭の座標を得ます
-	CALL	CUROFS
+	CALL	get_Y_top_of_logical_line	;論理行頭の座標を得ます
+	CALL	get_offset_from_cursol_XY
 	EX	DE,HL	;DE←現在行の行頭のカーソル･オフセット
-	CALL	GETLNL	;次の論理行の座標を得ます
+	CALL	get_Y_next_logical_line	;次の論理行の座標を得ます
 	DEC	H
 	CALL	_LOC	;カーソルを論理的に綱がっている最後の物理行へ
 	INC	H
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	OR	A
 	SBC	HL,DE
 	LD	C,L
@@ -1790,42 +1787,18 @@ INLLP2:	LD	A,(HL)
 	JP	SETPRN
 
 
-;リアル･タイム･ジョイスティック入力（入力待ちなし、エコー･バックなし、カーソル表示なし）
-;入力	[JOYFLG]参照
-;出力	Acc←アスキー･コード
-;破壊	AF，HL，DE，BC
-;〈入力のフォーマット（正論理）〉
-;0,0,B,A,→,←,↓,↑
-GETJOY:
-	RET
-
-;	スティックをチェック
-GETJY1:	LD	A,E	;Acc←ジョイスティック･データ
-	RET
-
-
-;ジョイスティックを読みます
-;入力	なし
-;出力	Acc←フィジカル･データ（ビットが1でオン）
-;破壊	AF，HL，DE，BC
-;〈入出力のフォーマット（正論理）〉
-;0,0,B,A,→,←,↓,↑
-GETJYF:
-	RET
-
-
 ;=======================
 ;1文字表示ルーチン
 ;=======================
 
 
 ;^R インサート･モードのオン／オフ
-CTLINS:
+control_code_INS:
 	RET
 
 
 ;^＠ 何もしません
-CTLNUL:
+control_code_NULL:
 	RET
 
 
@@ -1835,7 +1808,7 @@ CTLNUL:
 ;D	[_WIDTH]
 ;E	定数00000111B
 ;C	現在x負座標
-CTLTAB:
+control_code_TAB:
 	RET
 
 ;	最終桁の場合
@@ -1844,44 +1817,44 @@ CTLTAE:
 
 ;^L CLR 画面クリア
 ;注：フィジカル･ルーチンCLS（AF，HL，DE，BC破壊）を呼び出します。
-CTLCLS:
+control_code_CLS:
 ;	行連結情報のクリア
 ;	画面のクリア
 	CALL	CLS
-;	JP	CTLHOM
+;	JP	control_code_HOME
 
 
 ;^K HOME カーソル･ホーム位置
-CTLHOM:
+control_code_HOME:
 	RET
 
 
 ;^￥ → カーソル右移動
-CTLRHT:
+control_code_Right:
 	RET
 
 
 ;^］ ← カーソル左移動
-CTLLFT:
+control_code_Left:
 	RET
 
 
 ;^＾ ↑ カーソル上移動
-CTLUP:
+control_code_Up:
 	RET
 
 
 ;^＿ ↓ カーソル下移動
-CTLDWN:
+control_code_Down:
 	RET
 
 
 ;^S スクロール･アップします
-ROLUP:
+control_code_ROLL_UP:
 	RET
 
 ;^T スクロール･ダウンします
-ROLDWN:
+control_code_ROLL_DOWN:
 	RET
 
 ;^C STOP カーソルを次の行の行頭へ（論理改行）
@@ -1893,11 +1866,11 @@ CTLCR:
 	RET
 
 ;^H BS バック･スペース
-CTLBS:
+control_code_BS:
 	RET
 
 ;7EH DEL デリート･コード
-CTLDEL:
+control_code_DELETEL:
 	RET
 
 ;^E カーソル位置から行末までクリア
@@ -1941,14 +1914,14 @@ SETPRN:
 ;C	現在y座標
 ;BC	ライン･ターミナル･テーブルの先頭＋y座標
 ;HL	論理桁位置カウンタ
-GTPRC0:
+get_logical_column:
 	RET
 
 ;論理行頭の座標を得ます
 ;入力	なし
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
-GETLHD:
+get_Y_top_of_logical_line:
 	RET
 
 
@@ -1956,7 +1929,7 @@ GETLHD:
 ;入力	なし
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
-GETLNL:
+get_Y_next_logical_line:
 	RET
 
 
@@ -1965,7 +1938,7 @@ GETLNL:
 ;出力	HL←オフセット
 ;破壊	AF，HL
 ;注：cursol_offset_for_Y_tableは、y座標→カーソル･オフセット対応表。
-CUROFS:
+get_offset_from_cursol_XY:
 	RET
 
 
@@ -1973,7 +1946,7 @@ CUROFS:
 ;入力	HL←カーソル･オフセット
 ;出力	L←x座標,H←y座標
 ;破壊	AF，HL
-OFSCUR:
+get_cursol_XY_from_offset_address:
 	RET
 
 
@@ -1986,7 +1959,7 @@ OFSCUR:
 ;BC	定数[_WIDTH]
 ;HL	カーソル･オフセット
 ;Acc	ループ･カウンタ
-COFINI:
+generate_cursol_offset_table:
 	RET
 
 
@@ -1995,7 +1968,7 @@ COFINI:
 ;出力	[CSRADD]、[CSRNXI]、[CSRNYI]、[cursol_offset_last_top_of_line]、[total_number_of_character_display]、[vram_address_of_top_of_last_line]、
 ;	ライン･ターミナル･テーブル初期化
 ;破壊	AF，HL，DE，BC
-INICUR:
+initialize_cursol_control_work_area:
 	RET
 
 
@@ -2173,22 +2146,9 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	IM	2
 	LD	HL,KEYINT	;キー入力割り込み処理エントリ
 	LD	(0052H),HL	;X1モニタと同じ
-	LD	BC,1A03H
-	LD	A,10000010B	;モード0（A出力、B入力、C出力）
-	OUT	(C),A
-	DEC	C	;BC←1A02H
-	IN	A,(C)
-	LD	A,01110000B
-	OUT	(C),A
-	DEC	C	;BC←1A01H
-	IN	A,(C)	;？
-	XOR	A
-	LD	(RESMOD),A
-	CALL	CRTINI	;CRTCを初期化します
-	CALL	PRIINI	;プライオリティを初期化します
-	; CALL	PSGINI	;PSGを初期化します
-	; CALL	SCPUIN	;サブCPUを初期化します
-	LD	A,00H	;割り込み処理ルーチンのテーブル
+	CALL CRTINI		;CRTCを初期化します
+	CALL PRIINI		;プライオリティを初期化します
+	LD	A,00H		;割り込み処理ルーチンのテーブル
 	EI
 	LD	I,A
 ;
@@ -2230,7 +2190,7 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	LD	A,0
 	LD	(background_color),A
 	LD	A,0
-	LD	(BDRCLR),A
+	LD	(BDR_color),A
 	CALL	change_color
 
 ;	グラフィック、オフ
@@ -2283,7 +2243,6 @@ boot_entity:
  vertion_entity:
 	LD	HL,9520H	;SORD M23，S-OS V2.0
 	RET
-
 
 ;===============================================
 ;フィジカル･ルーチン･プリンタ関係（機種依存）
@@ -2348,15 +2307,6 @@ bell_entity:
 	EI
 	RET
 
-;クリック音を鳴らします
-;入力	[CLKFLG]参照
-;出力	なし
-;破壊	AF，HL，DE，BC
-;注：割り込み禁止して実行してください。
-CLICK:
-	RET
-
-
 ;===============================
 ;スクリーン関係（機種依存）
 ;===============================
@@ -2382,51 +2332,13 @@ move_cursol_XY_entity:
 	LD	(CSRNX),HL
 	JP	SETPRN
 
-
 ;指定座標の文字を読み込みます
 ;入力	L←x座標、H←y座標
 ;出力	Acc←文字
 ;破壊	AF，HL，DE，BC
 get_character_XY_entity:
-	CALL CUROFS
+	CALL get_offset_from_cursol_XY
 	JP read_character_offset_address
-
-
-;桁数と行数を表示可能な値に変更します
-;入力	L←桁数、H←行数
-;出力	L←修正された桁数、H←修正された行数
-;破壊	AF，HL，DE，BC
-;〈修正された桁数、行数〉
-;桁数	40，80
-;行数	25
-WLCHK:
-	LD	A,40
-	CP	L	;桁数0～40→CY＝0、桁数41～255→CY＝1
-	JR	NC,$+3
-	ADD	A,A	;Acc←80
-	LD	L,A
-	LD	H,25	;25行固定
-	RET
-
-
-;表示桁数を変更します
-;入力	[_WIDTH]、[_MXLIN]、[screen_width]、[RESFLG]参照
-;出力	なし
-;破壊	AF，HL，DE，BC
-change_width_entity:
-	DI
-	EI
-	RET
-
-
-;表示行数を変更します
-;入力	[_WIDTH]、[_MXLIN]、[screen_width]参照
-;出力	なし
-;破壊	AF，HL，DE，BC
-change_line_number:
-	CALL	INICUR
-	JP	SETPRN
-
 
 ;画面のクリア
 ;入力	[screen_width]、[total_number_of_character_display]、[attribute_data]参照
@@ -2475,14 +2387,14 @@ PRNCTL:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-	LD	HL,CTLTBL
+	LD	HL,control_code_jump_tabel
 	ADD	A,A	;Acc←コントロール･コード×2
 	ADD	A,L
-	LD	L,A	;HL←CTLTBL＋コントロール･コード×2
+	LD	L,A	;HL←control_code_jump_tabel＋コントロール･コード×2
 	LD	A,(HL)
 	INC	L
 	LD	H,(HL)
-	LD	L,A	;HL←[CTLTBL＋コントロール･コード×2]
+	LD	L,A	;HL←[control_code_jump_tabel＋コントロール･コード×2]
 
 	LD	DE,PRCRET
 	PUSH	DE	;リータン･アドレスの設定
@@ -2560,7 +2472,7 @@ PRNLL:
 	LD	(HL),0FFH	;最終行
 	PUSH	DE
 	PUSH	BC
-	CALL	ROLUP
+	CALL	control_code_ROLL_UP
 	CALL	SETADR
 	POP	BC
 	POP	DE
@@ -2670,7 +2582,7 @@ BPRL1J:
 	LD	(BPRLSP),SP
 	EI
 	LD	SP,(BPRRSP)
-	CALL	ROLUP
+	CALL	control_code_ROLL_UP
 	LD	BC,(vram_address_of_top_of_last_line)	;BC←最終行先頭のVRAMアドレス
 	DI
 	DB	31H	;「LD SP,n」
@@ -2724,7 +2636,7 @@ INKEY_entity:
 ;	キー入力バッファに文字が溜るまで待ちます
 INKLP_entity:
 	EI
-	CALL	INJOY
+	; CALL	INJOY
 	OR	A
 	RET	NZ
 	EI		;念のため
@@ -2758,8 +2670,6 @@ INKRT:
 ;破壊	AF，HL，DE，BC
 ;注：ジョイスティック対応。
 real_time_input_key_entity:
-;	ジョイスティックを読み出します
-	CALL	GETJOY
 	OR	A
 	RET	NZ
 
@@ -2780,81 +2690,6 @@ clear_key_buffer:
 	LD	(pointer_for_write_key_buffer),A	;キー入力バッファをクリアします
 	RET
 
-
-;※VBLANK版
-;ジョイスティック入力（入力待ちなし、エコー･バックなし、カーソル表示なし）
-;入力	なし
-;出力	Acc←アスキー･コード
-;破壊	AF，HL，DE，BC
-INJOY:
-	CALL	GETJOY
-
-INJY1:	OR	A
-	JR	NZ,INJY2
-
-;	入力がなかった
-	LD	(OLDJOY),A
-	LD	L,A
-	LD	H,A	;HL←0
-	LD	(JOYREP),HL	;[JOYREP]、[JOYCNT]のクリア
-	RET
-
-;	入力があった場合
-INJY2:	LD	HL,OLDJOY
-	CP	(HL)
-	JR	Z,INJY3
-
-;	前回と違うキーが入力された
-	LD	(HL),A	;[OLDJOY]←入力キー
-	LD	HL,0
-	LD	(JOYREP),HL	;[JOYREP]、[JOYCNT]のクリア
-	JR	INJRET
-
-;	前回と同じキーが入力されていた
-INJY3:	LD	B,A	;B←入力キー
-	LD	A,(JOYREP)
-	OR	A
-	JR	NZ,INJY4
-
-;	リピート中でなかった
-	LD	HL,JOYCNT
-	INC	(HL)
-	LD	A,(HL)
-	CP	10	;3分の1秒
-	JR	NC,INJY31	;リピート開始
-	DI
-	CALL	VBLANK
-	CALL	VBLANK
-	EI
-	XOR	A
-	RET
-
-;	リピート開始
-INJY31:	LD	HL,00FFH
-	LD	(JOYREP),HL	;[JOYREP]←FFH、[JOYCNT]←00H
-
-;	前回と同じキーが入力されていて、リピート中だった
-INJY4:	PUSH	BC
-	DI
-	CALL	VBLANK
-	CALL	VBLANK
-	EI
-	CALL	GETJOY
-	POP	BC	;B←入力キー
-	CP	B
-	JR	NZ,INJY1
-
-;	キー入力が有効
-INJRET:	PUSH	AF
-	DI
-	CALL	CLICK	;クリック音を鳴らします
-	EI
-	POP	AF
-	RET
-
-OLDJOY:	DB	0	;旧入力キー
-JOYREP:	DB	0	;＝FFHでリピート中
-JOYCNT:	DB	0	;リピート開始までのカウンタ（30分の1秒単位）
 
 
 ;===============================
@@ -2884,7 +2719,7 @@ read_character_offset_address:
 ;破壊	AF，HL，DE，BC
 display_cursol:
 	CALL	get_cursol_XY_entity
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	C,L
 	LD	A,20H	;アトリビュートVRAM先頭（2000H）
 	ADD	A,H
@@ -2905,7 +2740,7 @@ display_cursol:
 ;破壊	AF，HL，DE，BC
 erase_cursol:
 	CALL	get_cursol_XY_entity
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	C,L
 	LD	A,20H	;アトリビュートVRAM先頭（2000H）
 	ADD	A,H
@@ -2918,7 +2753,7 @@ erase_cursol:
 
 
 ;表示色を変更します
-;入力	[foreground_color]、[background_color]、[BDRCLR]参照
+;入力	[foreground_color]、[background_color]、[BDR_color]参照
 ;出力	[attribute_data]←アトリビュート･データ
 ;破壊	AF，HL，DE，BC
 change_color:
@@ -3139,7 +2974,7 @@ VBLLP:	DEC	BC	; 6ts
 ;出力	BC←テキストVRAMアドレス
 ;破壊	AF，HL，BC
 TEXADR:
-	CALL	CUROFS
+	CALL	get_offset_from_cursol_XY
 	LD	C,L
 	LD	A,30H	;テキストVRAM先頭（3000H）
 	ADD	A,H
@@ -3169,118 +3004,12 @@ WRCRTC:
 
 
 ;CRTCを初期化します
-;入力	[RESMOD]←解像度（0～3）
-;	[X1TFLG]、[LRSDAT～]、[HRSDAT～]参照
-;出力	[RESFLG]←解像度の状態、turbo以降でなければ[RESMOD]←1
 ;破壊	AF，HL，DE，BC
 ;注：割り込み禁止して実行してください。
 CRTINI:
-;	turbo以降でなければ、強制低解像モード
-	LD	A,(X1TFLG)
-	OR	A
-	JR	NZ,$+6
-	INC	A	;Acc←1
-	LD	(RESMOD),A
-
-;	40桁モードにします
-	LD	A,00001101B	;b6セット
-	LD	BC,1A03H
-	OUT	(C),A	;画面クロック切り換え
-
-;	解像度の判定
-	LD	A,(RESMOD)	;0：スイッチ，1：低解像度，2：高解像度，3：疑似高解像度
-	DEC	A
-	JR	Z,CRTILW	;低解像度
-	DEC	A
-	JR	Z,CRTIHG	;高解像度
-	DEC	A
-	JR	Z,CRTIMD	;疑似高解像度
-;
-	; CALL	LOKRES
-	OR	A
-	JR	NZ,CRTIHG	;高解像度
-
-;	低解像度
-CRTILW:	LD	DE,0000H
-	LD	HL,LRSDAT
-	JR	CRISUB
-
-;	疑似高解像度
-CRTIMD:	LD	DE,0004H	;16ラスタ文字
-	LD	HL,LRSDAT
-	CALL	CRISUB
-	LD	D,8	;R#8
-	LD	A,00000011B	;インターレース･シンク＆ビデオ･モード
-	CALL	WRCRTC
-	LD	A,00001110B	;1行のラスタ数－1（あるいは－2）
-	JP	WRCRTC
-
-;	高解像度
-CRTIHG:	LD	DE,0FF03H	;24KHzモード、グラフィック疑似200ライン
-	LD	HL,HRSDAT
-;	JR	CRISUB
-
-;CRTCなどを初期化します
-;入力	E←I／O 1FD0Hに出力する値、D←[RESFLG]に書き込む値、
-;	HL←CRTC初期化データの先頭アドレス
-;出力	[IO1FD0]←入力E、[RESFLG]←入力D
-;破壊	AF，HL，DE，BC
-;〈レジスタ･マップ〉
-;E	現在CRTCレジスタ番号
-;HL	現在初期化データのアドレス
-;BC	I／Oアドレス
-;Acc	ループ･カウンタ
-CRISUB:	LD	A,E
-	LD	(IO1FD0),A
-	LD	BC,1FD0H
-	OUT	(C),A
-	LD	A,D
-	LD	(RESFLG),A
-;
-	LD	D,0	;R#0
-	LD	B,14
-
-CRISLP:	LD	A,(HL)
-	INC	HL
-	CALL	WRCRTC
-	DJNZ	CRISLP
-
+	DI
+	EI
 	RET
-
-;CRTC低解像初期化データ（40桁用）
-LRSDAT:	DB	 55	;水平周期（文字単位）
-	DB	 40	;表示桁数
-	DB	 45	;水平同期信号出力位置（文字単位）
-	DB	 34H	;同期信号パルス幅
-	DB	 31	;垂直周期（文字単位）
-	DB	  2	;垂直周期調整（ラスタ単位）
-	DB	 25	;垂直表示文字数
-	DB	 28	;垂直同期信号出力位置（文字単位）
-	DB	00000000B	;インターレース･スキュー
-	DB	  7	;1行のラスタ数－1
-	DB	 00H	;カーソル･スタート･ラスタ？
-	DB	 00H	;カーソル･エンド･ラスタ？
-	DB	 00H	;表示先頭アドレス上位
-	DB	 00H	;表示先頭アドレス下位
-
-;CRTC高解像初期化データ（40桁用）
-HRSDAT:	DB	 53	;水平周期（文字単位）
-	DB	 40	;表示桁数
-	DB	 45	;水平同期信号出力位置（文字単位）
-	DB	 84H	;同期信号パルス幅
-	DB	 27	;垂直周期（文字単位）
-	DB	  0	;垂直周期調整（ラスタ単位）
-	DB	 25	;垂直表示文字数
-	DB	 26	;垂直同期信号出力位置（文字単位）
-	DB	00000000B	;インターレース･スキュー
-	DB	 15	;1行のラスタ数－1
-	DB	 00H	;カーソル･スタート･ラスタ？
-	DB	 00H	;カーソル･エンド･ラスタ？
-	DB	 00H	;表示先頭アドレス上位
-	DB	 00H	;表示先頭アドレス下位
-
-
-
 
 ;===============================
 ;グラフィック（機種固有）
@@ -3468,33 +3197,28 @@ MON2:
 	CP	':'
 	JP	Z,MONEDT	;メモリ･エディト
 	CP	'*'
-	CALL	Z,GETLTR
+	CALL Z,GETLTR
 	CP	'R'
 	JP	Z,MONRET	;モニタを終えます
 	CP	'#'
-	JP	Z,MONWCH	;桁チェンジ
-	CP	'D'
 	JP	Z,MONDMP	;ダンプ
 	CP	'F'
 	JP	Z,MONFIN	;サーチ
 	CP	'A'
-	JP	Z,MONGRA	;グラフィックのオン、オフ
-	CP	'G'
-	JP	Z,MONGO	;ジャンプ
+	JP	Z,MONGO		;ジャンプ
 	CP	'I'
 	JP	Z,MONIDS	;ディスク初期化
 	CP	'M'
 	JP	Z,MONMST	;メモリ･セット
 	CP	'L'
-	JP	Z,MONLD	;機種依存Lコマンド
+	JP	Z,MONLD		;機種依存Lコマンド
 	CP	'S'
-	JP	Z,MONSV	;機種依存Sコマンド
+	JP	Z,MONSV		;機種依存Sコマンド
 	CP	'C'
 	JP	Z,MONCOL	;機種依存Cコマンド
 	DS	4,00H	;ダミー
-	CALL	_BELL
+	CALL _BELL
 	JP	MON1
-
 
 ;オリジナル･モニタを終えます
 MONRET:
@@ -3515,63 +3239,6 @@ MONGO:
 MONGOE:
 	CALL _BELL
 	JP	MON1
-
-
-;オリジナル･モニタ 桁数チェンジ（行数チェンジ）
-MONWCH:
-	CALL MONWCE	;拡張桁チェンジ
-	LD	A,(screen_width)
-	CPL		;FFH，00H
-	AND	40	; 40， 0
-	ADD	A,40	; 80，40
-	CALL	_WIDCH
-	JP	MON1
-
-
-;オリジナル･モニタ グラフィック、オン、オフ
-MONGRA:
-	CALL	SPSKIP
-	LD	A,(DE)
-	CALL	TOUPR
-	OR	A
-	JR	Z,MNGRTO
-	CP	'C'	;グラフィックのクリア
-	JR	Z,MNGRCL
-	CP	'0'
-	JR	C,MNGRER
-	CP	'1'+1
-	JR	NC,MNGRER
-
-;	「G0」「G1」の場合
-; グラフィックをオン、またはオフします。
-	SUB	'0'	;「0」：0 ，「1」：1
-	DEC	A	;「0」：FFH，「1」：00H
-	CPL		;「0」：00H，「1」：FFH
-MNGRGN:
-	LD	(GRAFLG),A
-	DI
-	CALL GRAONF
-MNGRRT:
-	EI
-	JP	MON1
-
-;	「G」の場合
-; グラフィックのオン、オフを切り換えます。
-MNGRTO:
-	LD	A,(GRAFLG)
-	CPL
-	JR	MNGRGN
-
-;	「GC」の場合
-; グラフィックをクリアします。
-MNGRCL:
-	DI
-	CALL GRACLR	;GRAMをクリアします
-	JR	MNGRRT
-
-MNGRER:
-	CALL _BELL
-	JR	MNGRRT
 
 
 ;オリジナル･モニタ サーチ･ルーチン
@@ -4056,38 +3723,6 @@ MONDEV:
 ;オリジナル･モニタ 機種依存部分
 ;-------------------------------
 
-
-;拡張桁チェンジ
-;入力	DE←コマンドの次の文字のアドレス
-;出力	なし
-;破壊	全レジスタ
-MONWCE:
-	LD	A,(DE)
-	CALL	TOUPR
-	LD	C,0
-	CP	'S'	;スイッチ依存
-	JR	Z,MNWCE1
-	INC	C	;C←1
-	CP	'L'	;低解像度
-	JR	Z,MNWCE1
-	INC	C	;C←2
-	CP	'H'	;高解像度
-	JR	Z,MNWCE1
-	INC	C	;C←3
-	CP	'M'	;疑似高解像度
-	RET	NZ
-
-MNWCE1:
-	LD	A,C	;Acc←解像度モード（0～3）
-	LD	(RESMOD),A
-	DI
-	CALL	CRTINI
-	EI
-	LD	A,(_WIDTH)
-	CALL	_WIDCH
-	JP	MON1
-
-
 ;モニタ Lコマンド
 ;入力	DE←コマンドの次の文字のアドレス
 ;出力	なし
@@ -4191,74 +3826,154 @@ DIOETP:
 
 ;	フィジカル･ディスクI／Oルーチン組み込み
 ;	INCLUDE	SWEMDIO2
-	; INCLUDE	SWXCDIO
-	; INCLUDE	SWXCRIO
+
+; RAM disk driver (SWXCRIO)
+
+;レコード番号は、0〜127
+
+;===============
+;パッチあて
+;===============
+
+;特殊ワークの一部をRAMディスクにさきます
+;_WKSIZ(1F68H)	C000H→4000H	48Kバイト→16Kバイト
+
+
+;RAMディスク（デバイスE:）のクラスタ数を設定します
+;[20FFH]	0→8	0クラスタ→8クラスタ
+
+
+;DOSモジュールをRAMディスク対応にします
+;[2596H]	'D'+1→'E'+1	デバイスD:まで→デバイスE:まで
+
+
+;DISK I／Oのっとり
+;[2B00H〜]	JP DRSUB→JP RDSUB（C3H，54H，29H）
+;[2B03H〜]	JP DWSUB→JP WTSUB（C3H，5DH，29H）
+
+	ORG	2954H
+
+DRSUB	EQU	2B07H
+DWSUB	EQU	2B5EH
+
+;DREADのっとり
+;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数、
+;	Acc'←ユニット番号
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
+RDSUB:
+	EX	AF,AF'
+	CP	4
+	JR	Z,RDRAM	;デバイス「E:」
+	EX	AF,AF'
+	JP	DRSUB	;本来のルーチンへ
+
+
+;DWRITEのっとり
+;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数、
+;	Acc'←ユニット番号
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
+WTSUB:
+	EX	AF,AF'
+	CP	4
+	JR	Z,WTRAM	;デバイス「E:」
+	EX	AF,AF'
+	JP	DWSUB	;本来のルーチンへ
+
+
+;RDSUB本体
+;注：EX AF,AF'で飛んできます。
+WTRAM:
+;	初期設定
+	PUSH	HL
+	LD	A,7EH	;7EH，EDH，79H
+	LD	HL,79EDH	;LD A,(HL)／OUT (C),A
+	JR	RDRAM0
+
+
+;WTSUB本体
+;注：EX AF,AF'で飛んできます。
+RDRAM:
+;	初期設定
+	PUSH	HL
+	LD	A,0EDH	;EDH，78H，77H
+	LD	HL,7778H	;IN A,(C)／LD (HL),A
+RDRAM0:	LD	(RDRAM2),A
+	LD	(RDRAM2+1),HL
+	EX	AF,AF'
+	POP	HL
+
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	DEC	D
+	INC	D
+	JR	NZ,BDREC	;エラー（レコード256〜）
+	LD	D,A	;D←レコード数
+	ADD	A,E	;Acc←最後のレコード＋1
+	JR	C,BDREC	;エラー（最後のレコードが255〜）
+	CP	128+1
+	JR	NC,BDREC	;エラー（最後のレコードが128〜）
+	SET	7,E
+	LD	B,E
+	LD	C,0	;BC←レコード番号×256＋8000H
+
+RDRAM1:	LD	E,0
+
+;	256バイトをブロック転送
+RDRAM2:	IN	A,(C)
+	LD	(HL),A
+	INC	BC
+	INC	HL
+	DEC	E
+	JR	NZ,RDRAM2
+
+	DEC	D
+	JR	NZ,RDRAM1
+
+	OR	A
+	JR	RAMRT
+BDREC:	LD	A,5	;Bad Record
+	SCF
+RAMRT:	POP	HL
+	POP	DE
+	POP	BC
+	RET
+
+
+
+; Disk I/O Sub routine
+
+
+
 	ORG	2B00H
+
 	; JP	RDSUB	;RAMディスク･ドライバ用パッチ
 	; JP	WTSUB	;RAMディスク･ドライバ用パッチ
 
 
 ;	RUN＆SUBMITルーチン組み込み
-	; INCLUDE	SWEMRS
 
-;　ファイルの先頭が３０００Ｈで、サイズが７Ｋバイト（１Ｃ００Ｈ）
-;以内のファイルは、ＲＡＭディスク（デバイスＥ:）に、
-;メモリの３０００Ｈ～４ＢＦＦＨの内容が待避されます。
-;その場合は、ＲＡＭディスクのレコード０～１３、１８～３１が使用されます。
-;よって、ＲＡＭディスクのディレクトリ領域は２レコードしか使えません。
-;このことは、ＲＡＭディスク（デバイスＥ:）を６４Ｋバイト以内とみなしています。
+;　ファイルの先頭が3000Hで、サイズが7Kバイト（1C00H）
+;以内のファイルは、RAMディスク（デバイスE:）に、
+;メモリの3000H～4BFFHの内容が待避されます。
+;その場合は、RAMディスクのレコード0～13、18～31が使用されます。
+;よって、RAMディスクのディレクトリ領域は2レコードしか使えません。
+;このことは、RAMディスク（デバイスE:）を64Kバイト以内とみなしています。
 
-	ORG	1CC0H
-
-;	Ｓ-ＯＳエントリ
-; _HOT	EQU	1FFAH
-; _PRINT	EQU	1FF4H
-; _MPRNT	EQU	1FE2H
-; _LPTON	EQU	1FD9H
-; _LPTOF	EQU	1FD6H
-; _GETL	EQU	1FD3H	;未使用
-; _GETKY	EQU	1FD0H
-; _BRKEY	EQU	1FCDH
-; _INKEY	EQU	1FCAH
-; _BELL	EQU	1FC4H
-; _HEX	EQU	1FB8H	;未使用
-; _RDD	EQU	1FA6H
-; _FILE	EQU	1FA3H
-; _DRDSB	EQU	2000H
-; _DWTSB	EQU	2003H
-; _ROPEN	EQU	2009H
-; _CSR	EQU	2018H
-; _SCRN	EQU	201BH
-; _FLGET	EQU	2021H	;未使用
-; _ERROR	EQU	2033H	;未使用
-; _HL	EQU	1F81H
-
-;	Ｓ-ＯＳワーク
-; _USR	EQU	1F7EH
-; _LPSW	EQU	1F7CH
-; _IBFAD	EQU	1F74H
-; _SIZE	EQU	1F72H
-; _DTADR	EQU	1F70H
-; _EXADR	EQU	1F6EH
-; _MEMAX	EQU	1F6AH	;未使用
-; _FATPS	EQU	1F5EH
-; _DSK	EQU	1F5DH
-
-;	ＤＯＳモジュール内部エントリ
-ERROR	EQU	286CH
-
-;	バッチ処理バッファ
-BATBF	EQU	2D00H	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
-BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
+	ORG	1CC0H ; RUN&SUBMITルーチン･エリア
 
 
-;ＤＯＳモジュール、2152H番地よりジャンプしてきます（コマンドの拡張）
+;DOSモジュール、2152H番地よりジャンプしてきます（コマンドの拡張）
 EXCOM:
-	CP	';'	;ＲＥＭコマンド
+	CP	';'	;REMコマンド
 	RET	Z
 	CP	'P'	;ポーズ･コマンド
 	JR	Z,RSPAU
-	CP	' '	;ＲＵＮコマンド
+	CP	' '	;RUNコマンド
 	JR	Z,RUN
 	LD	A,13	;Syntax Error
 	SCF
@@ -4277,14 +3992,14 @@ PAU0:	CALL	_GETKY
 
 ;	CALL	_INKEY
 	CALL	PAU1	;バッチ･ファイルなどからキー入力させないため
-	CP	1BH	;ＥＳＣ
+	CP	1BH	;ESC
 	JP	Z,BOFF	;[BATFLG]をクリアします
 	OR	A
 	RET
 
 
-;モニタ Ｒコマンド処理
-;注：ＤＥは、コマンドまたはバッチ変数の次のアドレスを示しています。
+;モニタ Rコマンド処理
+;注：DEは、コマンドまたはバッチ変数の次のアドレスを示しています。
 RUN:
 	LD	A,1
 	CALL	_FILE
@@ -4295,7 +4010,7 @@ RUN:
 RUN0:	PUSH	DE
 	CALL	_ROPEN
 	JP	C,BATCH	;ファイル属性が違った（バッチ･ファイル）かも知れない
-;	CALL	CMNDQ	;コマンド･ファイルならＲＡＭディスクにメモリを待避します
+;	CALL	CMNDQ	;コマンド･ファイルならRAMディスクにメモリを待避します
 	DS	3,00H
 	CALL	_RDD
 	POP	DE
@@ -4310,10 +4025,10 @@ RUN1:	PUSH	AF
 	RET
 
 
-;コマンド･ファイル（先頭3000Hで、サイズ７Ｋバイト以下）ならＲＡＭディスクにメモリを待避します
+;コマンド･ファイル（先頭3000Hで、サイズ7Kバイト以下）ならRAMディスクにメモリを待避します
 ;入力	[_DTADR]、[_SIZE]参照
 ;出力	なし
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＡＦ'
+;破壊	AF，HL，DE，AF'
 CMNDQ:
 	XOR	A
 	LD	(COMF),A	;メモリ待避フラグ
@@ -4329,11 +4044,11 @@ CMNDQ:
 	ADD	HL,DE
 	RET	C	;サイズが1C00Hより大きい
 
-;	サイズが７Ｋバイト（1C00H）以下
+;	サイズが7Kバイト（1C00H）以下
 ;	メモリを待避します
 	LD	A,(_DSK)
 	PUSH	AF
-	CALL	SET1	;アクセスするデバイスをＲＡＭディスクにして、メモリ待避用のパラメータ（前半）を得ます
+	CALL	SET1	;アクセスするデバイスをRAMディスクにして、メモリ待避用のパラメータ（前半）を得ます
 	CALL	_DWTSB
 	CALL	SET2	;メモリ待避用のパラメータ（後半）を得ます
 	CALL	_DWTSB
@@ -4346,19 +4061,19 @@ CMNDQ:
 
 ;待避したメモリを元に戻します
 ;入力	なし
-;出力	[_DSK]←「E」、ＨＬ←3000H、ＤＥ←０、Ａｃｃ←１４
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＡＦ'
+;出力	[_DSK]←「E」、HL←3000H、DE←0、Acc←14
+;破壊	AF，HL，DE，AF'
 CWRT:
-	CALL	SET1	;アクセスするデバイスをＲＡＭディスクにして、メモリ待避用のパラメータ（前半）を得ます
+	CALL	SET1	;アクセスするデバイスをRAMディスクにして、メモリ待避用のパラメータ（前半）を得ます
 	CALL	_DRDSB
 	CALL	SET2	;メモリ待避用のパラメータ（後半）を得ます
 	JP	_DRDSB
 
 
-;アクセスするデバイスをＲＡＭディスクにして、メモリ待避用のパラメータ（前半）を得ます
+;アクセスするデバイスをRAMディスクにして、メモリ待避用のパラメータ（前半）を得ます
 ;入力	なし
-;出力	[_DSK]←「E」、ＨＬ←3000H、ＤＥ←０、Ａｃｃ←１４
-;破壊	Ａ，ＨＬ，ＤＥ
+;出力	[_DSK]←「E」、HL←3000H、DE←0、Acc←14
+;破壊	A，HL，DE
 SET1:
 	LD	A,'E'
 	LD	(_DSK),A
@@ -4370,8 +4085,8 @@ SET1:
 
 ;メモリ待避用のパラメータ（後半）を得ます
 ;入力	なし
-;出力	ＨＬ←3E00H、ＤＥ←１８、Ａｃｃ←１４
-;破壊	Ａ，ＨＬ，ＤＥ
+;出力	HL←3E00H、DE←18、Acc←14
+;破壊	A，HL，DE
 SET2:
 	LD	HL,3E00H
 	LD	DE,18
@@ -4394,24 +4109,24 @@ AUTOEX:
 	JP	_HOT
 
 
-;モニタ Ｒコマンド処理の続き（バッチ･ファイル）
+;モニタ Rコマンド処理の続き（バッチ･ファイル）
 ;入力	スタック←ファイル名のあとにあるパラメータのアドレス
 ;注：
 ;　バッチ変数があれば、バッチ変数バッファに格納します。
-;　ＤＥは、コマンドまたはバッチ変数の次のアドレスを示しています。
+;　DEは、コマンドまたはバッチ変数の次のアドレスを示しています。
 BATCH:
-	POP	DE	;ＤＥ←パラメータのアドレス
+	POP	DE	;DE←パラメータのアドレス
 	CALL	BOFF	;[BATFLG]をクリアします
 	CP	6	;ファイル属性の不一致
 	SCF
 	RET	NZ
 
-;	０１Ｈ以外のファイル属性のファイル
+;	01H以外のファイル属性のファイル
 	LD	HL,(_IBFAD)
-	LD	A,(HL)	;Ａｃｃ←ファイル属性
+	LD	A,(HL)	;Acc←ファイル属性
 ;注：
 ;　ここはソースとコメントのリセットするビットが違います。
-;ソースはb6（書き込み禁止属性）、コメントはb5（ベリファイＯＮ属性）。
+;ソースはb6（書き込み禁止属性）、コメントはb5（ベリファイON属性）。
 	AND	0BFH	;「1101 1111」←オリジナルのコメント（多分間違い）
 	CP	4
 	LD	A,6	;Bad File Mode
@@ -4420,41 +4135,41 @@ BATCH:
 
 ;	アスキー･ファイルだった
 	LD	BC,1EH
-	ADD	HL,BC	;ＨＬ←ＦＣＢバッファのクラスタ番号の部分
+	ADD	HL,BC	;HL←FCBバッファのクラスタ番号の部分
 	CALL	STTRK	;[BTRK]と[BREC]を設定します
 	CALL	STPARA	;バッチ変数をバッチ変数バッファを読み込みます
 	LD	A,(_DSK)
 	LD	(BDEV),A	;バッチ･ファイルのあるデバイス
 	LD	A,16+1
-	LD	(BCNT),A	;バッチ･ファイルの現在クラスタの残りレコード数＋１
+	LD	(BCNT),A	;バッチ･ファイルの現在クラスタの残りレコード数＋1
 	XOR	A
-	DEC	A	;Ａｃｃ←FFH
+	DEC	A	;Acc←FFH
 	LD	(BTPNT),A	;バッチ･ファイルのバッファの前回のリード位置
-	LD	(BATFLG),A	;＝FFH（０以外）でバッチ･ファイル実行中
+	LD	(BATFLG),A	;＝FFH（0以外）でバッチ･ファイル実行中
 	RET
 
 
 ;[BTRK]と[BREC]を設定します
 ;入力	[HL]←クラスタ番号
 ;出力	[BTRK]←クラスタ番号、[BREC]←レコード番号
-;破壊	ＡＦ，ＨＬ
+;破壊	AF，HL
 STTRK:
-	LD	A,(HL)	;Ａｃｃ←クラスタ番号
+	LD	A,(HL)	;Acc←クラスタ番号
 	LD	(BTRK),A	;バッチ･ファイルの現在クラスタ番号
 	LD	L,A
-	LD	H,0	;ＨＬ←クラスタ番号
+	LD	H,0	;HL←クラスタ番号
 	ADD	HL,HL
 	ADD	HL,HL
 	ADD	HL,HL
-	ADD	HL,HL	;ＨＬ←クラスタ番号×１６
+	ADD	HL,HL	;HL←クラスタ番号×16
 	LD	(BREC),HL	;バッチ･ファイルのあるレコード番号
 	RET
 
 
 ;バッチ変数をバッチ変数バッファを読み込みます
-;入力	ＤＥ←パラメータのアドレス
+;入力	DE←パラメータのアドレス
 ;出力	[BPRBF～]←バッチ変数
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＢＣ
+;破壊	AF，HL，DE，BC
 STPARA:
 ;	バッチ変数バッファをクリアします
 	LD	HL,BPRBF	;バッチ変数バッファ
@@ -4463,19 +4178,19 @@ STPARA:
 	PUSH	HL
 	LD	D,H
 	LD	E,L
-	INC	DE	;ＤＥ←BPRBF＋１
+	INC	DE	;DE←BPRBF＋1
 	LD	BC,179
-	LDIR		;[BPRBF～BPRBF＋１７９]をクリア
-	POP	HL	;ＨＬ←BPRBF
-	POP	DE	;ＤＥ←パラメータのアドレス
+	LDIR		;[BPRBF～BPRBF＋179]をクリア
+	POP	HL	;HL←BPRBF
+	POP	DE	;DE←パラメータのアドレス
 
-	LD	A,(DE)	;Ａｃｃ←パラメータの先頭
+	LD	A,(DE)	;Acc←パラメータの先頭
 	CP	':'
 	JR	NZ,STP0
 	INC	DE	;「:」をスキップ
-STP0:	LD	C,9	;バッチ変数は￥１～￥９の９個
+STP0:	LD	C,9	;バッチ変数は￥1～￥9の9個
 
-STPAR0:	LD	B,19	;バッチ変数１個につき２０バイト
+STPAR0:	LD	B,19	;バッチ変数1個につき20バイト
 
 ;	バッチ変数をバッチ変数バッファに転送します
 STPAR1:	LD	A,(DE)
@@ -4503,11 +4218,11 @@ STPAR4:	INC	HL
 
 ;バッチ･ファイルから1文字を得ます
 ;入力	なし
-;出力	ＣＹ＝０ならバッチ･ファイル実行中でＡｃｃ←キャラ
-;	ＣＹ＝１ならバッチ･ファイル実行中でないか、バッチ変数￥０が来た
-;破壊	ＡＦ，ＡＦ'
+;出力	CY＝0ならバッチ･ファイル実行中でAcc←キャラ
+;	CY＝1ならバッチ･ファイル実行中でないか、バッチ変数￥0が来た
+;破壊	AF，AF'
 BGET:
-	LD	A,(BATFLG)	;＝FFH（０以外）でバッチ･ファイル実行中
+	LD	A,(BATFLG)	;＝FFH（0以外）でバッチ･ファイル実行中
 	OR	A
 	SCF
 	RET	Z
@@ -4515,7 +4230,7 @@ BGET:
 ;	バッチ･ファイル実行中
 	PUSH	BC
 	PUSH	HL
-	LD	A,(PARAF)	;＝１（０以外）でバッチ変数アクセス中
+	LD	A,(PARAF)	;＝1（0以外）でバッチ変数アクセス中
 	OR	A
 	JR	Z,BGET0	;バッチ変数アクセス中でない
 
@@ -4526,10 +4241,10 @@ BPARA:	LD	HL,(BTPNT2)	;バッチ変数の現在アドレス
 	JR	NZ,BPARA0	;バッチ変数の終わりに達していない
 
 ;	バッチ変数の終わりに達した（[PARAF]のクリア）
-	LD	(PARAF),A	;＝１（０以外）でバッチ変数アクセス中
+	LD	(PARAF),A	;＝1（0以外）でバッチ変数アクセス中
 
-;	バッチ･ファイルから１バイト取り出します
-BGET0:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから１バイト取り出します
+;	バッチ･ファイルから1バイト取り出します
+BGET0:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
 	OR	A
 	JR	Z,BEND	;バッチ･ファイルからリード終了
 	CP	'\\'	;バッチ変数
@@ -4539,19 +4254,19 @@ BGET0:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから１バイ
 	CALL	PARAQ	;バッチ変数のアクセスを設定
 	JR	NC,BPARA	;バッチ変数だった
 
-;	リターンします（Ａｃｃ←キャラ）
-BGET1:	OR	A	;ＣＹ←０
+;	リターンします（Acc←キャラ）
+BGET1:	OR	A	;CY←0
 	POP	HL
 	POP	BC
 	RET
 
-;	バッチ変数バッファより１バイト取り出してリターンします
+;	バッチ変数バッファより1バイト取り出してリターンします
 BPARA0:	INC	HL
 	LD	(BTPNT2),HL	;バッチ変数の現在アドレス
 	JR	BGET1
 
 ;	バッチ･ファイルを終わります
-;出力	ＣＹ←１、Ａｃｃ←０
+;出力	CY←1、Acc←0
 BEND:	CALL	BOFF	;[BATFLG]をクリアします
 	SCF
 	POP	HL
@@ -4559,11 +4274,11 @@ BEND:	CALL	BOFF	;[BATFLG]をクリアします
 	RET
 
 
-;バッチ･ファイルから１バイト取り出します
+;バッチ･ファイルから1バイト取り出します
 ;入力	なし
-;出力	Ａｃｃ←キャラ
-;	Ａｃｃ＝０なら、バッチ･ファイルから読み込めなかった
-;破壊	ＡＦ，ＨＬ，ＡＦ'
+;出力	Acc←キャラ
+;	Acc＝0なら、バッチ･ファイルから読み込めなかった
+;破壊	AF，HL，AF'
 get_one_byte_fro_batch_file:
 	CALL	_BRKEY
 	LD	A,0
@@ -4574,12 +4289,12 @@ get_one_byte_fro_batch_file:
 	JR	NZ,read_one_byte_from_buffer_of_batch_file	;バッチ･ファイルのバッファから読み込み可能
 
 ;	バッチ･ファイルのリード･バッファが空
-	LD	HL,BCNT	;バッチ･ファイルの現在クラスタの残りレコード数＋１
+	LD	HL,BCNT	;バッチ･ファイルの現在クラスタの残りレコード数＋1
 	DEC	(HL)
 	JR	NZ,read_next_record_from_batch_file	;次のレコードを読みます
 
 ;	次のクラスタを読みます
-	LD	(HL),16	;[BCNT]←１６
+	LD	(HL),16	;[BCNT]←16
 	PUSH	DE
 	LD	DE,(_FATPS)
 	LD	HL,BATBF	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
@@ -4587,8 +4302,8 @@ get_one_byte_fro_batch_file:
 	JR	C,error_read_from_buffer_of_batch_file	;リード･エラー
 	LD	A,(BTRK)	;バッチ･ファイルの現在クラスタ番号
 	LD	E,A
-	LD	D,0	;ＤＥ←バッチ･ファイルの現在クラスタ番号
-	ADD	HL,DE	;ＨＬ←バッチ･ファイルのバッファの次のクラスタ番号の部分
+	LD	D,0	;DE←バッチ･ファイルの現在クラスタ番号
+	ADD	HL,DE	;HL←バッチ･ファイルのバッファの次のクラスタ番号の部分
 	CALL	STTRK	;[BTRK]と[BREC]を設定します
 	POP	DE
 
@@ -4603,7 +4318,7 @@ read_next_record_from_batch_file:
 	LD	(BREC),DE	;バッチ･ファイルの現在レコード番号
 	POP	DE
 
-;	バッチ･ファイルのバッファより、１バイト取り出します
+;	バッチ･ファイルのバッファより、1バイト取り出します
 read_one_byte_from_buffer_of_batch_file:
 	LD	HL,(BTPNT)	;バッチ･ファイルのバッファの前回のリード位置
 	LD	A,(HL)
@@ -4612,23 +4327,23 @@ read_one_byte_from_buffer_of_batch_file:
 ;	バッチ･ファイルから読み込めなかった
 error_read_from_buffer_of_batch_file:
 	POP	DE
-	XOR	A	;Ａｃｃ←０
+	XOR	A	;Acc←0
 	RET
 
 
 ;バッチ･ファイルを読みます
-;入力	ＨＬ←読み込みアドレス、ＤＥ←レコード番号
-;出力	ＣＹ＝１（Ａｃｃ←エラー･コード）ならエラー
-;破壊	ＡＦ，ＡＦ'
+;入力	HL←読み込みアドレス、DE←レコード番号
+;出力	CY＝1（Acc←エラー･コード）ならエラー
+;破壊	AF，AF'
 RSREAD:
 	LD	A,(_DSK)
 	PUSH	AF	;スタック←もとのデバイス
 	LD	A,(BDEV)	;バッチ･ファイルのあるデバイス
 	LD	(_DSK),A	;一時的にバッチ･ファイルのデバイスに
-	LD	A,1	;１レコード
+	LD	A,1	;1レコード
 	CALL	_DRDSB
 	EX	AF,AF'
-	POP	AF	;Ａｃｃ←もとのデバイス
+	POP	AF	;Acc←もとのデバイス
 	LD	(_DSK),A	;デバイスをもとに戻します
 	EX	AF,AF'
 	RET
@@ -4636,44 +4351,44 @@ RSREAD:
 
 ;バッチ変数のアクセスを設定
 ;入力	なし
-;出力	ＣＹ＝１ならバッチ変数でなかった（Ａｃｃ←キャラ）
-;破壊	ＡＦ，ＨＬ，ＢＣ，ＡＦ'
+;出力	CY＝1ならバッチ変数でなかった（Acc←キャラ）
+;破壊	AF，HL，BC，AF'
 PARAQ:
-	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから１バイト取り出します
+	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
 	CP	'0'
 	RET	C
 	CP	'9'+1
 	CCF
 	RET	C
 
-;	バッチ変数￥０～￥９
+;	バッチ変数￥0～￥9
 	SUB	'0'
 	JR	Z,PAR00	;「\0」だった
 
-;	バッチ変数￥１～￥９
+;	バッチ変数￥1～￥9
 	LD	L,A
-	LD	H,0	;ＨＬ←１～９
+	LD	H,0	;HL←1～9
 	ADD	HL,HL
-	ADD	HL,HL	;ＨＬ←(１～９)×４
+	ADD	HL,HL	;HL←(1～9)×4
 	LD	B,H
-	LD	C,L	;ＢＣ←(１～９)×４
+	LD	C,L	;BC←(1～9)×4
 	ADD	HL,HL
-	ADD	HL,HL	;ＨＬ←(１～９)×１６
-	ADD	HL,BC	;ＨＬ←(１～９)×２０
+	ADD	HL,HL	;HL←(1～9)×16
+	ADD	HL,BC	;HL←(1～9)×20
 	LD	BC,BPRBF-20	;バッチ変数バッファ
-	ADD	HL,BC	;ＨＬ←バッチ変数に対応するバッファのアドレス
+	ADD	HL,BC	;HL←バッチ変数に対応するバッファのアドレス
 	LD	(BTPNT2),HL	;バッチ変数の現在アドレス
-	XOR	A	;ＣＹ←０
-	INC	A	;Ａｃｃ←１
-	LD	(PARAF),A	;＝１（０以外）でバッチ変数アクセス中
+	XOR	A	;CY←0
+	INC	A	;Acc←1
+	LD	(PARAF),A	;＝1（0以外）でバッチ変数アクセス中
 	RET
 
-;	バッチ変数￥０（BGETルーチンを呼び出したルーチンにＣＹ＝１で戻ります）
-PAR00:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから１バイト取り出します
+;	バッチ変数￥0（BGETルーチンを呼び出したルーチンにCY＝1で戻ります）
+PAR00:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
 	OR	A
 	JR	Z,PAR01
 	CP	0DH	;RET
-	JR	NZ,PAR00	;ＣＲコードのスキップ
+	JR	NZ,PAR00	;CRコードのスキップ
 PAR01:	POP	HL	;戻り番地のキャンセル
 
 ;	BGETルーチンのスタックに保存したレジスタをもとに戻します
@@ -4690,7 +4405,7 @@ PAR01:	POP	HL	;戻り番地のキャンセル
 BOFF:
 	PUSH	AF
 	XOR	A
-	LD	(BATFLG),A	;＝FFH（０以外）でバッチ･ファイル実行中
+	LD	(BATFLG),A	;＝FFH（0以外）でバッチ･ファイル実行中
 	POP	AF
 	RET
 
@@ -4701,7 +4416,7 @@ BOFF:
 
 
 BFLGET:
-	CALL	BGET	;バッチ･ファイルから１文字を得ます
+	CALL	BGET	;バッチ･ファイルから1文字を得ます
 	RET	NC
 ;	ここのジャンプ先は、機種によって違います
 ;	JP	1CA0H	;本来の#FLGETルーチンへ（バグ処理ルーチン経由）
@@ -4714,19 +4429,19 @@ BFLGET:
 
 
 ;1F2CH番地よりジャンプして来る（バグ回避のため）
-;破壊	ＡＦ，ＢＣ
+;破壊	AF，BC
 BGETL:
-;	論理行頭にカーソルがあるかを、カーソルｘ座標でチェックします（少し問題あり）
+;	論理行頭にカーソルがあるかを、カーソルx座標でチェックします（少し問題あり）
 	PUSH	DE
 	PUSH	HL
 	CALL	_CSR
 	LD	A,L
 	OR	A
-	JR	Z,BGETL0	;ｘ座標が０
+	JR	Z,BGETL0	;x座標が0
 
-;	ｘ座標が０でなかった
-	LD	B,A	;Ｂ←文字数
-	LD	L,0	;Ｌ←０（ｘ座標）
+;	x座標が0でなかった
+	LD	B,A	;B←文字数
+	LD	L,0	;L←0（x座標）
 
 ;	画面からカーソル位置までのキャラを1行入力バッファに転送します
 BGTLL:	CALL	_SCRN
@@ -4736,7 +4451,7 @@ BGTLL:	CALL	_SCRN
 	DJNZ	BGTLL
 
 ;	バッチ･ファイルからの入力
-BGETL0:	CALL	BGET	;バッチ･ファイルから１文字を得ます
+BGETL0:	CALL	BGET	;バッチ･ファイルから1文字を得ます
 	JR	NC,BGETL1	;バッチ･ファイルから入力があった
 	POP	HL
 	POP	DE
@@ -4745,25 +4460,25 @@ BGETL0:	CALL	BGET	;バッチ･ファイルから１文字を得ます
 	JP	_GETL
 
 ;
-BGETL1:	CALL	RSPRNT	;画面に１文字表示します（プリンタには出力しません）
-	CP	0DH	;ＲＥＴ
+BGETL1:	CALL	RSPRNT	;画面に1文字表示します（プリンタには出力しません）
+	CP	0DH	;RET
 	JR	Z,BGETL2
-	LD	(DE),A	;１行入力バッファ←キャラ
+	LD	(DE),A	;1行入力バッファ←キャラ
 	INC	DE
 	JR	BGETL0
 
-;	１行入力された
-BGETL2:	XOR	A	;Ａｃｃ←ターミネータ
-	LD	(DE),A	;１行入力バッファ←ターミネータ
+;	1行入力された
+BGETL2:	XOR	A	;Acc←ターミネータ
+	LD	(DE),A	;1行入力バッファ←ターミネータ
 	POP	HL
 	POP	DE
 	RET
 
 
-;画面に１文字表示します（プリンタには出力しません）
-;入力	Ａｃｃ←キャラ
+;画面に1文字表示します（プリンタには出力しません）
+;入力	Acc←キャラ
 ;出力	なし
-;破壊	Ｆ，ＡＦ'
+;破壊	F，AF'
 RSPRNT:
 	EX	AF,AF'
 	LD	A,(_LPSW)
@@ -4785,7 +4500,7 @@ RSPRNT:
 RSERR:
 	CALL	BOFF	;[BATFLG]をクリアします
 	OR	A
-	RET	Z	;Ａｃｃ＝０ならエラー表示をしません
+	RET	Z	;Acc＝0ならエラー表示をしません
 	JP	ERROR
 
 
@@ -4794,15 +4509,15 @@ RSERR:
 ;=======
 
 
-COMF:	DS	1	;＝１で、ＲＡＭディスクへメモリ3000H～4BFFHの待避が行われた
+COMF:	DS	1	;＝1で、RAMディスクへメモリ3000H～4BFFHの待避が行われた
 BDEV:	DS	1	;バッチ･ファイルのあるデバイス
 BTRK:	DS	1	;バッチ･ファイルの現在クラスタ番号
 BREC:	DS	2	;バッチ･ファイルの現在レコード番号
-BCNT:	DS	1	;バッチ･ファイルの現在クラスタの残りレコード数＋１
+BCNT:	DS	1	;バッチ･ファイルの現在クラスタの残りレコード数＋1
 BTPNT:	DW	BATBF	;下位はバッチ･ファイルのバッファの前回のリード位置
 BTPNT2:	DS	2	;バッチ変数の現在アドレス
-BATFLG:	DS	1	;＝FFH（０以外）でバッチ･ファイル実行中
-PARAF:	DS	1	;＝１（０以外）でバッチ変数アクセス中
+BATFLG:	DS	1	;＝FFH（0以外）でバッチ･ファイル実行中
+PARAF:	DS	1	;＝1（0以外）でバッチ変数アクセス中
 ;AUTNAM:	DB	'A:AUTOEXEC.BAT'	;自動実行ファイル名
 ;	DS	4
 AUTNAM:	DB	'AUTOEXEC.BAT',00H	;自動実行ファイル名（カレント･ドライブより）
@@ -4876,21 +4591,21 @@ _XYADR:	DW	display_cursol_XY_not_use	;1F78H 'ダミー
 _PRCNT:	DW	number_of_character_after_CR	;1F7AH '未使用
 _LPSW:	DB	0	;1F7CH
 _DVSW:	DB	0	;1F7CH 'S-OS 2400bps 'ダミー
-_USR:	DW	_HOT	;1F7EH '通常_HOTが入ります
-_GETPC:	POP	HL	;1F80H
-_HL:	JP	(HL)	;1F81H
+_USR:	DW	_HOT;1F7EH '通常_HOTが入ります
 ;NEXT	1F82H
 
 
 ;===============================
 ;S-OSジャンプ･テーブル
 ;===============================
-
+	ORG	1F80H
+_GETPC:			POP HL		;1F80H
+_HL:			JP	(HL)	;1F81H
 
 	DS	3	;1F82H 'MSXでは「MBIOS」
 	DS	3	;1F85H
 	DS	3	;1F88H
-BPRNT:	JP	BPRNT0	;1F8BH
+BPRNT:			JP	BPRNT0	;1F8BH
 
 	ORG	1F8EH
 _MON:			JP	MON		;1F8EH
@@ -4928,8 +4643,8 @@ _NL:			JP	NL		;1FEBH
 _LTNL:			JP	LTNL	;1FEEH
 _PRNTS:			JP	PRNTS	;1FF1H
 _PRINT:			JP	PRINT	;1FF4H
-_VER:			JP	VER	;1FF7H
-_HOT:			JP	DOSHOT	;1FFAH
+_VER:			JP	VER		;1FF7H 
+_HOT:			JP	DOSHOT	;1FFAH SOSのモニタ
 _COLD:			JP	COLD	;1FFDH
 ;	SWORDで拡張された部分
 _DRDSB:			JP	read_disk	;2000H
@@ -4950,110 +4665,34 @@ _INP:			JP	INP		;202AH
 _OUT:			JP	OUTP	;202DH
 _WIDCH:			JP	WIDCH	;2030H
 _ERROR:			JP	RSERR	;2033H
+; Oh! MZ 1986/2に載っているのはここまで
+
 _BOOT:			JP	BOOT	;2036H
 ;NEXT	2039H
-GTPRC:			JP	GTPRC0	;2039H
+GTPRC:			JP	get_logical_column	;2039H
 LINCH:			JP	LINCH0	;203CH
 ;NEXT	203FH
 
-
 ;	204BH～20FEHはバッチ変数バッファ
 
-
 ;	_ETRK（20FFH）はデバイス「E:」のクラスタ数
-
 
 ;	共通DOSモジュール組み込み（20FFH～28CCH）
 	; INCLUDE	SWEMDOS
 
 	ORG	20FFH
-_ETRK:	DS	1	;ＲＡＭディスクのクラスタ数
+_ETRK:	DS	1	;RAMディスクのクラスタ数
 
+;
+; DOSモジュールの始まり
+;
 	ORG	2100H
-
-;〈注意〉
-;　仕様と違い、ディスクをアクセスするファンクションは、ＡＦ'が破壊されます。
-
 
 ;〈セーブ動作〉
 ;　「_FILE」「_WOPEN」「_WRD」の順で呼び出します。
 
-
 ;〈ロード動作〉
 ;　「_FILE」「_ROPEN」「_RDD」の順で呼び出します。
-
-
-;	各機種ディスクＩ／Ｏ
-; DREAD	EQU	2B00H
-; DWRITE	EQU	2B03H
-; disk_unit_number	EQU	2B06H
-
-
-;	Ｓ-ＯＳエントリ
-; _MON	EQU	1F8EH
-; _BELL	EQU	1FC4H
-; _LPTOF	EQU	1FD6H
-; _BRKEY	EQU	1FCDH	;未使用
-; _HLHEX	EQU	1FB2H
-; _PRINT	EQU	1FF4H
-; _PRNTS	EQU	1FF1H
-; _PRTHX	EQU	1FC1H
-; _PRTHL	EQU	1FBEH
-; _MSG	EQU	1FE8H
-; _MSX	EQU	1FE5H
-; _MPRNT	EQU	1FE2H
-; _LTNL	EQU	1FEEH
-; _NL	EQU	1FEBH
-; _PAUSE	EQU	1FC7H
-; _FPRNT	EQU	1F9DH
-; _FILE	EQU	1FA3H
-; _GETKY	EQU	1FD0H
-; _GETL	EQU	1FD3H
-; _WRD	EQU	1FACH
-; _WOPEN	EQU	1FAFH
-; _RDD	EQU	1FA6H
-; _DIR	EQU	2006H
-; _ROPEN	EQU	2009H
-; _SET	EQU	200CH
-; _RESET	EQU	200FH
-; _NAME	EQU	2012H
-; _KILL	EQU	2015H
-; _RDVSW	EQU	2024H
-; _SDVSW	EQU	2027H
-; _WIDCH	EQU	2030H
-; _ERROR	EQU	2033H
-; _BOOT	EQU	2036H
-;
-; _DSK	EQU	1F5DH
-; _IBFAD	EQU	1F74H
-; _DIRNO	EQU	1F67H
-; _FATBF	EQU	1F62H
-; _DTBUF	EQU	1F64H
-; ; _FATPS	EQU	1F5EH
-; _DIRPS	EQU	1F60H
-; _MXTRK	EQU	1F66H
-; _SIZE	EQU	1F72H
-; _DTADR	EQU	1F70H
-; _EXADR	EQU	1F6EH
-; _DVSW	EQU	1F7DH
-; _STKAD	EQU	1F6CH
-; _KBFAD	EQU	1F76H
-; _WIDTH	EQU	1F5CH
-
-
-;	Ｓ-ＯＳ内部エントリ
-; _RDI	EQU	2900H
-; _TROPN	EQU	2903H
-; _WRI	EQU	2906H
-; _TWRD	EQU	2909H
-; _TRDD	EQU	290CH
-; _TDIR	EQU	290FH
-; _DVCHK	EQU	2915H
-; _OPNFG	EQU	291EH
-; _FTYPE	EQU	291FH
-; _DFDV	EQU	2920H
-; _PARSC	EQU	292AH
-; _PARCS	EQU	293FH
 
 
 ;===============
@@ -5074,7 +4713,7 @@ DOSHOT:
 
 
 ;コマンド･ライン･ルーチン
-;出力	ＣＹ＝１でエラー
+;出力	CY＝1でエラー
 MCOM:
 	LD	A,(DE)
 	CP	'#'
@@ -5102,9 +4741,9 @@ MCOM:
 	CP	'W'
 	JP	Z,MWIDTH	;表示桁
 	CP	'S'
-	JR	Z,CMDSB1	;プロテクト（ＳＴ），セーブ（Ｓ）
+	JR	Z,CMDSB1	;プロテクト（ST），セーブ（S）
 	CP	'D'
-	JR	Z,CMDSB2	;デフォルト･デバイス（ＤＶ），ディレクトリ（Ｄ）
+	JR	Z,CMDSB2	;デフォルト･デバイス（DV），ディレクトリ（D）
 ;	LD	A,13	;Syntax Error
 ;	SCF
 ;	RET
@@ -5112,29 +4751,29 @@ MCOM:
 	DS	1
 
 
-;モニタ Ｓｘコマンド処理
+;モニタ Sxコマンド処理
 CMDSB1:
 	LD	A,(DE)
 	CALL	TOUPER	;小文字→大文字変換
 	INC	DE
 	CP	'T'
-	JP	Z,MSET	;モニタ ＳＴコマンド処理
+	JP	Z,MSET	;モニタ STコマンド処理
 	DEC	DE
-	JP	SAVE	;モニタ Ｓコマンド処理
+	JP	SAVE	;モニタ Sコマンド処理
 
 
-;モニタ Ｄｘコマンド処理
+;モニタ Dxコマンド処理
 CMDSB2:
 	LD	A,(DE)
 	CALL	TOUPER	;小文字→大文字変換
 	INC	DE
 	CP	'V'
-	JP	Z,DEVST	;モニタ ＤＶコマンド処理
+	JP	Z,DEVST	;モニタ DVコマンド処理
 	DEC	DE
-	JP	MDIR	;モニタ Ｄコマンド処理
+	JP	MDIR	;モニタ Dコマンド処理
 
 
-;モニタ Ｊコマンド処理
+;モニタ Jコマンド処理
 JUMP:	CALL	SPCUT	;文字列の空白を読み飛ばします
 	CALL	_HLHEX
 	LD	A,13	;Syntax Error
@@ -5147,19 +4786,19 @@ JUMP:	CALL	SPCUT	;文字列の空白を読み飛ばします
 	; EX	DE,HL
 	; JP	(HL)
 	; ENDIF
-;	ＤＥ保存のための改定
+;	DE保存のための改定
 	EX	(SP),HL	;スタック←ジャンプ先
 	LD	HL,DOSHOT
-	EX	(SP),HL	;スタック←DOSHOT，ＨＬ←ジャンプ先
+	EX	(SP),HL	;スタック←DOSHOT，HL←ジャンプ先
 	JP	(HL)
 	DS	1
 
 
-;モニタ Ｍコマンド処理
+;モニタ Mコマンド処理
 DOSMON:	JP	_MON
 
 
-;モニタ Ｄコマンド処理
+;モニタ Dコマンド処理
 MDIR:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	CALL	GETDEV	;文字列からデバイス名を得ます
@@ -5168,7 +4807,7 @@ MDIR:
 	RET
 
 
-;モニタ Ｓコマンド処理
+;モニタ Sコマンド処理
 SAVE:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	LD	A,1
@@ -5214,7 +4853,7 @@ SNERR:	LD	A,13	;Syntax Error
 	RET
 
 
-;モニタ Ｌコマンド処理
+;モニタ Lコマンド処理
 LOAD:
 	LD	A,1
 	CALL	_FILE
@@ -5249,11 +4888,11 @@ LOAD1:	CALL	_ROPEN
 LOAD3:	JP	_RDD
 
 LDWORK:	DS	2	;ロード･アドレス
-	DS	1	;ロード･アドレス･フラグ（＝０でロード･アドレスが無効）
+	DS	1	;ロード･アドレス･フラグ（＝0でロード･アドレスが無効）
 
 
 ;テープのスキップしているファイル名を表示します
-;破壊	ＤＥ
+;破壊	DE
 SKPRT:
 	PUSH	AF
 	CALL	_MPRNT
@@ -5264,7 +4903,7 @@ SKPRT:
 	RET
 
 
-;モニタ Ｋコマンド処理
+;モニタ Kコマンド処理
 MKILL:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	CALL	_FILE
@@ -5273,7 +4912,7 @@ MKILL:
 	RET
 
 
-;モニタ ＳＴコマンド処理
+;モニタ STコマンド処理
 MSET:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	CALL	_FILE
@@ -5292,7 +4931,7 @@ MSET:
 	RET
 
 
-;モニタ ＤＶコマンド処理
+;モニタ DVコマンド処理
 DEVST:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	LD	A,(DE)
@@ -5305,7 +4944,7 @@ DEVST1:	LD	(_DSK),A
 	JP	_SDVSW
 
 
-;モニタ Ｎコマンド処理
+;モニタ Nコマンド処理
 MNAME:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 	CALL	_FILE
@@ -5318,8 +4957,8 @@ MNAME:
 	RET
 
 
-;モニタ Ｗコマンド処理
-;注：８０桁モード以外なら４０桁モードにしています。
+;モニタ Wコマンド処理
+;注：80桁モード以外なら40桁モードにしています。
 MWIDTH:	LD	A,(_WIDTH)
 	CP	80
 	JR	NZ,MWDTH1
@@ -5330,9 +4969,9 @@ MWDTH1:	LD	A,80
 
 
 ;文字列の空白を読み飛ばします
-;入力	ＤＥ←文字列の先頭アドレス
-;出力	ＤＥ←カウント･アップ
-;破壊	ＡＦ，ＤＥ
+;入力	DE←文字列の先頭アドレス
+;出力	DE←カウント･アップ
+;破壊	AF，DE
 	INC	DE
 SPCUT:
 	LD	A,(DE)
@@ -5342,21 +4981,21 @@ SPCUT:
 
 
 ;=======================================
-;拡張されたＳ-ＯＳファンクション本体
+;拡張されたS-OSファンクション本体
 ;=======================================
 
 
 ;文字列からデバイス名を得ます
-;入力	ＤＥ←文字列のアドレス
-;出力	Ａｃｃ←デバイス名、ＤＥ←カウント･アップ
-;破壊	ＡＦ，ＤＥ
+;入力	DE←文字列のアドレス
+;出力	Acc←デバイス名、DE←カウント･アップ
+;破壊	AF，DE
 ;注：
 ;　小文字は大文字に変換されます。
 ;　デバイス名が省略された場合、デフォルト･デバイスが採用されます。
 GETDEV:
 	CALL	SPCUT	;文字列の空白を読み飛ばします
 ;	INC	DE
-;	LD	A,(DE)	;Ａｃｃ←２文字目
+;	LD	A,(DE)	;Acc←2文字目
 ;	DEC	DE
 	CALL	GDVPAT	;GETDEVのバグ回避
 	CP	':'
@@ -5369,9 +5008,9 @@ GETDEV:
 
 
 ;小文字→大文字変換
-;入力	Ａｃｃ←アスキー･コード
-;出力	Ａｃｃ←変換されたアスキー･コード
-;破壊	ＡＦ
+;入力	Acc←アスキー･コード
+;出力	Acc←変換されたアスキー･コード
+;破壊	AF
 TOUPER:
 	CP	'a'
 	RET	C
@@ -5383,23 +5022,23 @@ TOUPER:
 
 ;#WOPEN（1FAFH）の本体
 ;注：
-;　仕様と違いＡＦ'が破壊されます。
+;　仕様と違いAF'が破壊されます。
 ;　テープではインフォメーション･ファイルを書き込み、
 ;ディスクでは空きエリアをチェックします。
-;　正常終了ＣＹ＝０（Ａｃｃ←０）。
+;　正常終了CY＝0（Acc←0）。
 WOPEN:
-	CALL	CLOSE	;[_OPNFG]←０
+	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
 	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JP	Z,_WRI	;カセットにインフォメーション･ファイルをセーブします
 
 ;	テープ以外
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	JR	NC,WOPEN1
 	RET		;エラー（テープ，ディスク以外）
 
-WOPEN1:	CALL	FATRED	;ＦＡＴを読みます
+WOPEN1:	CALL	FATRED	;FATを読みます
 	RET	C	;エラー
 	CALL	FCBSCH	;ファイルを検索します（属性は無視）
 	JR	NZ,WOPEN2
@@ -5414,9 +5053,9 @@ WOPEN1:	CALL	FATRED	;ＦＡＴを読みます
 	PUSH	HL
 	LD	BC,30
 	ADD	HL,BC
-	LD	A,(HL)	;Ａｃｃ←ファイルの開始クラスタ
+	LD	A,(HL)	;Acc←ファイルの開始クラスタ
 	POP	HL
-	CALL	ERAFAT	;ＦＡＴバッファから指定のクラスタ･チェインをカットします
+	CALL	ERAFAT	;FATバッファから指定のクラスタ･チェインをカットします
 	RET	C	;エラー
 	JR	WOPEN3
 
@@ -5426,28 +5065,28 @@ WOPEN2:	CALL	FRESCH	;ディスクに空きエリアがあるかチェックし�
 	RET	C	;エラー
 
 WOPEN3:	LD	(DEBUF),DE	;アクセスするレコード番号の一時保存場所
-	LD	(HLBUF),HL	;参照ＦＣＢのアドレスの一時保存場所
-	CALL	_PARCS	;Ｓ-ＯＳのカセットのアドレス情報を、機種依存のワークに転送します
-	CALL	OPEN	;[_OPNFG]←１
-	XOR	A	;ＣＹ←０，Ａｃｃ←０
+	LD	(HLBUF),HL	;参照FCBのアドレスの一時保存場所
+	CALL	_PARCS	;S-OSのカセットのアドレス情報を、機種依存のワークに転送します
+	CALL	OPEN	;[_OPNFG]←1
+	XOR	A	;CY←0，Acc←0
 	RET
 
 
 ;#ROPEN（2009H）の本体
 ;注：
-;　仕様と違いＡＦ'が破壊されます。
+;　仕様と違いAF'が破壊されます。
 ;　テープではインフォメーション･ファイルの読み込み、
 ;ディスクではファイルの存在のチェック。
-;　正常終了ＣＹ＝０（Ａｃｃ←０）。
+;　正常終了CY＝0（Acc←0）。
 ROPEN:
-	CALL	CLOSE	;[_OPNFG]←０
+	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
 	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
 	JP	Z,_TROPN	;テープのリード･オープン
 
 ;	テープ以外
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	JR	NC,ROPEN1
 	RET		;エラー（テープ，ディスク以外）
 
@@ -5458,7 +5097,7 @@ ROPEN1:	CALL	FCBSCH	;ファイルを検索します（属性は無視）
 	SCF
 	RET	NZ	;エラー（ファイルが見つからなかった）
 
-;	一致したＦＣＢを、ＦＣＢバッファに転送します
+;	一致したFCBを、FCBバッファに転送します
 	PUSH	HL
 	LD	DE,(_IBFAD)
 	LD	BC,32
@@ -5471,16 +5110,16 @@ ROPEN1:	CALL	FCBSCH	;ファイルを検索します（属性は無視）
 	RET	C	;エラー
 
 ;	アドレス情報の転送など
-ROPEN2:	CALL	_PARSC	;機種依存のカセットのアドレス情報を、Ｓ-ＯＳのワークに転送します
-	CALL	OPEN	;[_OPNFG]←１
-	XOR	A	;ＣＹ←０，Ａｃｃ←０
+ROPEN2:	CALL	_PARSC	;機種依存のカセットのアドレス情報を、S-OSのワークに転送します
+	CALL	OPEN	;[_OPNFG]←1
+	XOR	A	;CY←0，Acc←0
 	RET
 
 
 ;#WRD（1FACH）の本体
 ;注：
 ;　仕様と違いAF'が破壊されます。
-;　正常終了ＣＹ＝０（Ａｃｃ←０）。
+;　正常終了CY＝0（Acc←0）。
 WRD:
 	LD	A,(_DSK)
 	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
@@ -5494,9 +5133,9 @@ WRD:
 	SCF
 	LD	A,12	;File not Open
 	RET		;オープンされてなかった
-WRD1:	CALL	CLOSE	;[_OPNFG]←０
+WRD1:	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスクの場合
@@ -5506,8 +5145,8 @@ WRD1:	CALL	CLOSE	;[_OPNFG]←０
 
 ;#RDD（1FA6H）の本体
 ;注：
-;　仕様と違いＡＦ'が破壊されます。
-;　正常終了ＣＹ＝０（Ａｃｃ←０）。
+;　仕様と違いAF'が破壊されます。
+;　正常終了CY＝0（Acc←0）。
 ;　[_DIRNO]、[RETPOI]をクリアします。
 RDD:
 	LD	A,(_DSK)
@@ -5518,20 +5157,20 @@ RDD:
 ;	テープ以外
 	XOR	A
 	LD	(_DIRNO),A	;クローズ処理
-	LD	(RETPOI),A	;以前正しいＦＣＢがロードされたかのフラグ
+	LD	(RETPOI),A	;以前正しいFCBがロードされたかのフラグ
 	LD	A,(_OPNFG)
 	OR	A
 	JR	NZ,RDD1
 	SCF
 	LD	A,12	;File not Open
 	RET		;オープンされてなかった
-RDD1:	CALL	CLOSE	;[_OPNFG]←０
+RDD1:	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスクの場合
-	CALL	FATRED	;ＦＡＴを読みます
+	CALL	FATRED	;FATを読みます
 	RET	C	;エラー
 	CALL	DLOAD	;ディスクからファイルを読み込みます
 	RET
@@ -5539,16 +5178,16 @@ RDD1:	CALL	CLOSE	;[_OPNFG]←０
 
 ;#FCB（1FA9H）の本体
 ;〈解説〉
-;　ＥＳＣキーが押されていれば、ＣＹ＝１（Ａｃｃ←８）で戻ります
+;　ESCキーが押されていれば、CY＝1（Acc←8）で戻ります
 ;（[_DIRNO]はクリア）。
-;　ＲＥＴキーが押されていれば、[_DIRNO]をカウント･ダウン
-;（以前正しくロードされたＦＣＢ）。
+;　RETキーが押されていれば、[_DIRNO]をカウント･ダウン
+;（以前正しくロードされたFCB）。
 ;注：
-;　仕様と違いＡＦ'が破壊されます。
+;　仕様と違いAF'が破壊されます。
 ;　ファイルのオープンと同等。
-;　正常終了ＣＹ＝０（Ａｃｃ←０）。
+;　正常終了CY＝0（Acc←0）。
 GETFCB:
-	CALL	CLOSE	;[_OPNFG]←０
+	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
 	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C	;エラー
@@ -5561,48 +5200,48 @@ GETFCB:
 
 ;	テープ以外
 GETFC1:	CALL	_GETKY
-	CP	1BH	;ＥＳＣ
-	JP	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーＮｏ.８でリターン
-	CP	0DH	;ＲＥＴ
+	CP	1BH	;ESC
+	JP	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
+	CP	0DH	;RET
 	JR	NZ,GETFC2
 
-;	ＲＥＴキーが押された場合
-	LD	A,(RETPOI)	;以前正しいＦＣＢがロードされたかのフラグ
+;	RETキーが押された場合
+	LD	A,(RETPOI)	;以前正しいFCBがロードされたかのフラグ
 	OR	A
-	JR	NZ,DECPOI	;[_DIRNO]をカウント･ダウンして、[RETPOI]をクリアしてエラーＮｏ.８でリターン
+	JR	NZ,DECPOI	;[_DIRNO]をカウント･ダウンして、[RETPOI]をクリアしてエラーNo.8でリターン
 
 ;	[_DIRNO]に対応するレコードを読み込みます
 GETFC2:	LD	A,(_DIRNO)
-	LD	C,A	;Ｃ←[_DIRNO]
+	LD	C,A	;C←[_DIRNO]
 	LD	B,3
-SFR41:	SRL	A	;Ａｃｃ←[_DIRNO]÷８
+SFR41:	SRL	A	;Acc←[_DIRNO]÷8
 	DJNZ	SFR41
 	LD	HL,(_DIRPS)
 	LD	D,0
-	LD	E,A	;ＤＥ←[_DIRNO]÷８
+	LD	E,A	;DE←[_DIRNO]÷8
 	ADD	HL,DE
-	EX	DE,HL	;ＤＥ←[_DIRNO]に対応するＦＣＢが存在するディスクのレコード番号
+	EX	DE,HL	;DE←[_DIRNO]に対応するFCBが存在するディスクのレコード番号
 	LD	HL,(_DTBUF)
 	LD	A,1
 	CALL	read_disk	;=#DRDSB（2000H）
-	JR	C,ERRRET	;[_DIRNO]と[RETPOI]をクリア（ＡＦ保存）
+	JR	C,ERRRET	;[_DIRNO]と[RETPOI]をクリア（AF保存）
 
-;	有効なＦＣＢかチェック
-	LD	A,C	;Ａｃｃ←[_DIRNO]
+;	有効なFCBかチェック
+	LD	A,C	;Acc←[_DIRNO]
 	AND	00000111B
 	LD	B,5
-SFL51:	ADD	A,A	;Ａｃｃ←[_DIRNO]の下位３ビット×３２
+SFL51:	ADD	A,A	;Acc←[_DIRNO]の下位3ビット×32
 	DJNZ	SFL51
 	LD	HL,(_DTBUF)
 	ADD	A,L
 	LD	L,A
 	JR	NC,$+3
-	INC	H	;ＨＬ←[_DTBUF]＋[_DIRNO]の下位３ビット×３２
-	LD	A,(HL)	;Ａｃｃ←[_DIRNO]に対応するＦＣＢの属性
+	INC	H	;HL←[_DTBUF]＋[_DIRNO]の下位3ビット×32
+	LD	A,(HL)	;Acc←[_DIRNO]に対応するFCBの属性
 	OR	A
-	JR	Z,NEXT1	;未使用ＦＣＢ
-	CP	0FFH	;最後のＦＣＢを通過したか
-	JR	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーＮｏ.８でリターン
+	JR	Z,NEXT1	;未使用FCB
+	CP	0FFH	;最後のFCBを通過したか
+	JR	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
 
 	LD	DE,(_IBFAD)
 	LD	BC,32
@@ -5610,7 +5249,7 @@ SFL51:	ADD	A,A	;Ａｃｃ←[_DIRNO]の下位３ビット×３２
 	CALL	INCPOI	;[_DIRNO]をカウント･アップして、[RETPOI]に[_DIRNO]をコピーします
 	JP	ROPEN2	;アドレス情報の転送など
 
-;	未使用ＦＣＢだった
+;	未使用FCBだった
 NEXT1:	CALL	INCPOI	;[_DIRNO]をカウント･アップして、[RETPOI]に[_DIRNO]をコピーします
 	JR	NC,GETFC1
 	RET
@@ -5618,36 +5257,36 @@ NEXT1:	CALL	INCPOI	;[_DIRNO]をカウント･アップして、[RETPOI]に[_DIR
 
 ;[_DIRNO]をカウント･アップして、[RETPOI]に[_DIRNO]をコピーします
 ;入力	なし
-;出力	ＣＹ＝１なら、[_MXTRK]に達した、
-;	[_DIRNO]と[RETPOI]をクリアしてエラーＮｏ.８でリターン
-;破壊	ＡＦ，ＨＬ
+;出力	CY＝1なら、[_MXTRK]に達した、
+;	[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
+;破壊	AF，HL
 INCPOI:
 	LD	HL,_DIRNO
 	INC	(HL)
 	LD	A,(HL)
 	LD	HL,_MXTRK
 	CP	(HL)
-	JR	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーＮｏ.８でリターン
+	JR	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
 	LD	(RETPOI),A
 	OR	A
 	RET
 
 
-;[_DIRNO]と[RETPOI]をクリア（ＡＦ保存）
+;[_DIRNO]と[RETPOI]をクリア（AF保存）
 ;入力	なし
-;出力	[_DIRNO]←０、[RETPOI]←０
+;出力	[_DIRNO]←0、[RETPOI]←0
 ;破壊	なし
 ERRRET:
 	PUSH	AF
-	CALL	DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーＮｏ.８でリターン
+	CALL	DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
 	POP	AF
 	RET
 
 
-;[_DIRNO]をカウント･ダウンして、[RETPOI]をクリアしてエラーＮｏ.８でリターン
+;[_DIRNO]をカウント･ダウンして、[RETPOI]をクリアしてエラーNo.8でリターン
 ;入力	なし
-;出力	[_DIRNO]をカウント･ダウン、[RETPOI]←０
-;破壊	ＡＦ，ＨＬ
+;出力	[_DIRNO]をカウント･ダウン、[RETPOI]←0
+;破壊	AF，HL
 DECPOI:
 	LD	HL,_DIRNO
 	LD	A,(HL)
@@ -5658,10 +5297,10 @@ DECPOI:
 	JR	DEND1
 
 
-;[_DIRNO]と[RETPOI]をクリアしてエラーＮｏ.８でリターン
+;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
 ;入力	なし
-;出力	[_DIRNO]←０、[RETPOI]←０
-;破壊	ＡＦ
+;出力	[_DIRNO]←0、[RETPOI]←0
+;破壊	AF
 DEND:
 	XOR	A
 	LD	(_DIRNO),A
@@ -5671,13 +5310,13 @@ DEND1:	LD	(RETPOI),A
 	RET
 
 ;注：
-;　00H以外で、以前に正しいＦＣＢがロードされたことをあらわします。
+;　00H以外で、以前に正しいFCBがロードされたことをあらわします。
 ;　#RDDを実行すると、クリアされます。
-RETPOI:	DB	0	;以前正しいＦＣＢがロードされたかのフラグ
+RETPOI:	DB	0	;以前正しいFCBがロードされたかのフラグ
 
 
 ;#DIR（2006H）の本体
-;注：仕様と違いＡＦ'が破壊されます。
+;注：仕様と違いAF'が破壊されます。
 DIR:
 	LD	A,(_DSK)
 	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
@@ -5685,11 +5324,11 @@ DIR:
 	JP	Z,_TDIR	;テープのディレクトリを表示します
 
 ;	テープ以外
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスク
-	CALL	FATRED	;ＦＡＴを読みます
+	CALL	FATRED	;FATを読みます
 	RET	C	;エラー
 	LD	A,'$'
 	CALL	_PRINT
@@ -5704,7 +5343,7 @@ DIRL:	LD	HL,(_DTBUF)
 	LD	A,1
 	CALL	read_disk	;=#DRDSB（2000H）
 	RET	C	;エラー
-	CALL	DIRPRT	;ディレクトリを１セクタ分表示します
+	CALL	DIRPRT	;ディレクトリを1セクタ分表示します
 	RET	Z
 	INC	DE
 	DJNZ	DIRL
@@ -5713,10 +5352,10 @@ DIRL:	LD	HL,(_DTBUF)
 	RET
 
 
-;ディレクトリを１セクタ分表示します
-;入力	ＨＬ←ディレクトリのアドレス（２５６バイト)
-;出力	ＺＦ＝１ならブレイクされた
-;破壊	ＡＦ，ＨＬ
+;ディレクトリを1セクタ分表示します
+;入力	HL←ディレクトリのアドレス（256バイト)
+;出力	ZF＝1ならブレイクされた
+;破壊	AF，HL
 DIRPRT:
 	PUSH	BC
 	PUSH	DE
@@ -5744,16 +5383,16 @@ DIRPE:	XOR	A
 
 
 ;#KILL（2015H）の本体
-;注：仕様と違いＡＦ'が破壊されます。
+;注：仕様と違いAF'が破壊されます。
 KILL:
 	LD	A,(_DSK)
-	CALL	ALCHK	;デバイス名がＦＤかチェックします
+	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C
 
-;	ＦＡＴを読みます
-	CALL	FATRED	;ＦＡＴを読みます
+;	FATを読みます
+	CALL	FATRED	;FATを読みます
 	RET	C
 
 ;	ファイル名を検索
@@ -5766,38 +5405,38 @@ KILL:
 	CALL	WPCHK	;ファイルのライト･プロテクトのチェック
 	RET	C	;エラー
 
-;	ディレクトリ･バッファとＦＡＴバッファを書き換えます
+;	ディレクトリ･バッファとFATバッファを書き換えます
 	LD	(HL),0	;未使用をあらわします
 	PUSH	HL
 	LD	BC,30
 	ADD	HL,BC
-	LD	A,(HL)	;Ａｃｃ←ファイルの開始クラスタ
+	LD	A,(HL)	;Acc←ファイルの開始クラスタ
 	POP	HL
-	CALL	ERAFAT	;ＦＡＴバッファから指定のクラスタ･チェインをカットします
+	CALL	ERAFAT	;FATバッファから指定のクラスタ･チェインをカットします
 	RET	C	;エラー
 
 ;	ディスクを書き換えます（先にディレクトリを）
 	LD	HL,(_DTBUF)
 	LD	A,1
 	CALL	write_disk	;=#DWRSB（2003H）の本体
-	CALL	NC,FATWRT	;ＦＡＴを書き込みます
+	CALL	NC,FATWRT	;FATを書き込みます
 	RET
 
 
 ;#NAME（2012H）の本体
-;注：仕様と違いＡＦ'が破壊されます。
+;注：仕様と違いAF'が破壊されます。
 NAME:
 	LD	A,(_DSK)
-	CALL	ALCHK	;デバイス名がＦＤかチェックします
+	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C
 
 ;	変更前のファイル名を検索
 	PUSH	DE
 	CALL	FCBSCH	;ファイルを検索します（属性は無視）
 	LD	(DEBUF),DE	;アクセスするレコード番号の一時保存場所
-	LD	(HLBUF),HL	;参照ＦＣＢのアドレスの一時保存場所
+	LD	(HLBUF),HL	;参照FCBのアドレスの一時保存場所
 	POP	DE
 	RET	C	;エラー
 	LD	A,8	;File not Found
@@ -5829,7 +5468,7 @@ NAME:
 ;	ディレクトリ･バッファのファイル名を変更します
 	LD	HL,(_IBFAD)
 	INC	HL
-	LD	DE,(HLBUF)	;参照ＦＣＢのアドレスの一時保存場所
+	LD	DE,(HLBUF)	;参照FCBのアドレスの一時保存場所
 	INC	DE
 	LD	BC,17
 	LDIR
@@ -5842,12 +5481,12 @@ NAME:
 
 
 ;#SET（200CH）の本体
-;注：仕様と違いＡＦ'が破壊されます。
+;注：仕様と違いAF'が破壊されます。
 SETP:
 	LD	A,(_DSK)
-	CALL	ALCHK	;デバイス名がＦＤかチェックします
+	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C
 
 ;	ファイル名を検索
@@ -5858,7 +5497,7 @@ SETP:
 	RET	NZ	;ファイルが見つからない
 
 ;	ディレクトリ･バッファを書き換えます
-	SET	6,(HL)	;属性b6←１
+	SET	6,(HL)	;属性b6←1
 
 ;	ディレクトリを書き換えます
 	LD	HL,(_DTBUF)
@@ -5868,12 +5507,12 @@ SETP:
 
 
 ;#RESET（200FH）の本体
-;注：仕様と違いＡＦ'が破壊されます。
+;注：仕様と違いAF'が破壊されます。
 RESET:
 	LD	A,(_DSK)
-	CALL	ALCHK	;デバイス名がＦＤかチェックします
+	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C
 
 ;	ファイル名を検索
@@ -5884,7 +5523,7 @@ RESET:
 	RET	NZ	;ファイルが見つからない
 
 ;	ディレクトリ･バッファを書き換えます
-	RES	6,(HL)	;属性b6←０
+	RES	6,(HL)	;属性b6←0
 
 ;	ディレクトリを書き換えます
 	LD	HL,(_DTBUF)
@@ -5894,46 +5533,46 @@ RESET:
 
 
 ;#DRDSB（2000H）の本体
-;入力	ＨＬ←読み込みアドレス、ＤＥ←レコード番号、Ａｃｃ←レコード数
-;出力	ＣＹ＝０(Ａｃｃ←０)なら成功、
-;	ＣＹ＝１（Ａｃｃ←エラー･コード）なら失敗
-;破壊	ＡＦ，ＡＦ'
+;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
+;出力	CY＝0(Acc←0)なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
 read_disk:
-	EX	AF,AF'	;ＡＦ'
+	EX	AF,AF'	;AF'
 	LD	A,(_DSK)
-	CALL	ALCHK	;デバイス名がＦＤかチェックします
+	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C
 	SUB	'A'
-	LD	(disk_unit_number),A	;ディスクのユニット番号（０～）
+	LD	(disk_unit_number),A	;ディスクのユニット番号（0～）
 	EX	AF,AF'
 	CALL	DREAD	;ディスク読み込み
 	RET
 
 
 ;#DWRSB（2003H）の本体
-;入力	ＨＬ←書き込みアドレス、ＤＥ←レコード番号、Ａｃｃ←レコード数
-;出力	ＣＹ＝０（Ａｃｃ←０）なら成功、
-;	ＣＹ＝１（Ａｃｃ←エラー･コード）なら失敗
-;破壊	ＡＦ，ＡＦ'
+;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
 write_disk:
 	EX	AF,AF'	;AF'
 	LD	A,(_DSK)
-	CALL	ALCHK	;デバイス名がＦＤかチェックします
+	CALL	ALCHK	;デバイス名がFDかチェックします
 	RET	C
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET	C
 	SUB	'A'
-	LD	(disk_unit_number),A	;ディスクのユニット番号（０～）
+	LD	(disk_unit_number),A	;ディスクのユニット番号（0～）
 	EX	AF,AF'
 	CALL	DWRITE	;ディスク書き込み
 	RET
 
 
-;[_OPNFG]←１
+;[_OPNFG]←1
 ;入力	なし
-;出力	[_OPNFG]←１
+;出力	[_OPNFG]←1
 ;破壊	なし
 OPEN:
 	PUSH	AF
@@ -5941,9 +5580,9 @@ OPEN:
 	JR	CLOSE1
 
 
-;[_OPNFG]←０
+;[_OPNFG]←0
 ;入力	なし
-;出力	[_OPNFG]←０
+;出力	[_OPNFG]←0
 ;破壊	なし
 CLOSE:
 	PUSH	AF
@@ -5954,11 +5593,11 @@ CLOSE1:	LD	(_OPNFG),A
 
 
 ;ファイルのライト･プロテクトのチェック
-;入力	Ａｃｃ←属性（b6）
-;出力	ＣＹ＝１ならライト･プロテクト（Ａｃｃ←４）
-;破壊	Ｆ，（ＡＦ）
+;入力	Acc←属性（b6）
+;出力	CY＝1ならライト･プロテクト（Acc←4）
+;破壊	F，（AF）
 WPCHK:
-	OR	A	;ＣＹ←０
+	OR	A	;CY←0
 	BIT	6,A
 	RET	Z
 	LD	A,4	;Write Protected
@@ -5967,10 +5606,10 @@ WPCHK:
 
 
 ;属性をチェックします
-;入力	Ａｃｃ←属性（b7b2b1b0）
+;入力	Acc←属性（b7b2b1b0）
 ;	[_FTYPE]参照
-;出力	ＣＹ＝１（Ａｃｃ←６）なら一致しない
-;破壊	ＡＦ
+;出力	CY＝1（Acc←6）なら一致しない
+;破壊	AF
 FMCHK:
 	PUSH	HL
 	AND	10000111B
@@ -5983,60 +5622,60 @@ FMCHK:
 	RET
 
 
-;デバイス名がＦＤかチェックします
-;入力	Ａｃｃ←デバイス名
-;出力	ＣＹ＝１ならＦＤでない
-;破壊	Ｆ（ＡＦ）
+;デバイス名がFDかチェックします
+;入力	Acc←デバイス名
+;出力	CY＝1ならFDでない
+;破壊	F（AF）
 DSKCHK:
 	CP	'A'
 	JR	C,DSKCH1
 ;	CP	'D'+1
-	CP	'E'+1	;ＲＡＭディスク対応のための改定
+	CP	'E'+1	;RAMディスク対応のための改定
 	CCF
 	RET	NC
 DSKCH1:	LD	A,11	;Reserved Feature
 	RET
 
 
-;デバイス名がＦＤかチェックします
-;入力	Ａｃｃ←デバイス名
-;出力	ＣＹ＝１ならＦＤでない
-;破壊	Ｆ（ＡＦ）
-;注：デバイス名が不正なら、Ａｃｃ←エラー･コード。
+;デバイス名がFDかチェックします
+;入力	Acc←デバイス名
+;出力	CY＝1ならFDでない
+;破壊	F（AF）
+;注：デバイス名が不正なら、Acc←エラー･コード。
 ALCHK:
 	CALL	DEVCHK	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
 	RET	C
-	CALL	TPCHK	;デバイス名がテープ（ＱＤ）かチェックします
+	CALL	TPCHK	;デバイス名がテープ（QD）かチェックします
 	JR	NZ,$+6
 	LD	A,3	;Bad File Descripter
 	SCF
 	RET
-	CALL	DSKCHK	;デバイス名がＦＤかチェックします
+	CALL	DSKCHK	;デバイス名がFDかチェックします
 	RET
 
 
 ;#RDVSW（2024H）の本体
 RDVSW:
 	LD	A,(_DFDV)	;デフォルト･デバイス
-	CALL	TPCHK	;デバイス名がテープ（ＱＤ）かチェックします
+	CALL	TPCHK	;デバイス名がテープ（QD）かチェックします
 	RET	NZ	;テープ以外ならそのままリターン
 
 
 ;#DVSWからテープのデバイス名を求めます
 ;入力	なし
-;出力	Ａｃｃ←テープのデバイス名
-;破壊	ＡＦ
+;出力	Acc←テープのデバイス名
+;破壊	AF
 TRDVSW:
 	LD	A,(_DVSW)
 	OR	A
 	JR	NZ,$+4
-	LD	A,'T'	;Ｓ-ＯＳ ２４００ｂｐｓ
+	LD	A,'T'	;S-OS 2400bps
 	CP	1
 	JR	NZ,$+4
 	LD	A,'S'	;システム依存
 	CP	3
 	JR	NZ,$+4
-	LD	A,'Q'	;ＱＤ
+	LD	A,'Q'	;QD
 	RET
 
 
@@ -6059,15 +5698,15 @@ SDVSW:
 
 
 ;ディスクからファイルを読み込みます
-;入力	[_IBFAD]～,[_FATBF]～ｅｔｃ参照
-;出力	ＣＹ＝０（Ａｃｃ←０）なら成功、
-;	ＣＹ＝１（Ａｃｃ←エラー･コード）なら失敗
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＢＣ，ＡＦ'
+;入力	[_IBFAD]～,[_FATBF]～etc参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，HL，DE，BC，AF'
 DLOAD:
 	LD	HL,(_IBFAD)
 	LD	BC,30
 	ADD	HL,BC
-	LD	A,(HL)	;Ａｃｃ←ファイルの開始クラスタ
+	LD	A,(HL)	;Acc←ファイルの開始クラスタ
 	LD	(NXCLST),A	;アクセスするクラスタの一時保存場所
 	LD	BC,(_SIZE)
 	LD	HL,(_DTADR)
@@ -6077,8 +5716,8 @@ DLOAD1:	PUSH	HL
 	LD	A,(NXCLST)	;アクセスするクラスタの一時保存場所
 	LD	HL,(_FATBF)
 	LD	E,A
-	LD	D,0	;ＤＥ←アクセスするクラスタ番号
-	ADD	HL,DE	;ＨＬ←ＦＡＴバッファのアクセスするクラスタの位置
+	LD	D,0	;DE←アクセスするクラスタ番号
+	ADD	HL,DE	;HL←FATバッファのアクセスするクラスタの位置
 	LD	A,(HL)	;次のクラスタへのチェイン情報
 	LD	(NXCLST),A	;アクセスするクラスタの一時保存場所
 	EX	DE,HL
@@ -6086,13 +5725,13 @@ DLOAD1:	PUSH	HL
 	ADD	HL,HL
 	ADD	HL,HL
 	ADD	HL,HL
-	EX	DE,HL	;ＤＥ←アクセスするレコード位置（空きクラスタ番号×１６）
-	POP	HL	;ＨＬ←[_DTADR]
+	EX	DE,HL	;DE←アクセスするレコード位置（空きクラスタ番号×16）
+	POP	HL	;HL←[_DTADR]
 	OR	A
-	JR	Z,DLOAD2	;ＦＡＴが不正
+	JR	Z,DLOAD2	;FATが不正
 	CP	80H
 	JR	NC,DLOAD3	;最後のクラスタ
-	LD	A,16	;４Ｋバイト読み込みます
+	LD	A,16	;4Kバイト読み込みます
 	CALL	read_disk	;=#DRDSB（2000H）
 	RET	C	;エラー
 	LD	DE,1000H
@@ -6104,7 +5743,7 @@ DLOAD1:	PUSH	HL
 	SBC	HL,DE
 	LD	C,L
 	LD	B,H	;サイズのカウント･ダウン
-	POP	HL	;ＨＬ←次のメモリ
+	POP	HL	;HL←次のメモリ
 	JR	NC,DLOAD1
 
 ;	エラー
@@ -6113,55 +5752,55 @@ DLOAD2:	LD	A,7	;Bad Allocation Table
 	RET
 
 ;	最後のクラスタ
-DLOAD3:	SUB	7FH	;Ａｃｃ←読み込みセクタ数
+DLOAD3:	SUB	7FH	;Acc←読み込みセクタ数
 	CP	16+1
-	JR	NC,DLOAD2	;ＦＡＴが不正
-	DEC	A	;Ａｃｃ←読み込みセクタ数－１（０～１５）
-	DEC	BC	;Ｂ←読み込む最後のセクタ－１（０～１５）
+	JR	NC,DLOAD2	;FATが不正
+	DEC	A	;Acc←読み込みセクタ数－1（0～15）
+	DEC	BC	;B←読み込む最後のセクタ－1（0～15）
 	CP	B
-	JR	NZ,DLOAD2	;ＦＡＴが不正
+	JR	NZ,DLOAD2	;FATが不正
 	LD	B,0
-	INC	BC	;ＢＣ←最後のセクタのバイト数
+	INC	BC	;BC←最後のセクタのバイト数
 	OR	A
-	JR	Z,DLOAD4	;最後のクラスタは、セクタを１つだけ使用
+	JR	Z,DLOAD4	;最後のクラスタは、セクタを1つだけ使用
 
 ;	最後のセクタ以外を読み込みます
 	PUSH	AF
 	CALL	read_disk	;=#DRDSB（2000H）
 	JR	C,DLOAD5
-	POP	AF	;Ａｃｃ←読み込みセクタ数－１（０～１５）
+	POP	AF	;Acc←読み込みセクタ数－1（0～15）
 
 DLOAD4:	PUSH	DE
 	LD	E,0
-	LD	D,A	;ＤＥ←次に読み込むアドレスの変移
+	LD	D,A	;DE←次に読み込むアドレスの変移
 	ADD	HL,DE	;メモリのカウント･アップ
-	EX	(SP),HL	;ＨＬ←最後のクラスタの先頭レコード番号，スタック←最後に読み込むメモリのアドレス
+	EX	(SP),HL	;HL←最後のクラスタの先頭レコード番号，スタック←最後に読み込むメモリのアドレス
 	LD	E,A
-	LD	D,0	;ＤＥ←次に読み込むレコードの変移
+	LD	D,0	;DE←次に読み込むレコードの変移
 	ADD	HL,DE
 
 ;	最後のセクタ以外を読み込みます
-	EX	DE,HL	;ＤＥ←最後に読み込むレコード番号
+	EX	DE,HL	;DE←最後に読み込むレコード番号
 	LD	HL,(_DTBUF)
 	LD	A,1
 	CALL	read_disk	;=#DRDSB（2000H）
-DLOAD5:	POP	DE	;ＤＥ←最後に読み込むメモリのアドレス
+DLOAD5:	POP	DE	;DE←最後に読み込むメモリのアドレス
 	RET	C
 
 ;	[_DTBUF]～から最後のセクタの内容を正しいメモリに転送します
 	LDIR
-	XOR	A	;Ａｃｃ←０
+	XOR	A	;Acc←0
 	RET
 
 
 ;ディスクにファイルを書き込みます
-;入力	[DEBUF]、[HLBUF]、[_FATBF]～ｅｔｃ参照
-;出力	ＣＹ＝０（Ａｃｃ←０）なら成功、
-;	ＣＹ＝１（Ａｃｃ←エラー･コード）なら失敗
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＢＣ，ＡＦ'
+;入力	[DEBUF]、[HLBUF]、[_FATBF]～etc参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，HL，DE，BC，AF'
 DSAVE:
 	LD	DE,(DEBUF)	;アクセスするレコード番号の一時保存場所
-	LD	HL,(HLBUF)	;参照ＦＣＢのアドレスの一時保存場所
+	LD	HL,(HLBUF)	;参照FCBのアドレスの一時保存場所
 	LD	BC,(_SIZE)
 	PUSH	BC
 	DEC	BC
@@ -6169,10 +5808,10 @@ DSAVE:
 	SRL	B
 	SRL	B
 	SRL	B
-	INC	B	;Ｂ←占有クラスタ数
+	INC	B	;B←占有クラスタ数
 	CALL	FRECLU	;空きクラスタ数を得ます
 	CP	B
-	POP	BC	;ＢＣ←[_SIZE]
+	POP	BC	;BC←[_SIZE]
 	LD	A,9	;Device Full
 	RET	C	;空き領域が足りない
 
@@ -6189,32 +5828,32 @@ DSAVE:
 	LD	(HL),0
 	LD	BC,7
 	LDIR
-	POP	BC	;ＢＣ←[_SIZE]
-	POP	DE	;ＤＥ←[DEBUF]
-	POP	HL	;ＨＬ←[_IBFAD]
+	POP	BC	;BC←[_SIZE]
+	POP	DE	;DE←[DEBUF]
+	POP	HL	;HL←[_IBFAD]
 
-;	ＦＣＢのクラスタ値の設定
+;	FCBのクラスタ値の設定
 	LD	A,30
 	ADD	A,L
 	LD	L,A
 	JR	NC,$+3
-	INC	H	;ＨＬ←[_IBFAD]＋３０
+	INC	H	;HL←[_IBFAD]＋30
 	CALL	FCGET	;空きクラスタを得ます
-	LD	(HL),A	;ＦＣＢのクラスタ値←空きクラスタ番号
+	LD	(HL),A	;FCBのクラスタ値←空きクラスタ番号
 	LD	HL,(_DTADR)
 
 ;	セーブ･ループ
 DSAVE1:	PUSH	HL
 	LD	HL,(_FATBF)
 	LD	E,A
-	LD	D,0	;ＤＥ←空きクラスタ番号
-	ADD	HL,DE	;ＨＬ←ＦＡＴバッファの空きクラスタの位置
+	LD	D,0	;DE←空きクラスタ番号
+	ADD	HL,DE	;HL←FATバッファの空きクラスタの位置
 	EX	DE,HL
 	ADD	HL,HL
 	ADD	HL,HL
 	ADD	HL,HL
 	ADD	HL,HL
-	EX	DE,HL	;ＤＥ←空きレコード位置（空きクラスタ番号×１６）
+	EX	DE,HL	;DE←空きレコード位置（空きクラスタ番号×16）
 	DEC	BC
 	LD	A,B
 	INC	BC
@@ -6223,9 +5862,9 @@ DSAVE1:	PUSH	HL
 	LD	(HL),80H	;FCGETルーチンでスキップさせるため
 	CALL	FCGET	;空きクラスタを得ます
 	LD	(HL),A	;次のクラスタへのチェイン情報
-	POP	HL	;ＨＬ←[_DTADR]
+	POP	HL	;HL←[_DTADR]
 	PUSH	AF
-	LD	A,16	;４Ｋバイト書き込みます
+	LD	A,16	;4Kバイト書き込みます
 	CALL	write_disk	;=#DWRSB（2003H）の本体
 	JR	C,DSAVE2	;エラー
 	LD	DE,1000H
@@ -6237,8 +5876,8 @@ DSAVE1:	PUSH	HL
 	SBC	HL,DE
 	LD	C,L
 	LD	B,H	;サイズのカウント･ダウン
-	POP	HL	;ＨＬ←次のメモリ
-	POP	AF	;Ａｃｃ←次のクラスタ
+	POP	HL	;HL←次のメモリ
+	POP	AF	;Acc←次のクラスタ
 	JR	DSAVE1
 
 ;	エラー
@@ -6246,22 +5885,22 @@ DSAVE2:	POP	HL	;スタック位置調整のため
 	RET
 
 ;	最後のクラスタ
-DSAVE3:	INC	A	;Ａｃｃ←書き込みセクタ数
+DSAVE3:	INC	A	;Acc←書き込みセクタ数
 	PUSH	AF
-	ADD	A,7FH	;Ａｃｃ←８０Ｈ～８ＦＨ
+	ADD	A,7FH	;Acc←80H～8FH
 	LD	(HL),A	;チェインの終わりを示す
-	POP	AF	;Ａｃｃ←書き込みセクタ数
-	POP	HL	;ＨＬ←メモリのアドレス
+	POP	AF	;Acc←書き込みセクタ数
+	POP	HL	;HL←メモリのアドレス
 	CALL	write_disk	;=#DWRSB（2003H）の本体
 	RET	C	;エラー
 
-;	ＦＡＴの更新
-	CALL	FATWRT	;ＦＡＴを書き込みます
+;	FATの更新
+	CALL	FATWRT	;FATを書き込みます
 	RET	C	;エラー
 
 ;	ディレクトリの更新
 	LD	HL,(_IBFAD)
-	LD	DE,(HLBUF)	;参照ＦＣＢのアドレスの一時保存場所
+	LD	DE,(HLBUF)	;参照FCBのアドレスの一時保存場所
 ;	INC	DE	;無意味？
 	LD	BC,32
 	LDIR
@@ -6270,15 +5909,15 @@ DSAVE3:	INC	A	;Ａｃｃ←書き込みセクタ数
 	LD	A,1
 	CALL	write_disk	;=#DWRSB（2003H）の本体
 	RET	C
-	XOR	A	;Ａｃｃ←０
+	XOR	A	;Acc←0
 	RET
 
 
-;ＦＡＴを読みます
+;FATを読みます
 ;入力	[_FATPS]、[_FATBF]参照
-;出力	ＣＹ＝０（Ａｃｃ←０）なら成功、
-;	ＣＹ＝１（Ａｃｃ←エラー･コード）なら失敗
-;破壊	ＡＦ，ＡＦ'
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
 FATRED:
 	PUSH	DE
 	PUSH	HL
@@ -6291,11 +5930,11 @@ FATRED:
 	RET
 
 
-;ＦＡＴを書き込みます
+;FATを書き込みます
 ;入力	[_FATPS]、[_FATBF]～参照
-;出力	ＣＹ＝０（Ａｃｃ←０）なら成功、
-;	ＣＹ＝１（Ａｃｃ←エラー･コード）なら失敗
-;破壊	ＡＦ，ＡＦ'
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
 FATWRT:
 	PUSH	DE
 	PUSH	HL
@@ -6310,8 +5949,8 @@ FATWRT:
 
 ;空きクラスタ数を得ます
 ;入力	[_FATBF]～参照
-;出力	Ａｃｃ←空きクラスタ数
-;破壊	ＡＦ
+;出力	Acc←空きクラスタ数
+;破壊	AF
 FRECLU:
 	PUSH	BC
 	PUSH	HL
@@ -6334,9 +5973,9 @@ FRECL2:	INC	HL
 
 ;空きクラスタを得ます
 ;入力	なし
-;出力	Ａｃｃ←空きクラスタ番号
-;	ＣＹ＝１なら空きクラスタがない
-;破壊	ＡＦ
+;出力	Acc←空きクラスタ番号
+;	CY＝1なら空きクラスタがない
+;破壊	AF
 FCGET:
 	PUSH	BC
 	PUSH	HL
@@ -6352,26 +5991,26 @@ FCGET2:	LD	A,(HL)
 	SCF
 	JR	FCGET4
 FCGET3:	LD	A,80H
-	SUB	B	;Ａｃｃ←空きクラスタ番号
+	SUB	B	;Acc←空きクラスタ番号
 	OR	A
 FCGET4:	POP	HL
 	POP	BC
 	RET
 
 
-;ＦＡＴバッファから指定のクラスタ･チェインをカットします
-;入力	Ａｃｃ←ファイルの開始クラスタ
-;出力	ＣＹ＝０（Ａｃｃ←０）なら正常終了、ＣＹ＝１（Ａｃｃ←７）ならエラー
-;破壊	ＡＦ，ＤＥ
+;FATバッファから指定のクラスタ･チェインをカットします
+;入力	Acc←ファイルの開始クラスタ
+;出力	CY＝0（Acc←0）なら正常終了、CY＝1（Acc←7）ならエラー
+;破壊	AF，DE
 ERAFAT:
 	PUSH	DE
 	PUSH	HL
 	LD	DE,(_FATBF)
 
 ERAFA1:	LD	L,A
-	LD	H,0	;ＨＬ←ファイルの開始クラスタ
-	ADD	HL,DE	;ＨＬ←対応するＦＡＴバッファのアドレス
-	LD	A,(HL)	;Ａｃｃ←チェインしているクラスタ番号
+	LD	H,0	;HL←ファイルの開始クラスタ
+	ADD	HL,DE	;HL←対応するFATバッファのアドレス
+	LD	A,(HL)	;Acc←チェインしているクラスタ番号
 	LD	(HL),0
 	CP	80H
 	JR	C,ERAFA1	;チェインしていた
@@ -6380,7 +6019,7 @@ ERAFA1:	LD	L,A
 	POP	HL
 	POP	DE
 	CP	90H
-	JR	NC,ERAFA2	;９０Ｈ～のデータがあった
+	JR	NC,ERAFA2	;90H～のデータがあった
 ;	正常終了
 	XOR	A
 	RET
@@ -6393,10 +6032,10 @@ ERAFA2:	LD	A,7	;Bad Allocation Table
 
 ;ファイルを検索します（属性は無視）
 ;入力	[_IBFAD]参照
-;出力	ＺＦ＝１なら一致した
-;	ＨＬ←一致したＦＣＢのあるアドレス、ＤＥ←一致したＦＣＢのあるレコード番号
-;	ＣＹ＝１ならエラー（Ａｃｃ←エラー･コード）
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＡＦ'
+;出力	ZF＝1なら一致した
+;	HL←一致したFCBのあるアドレス、DE←一致したFCBのあるレコード番号
+;	CY＝1ならエラー（Acc←エラー･コード）
+;破壊	AF，HL，DE，AF'
 FCBSCH:
 	PUSH	BC
 	LD	C,16
@@ -6438,9 +6077,9 @@ FCBSC6:	POP	BC
 
 ;ディスクに空きエリアがあるかチェックします
 ;入力	なし
-;出力	ＨＬ←一空きＦＣＢのあるアドレス、ＤＥ←空きＦＣＢのあるレコード番号
-;	ＣＹ＝１ならエラー（Ａｃｃ←エラー･コード）
-;破壊	ＡＦ，ＨＬ，ＤＥ，ＡＦ'
+;出力	HL←一空きFCBのあるアドレス、DE←空きFCBのあるレコード番号
+;	CY＝1ならエラー（Acc←エラー･コード）
+;破壊	AF，HL，DE，AF'
 FRESCH:
 	PUSH	BC
 	LD	C,16
@@ -6475,10 +6114,10 @@ FRESC4:	XOR	A
 
 ; 	IF	0
 ; ;ファイル名を比較します
-; ;入力	ＨＬ←比較されるＦＣＢの先頭アドレス、
-; ;	ＤＥ←比較するＦＣＢの先頭アドレス
-; ;出力	ＺＦ＝１なら一致した
-; ;破壊	ＡＦ
+; ;入力	HL←比較されるFCBの先頭アドレス、
+; ;	DE←比較するFCBの先頭アドレス
+; ;出力	ZF＝1なら一致した
+; ;破壊	AF
 ; FCOMP:
 ; 	PUSH	BC
 ; 	PUSH	DE
@@ -6510,20 +6149,20 @@ FCMPW1:	LD	A,(DE)
 	LD	C,A
 	LD	A,(HL)
 	CALL	TOUPER	;小文字→大文字変換
-	CP	C	;ＺＦ＝１なら一致
+	CP	C	;ZF＝1なら一致
 	RET
 
 
 NXCLST:	DS	1	;アクセスするクラスタの一時保存場所（ロード･ルーチンで使用）
 DEBUF:	DS	2	;アクセスするレコード番号の一時保存場所
-HLBUF:	DS	2	;参照ＦＣＢのアドレスの一時保存場所
+HLBUF:	DS	2	;参照FCBのアドレスの一時保存場所
 
 
 ;P%FNAM（2912H）の本体
 ;ファイル情報を表示します
-;入力	Ａｃｃ←属性、ＨＬ←ファイル情報の先頭アドレス
+;入力	Acc←属性、HL←ファイル情報の先頭アドレス
 ;出力	なし
-;破壊	ＡＦ
+;破壊	AF
 PFNAM:
 	PUSH	BC
 	PUSH	DE
@@ -6537,7 +6176,7 @@ PFNAM:
 	LD	A,':'
 	CALL	_PRINT
 	CALL	_FPRNT
-ADRPRT:	CALL	_PARSC	;機種依存のカセットのアドレス情報を、Ｓ-ＯＳのワークに転送します
+ADRPRT:	CALL	_PARSC	;機種依存のカセットのアドレス情報を、S-OSのワークに転送します
 	LD	BC,(_SIZE)
 	LD	HL,(_DTADR)
 	LD	DE,(_EXADR)
@@ -6559,9 +6198,9 @@ PHEX:	LD	A,':'
 
 
 ;属性情報を表示します
-;入力	Ａｃｃ←属性
+;入力	Acc←属性
 ;出力	なし
-;破壊	ＡＦ，ＨＬ，ＤＥ
+;破壊	AF，HL，DE
 ATRPRT:
 	PUSH	AF
 	LD	DE,ATRMES
@@ -6570,7 +6209,7 @@ ATRPRT:
 ;	ディレクトリの場合
 	LD	A,8
 	DB	11H	;「LD DE,」
-ATRP1:	AND	07H	;Ａｃｃ←０～８
+ATRP1:	AND	07H	;Acc←0～8
 	LD	L,A
 	LD	H,0
 	ADD	HL,HL
@@ -6591,12 +6230,12 @@ ATRP2:	CALL	_PRINT
 
 ;%DEVCHK（2851H）の本体
 ;デバイス名が正しいか（A～L，S，T，Q）かチェックします
-;入力	Ａｃｃ←デバイス名（小文字不可）
-;出力	ＺＦ＝１ならテープ、ＣＹ＝１なら不正
-;破壊	Ｆ（ＡＦ）
-;注：デバイス名が不正なら、Ａｃｃ←エラー･コード。
+;入力	Acc←デバイス名（小文字不可）
+;出力	ZF＝1ならテープ、CY＝1なら不正
+;破壊	F（AF）
+;注：デバイス名が不正なら、Acc←エラー･コード。
 DEVCHK:
-	CALL	TPCHK	;デバイス名がテープ（ＱＤ）かチェックします
+	CALL	TPCHK	;デバイス名がテープ（QD）かチェックします
 	RET	Z
 	CP	'A'
 	JR	C,DEVCH1	;「A」未満
@@ -6612,10 +6251,10 @@ DEVCH1:	LD	A,3	;Bad File Descripter
 
 
 ;%TPCHK（2918H）の本体
-;デバイス名がテープ（ＱＤ）かチェックします
-;入力	Ａｃｃ←デバイス名（小文字不可）
-;出力	ＺＦ＝１ならテープ
-;破壊	Ｆ
+;デバイス名がテープ（QD）かチェックします
+;入力	Acc←デバイス名（小文字不可）
+;出力	ZF＝1ならテープ
+;破壊	F
 TPCHK:
 	CP	'T'
 	RET	Z
@@ -6634,7 +6273,7 @@ TPCHK:
 ; 	LD	DE,ER15
 ; 	PUSH	AF
 ; 	CALL	_MSG
-; 	LD	A,'$'	;１６進数ヘッダ
+; 	LD	A,'$'	;16進数ヘッダ
 ; 	CALL	_PRINT
 ; 	POP	AF
 ; 	CALL	_PRTHX
@@ -6694,10 +6333,10 @@ MSET1:	CALL	SPCUT	;文字列の空白を読み飛ばします
 
 
 ;ファイル名を比較します（小文字、拡張子なしでも一致させるため）
-;入力	ＨＬ←比較されるＦＣＢの先頭アドレス、
-;	ＤＥ←比較するＦＣＢの先頭アドレス
-;出力	ＺＦ＝１なら一致した
-;破壊	ＡＦ
+;入力	HL←比較されるFCBの先頭アドレス、
+;	DE←比較するFCBの先頭アドレス
+;出力	ZF＝1なら一致した
+;破壊	AF
 FCOMPW:
 	PUSH	BC
 	PUSH	DE
@@ -6906,25 +6545,6 @@ START:
 	DI
 	LD	SP,0100H	;仮スタック
 
-;	機種の判別
-	LD	BC,37FFH
-	IN	E,(C)	;E←テキストVRAMデータ
-	LD	B,3FH	;BC←3FFFH
-	IN	D,(C)	;D←漢字VRAMデータ
-	LD	A,D
-	CPL		;Acc←漢字VRAMデータの反転
-	OUT	(C),A	;漢字VRAM←反転データ
-	LD	B,37H	;BC←37FFH
-	OUT	(C),E	;テキストVRAMを元に戻します
-	LD	B,3FH	;BC←3FFFH
-	IN	E,(C)	;E←書き込んで読み出したデータ
-	OUT	(C),D	;漢字VRAMを元に戻します
-	SUB	E	;X1：00H以外、turbo：00H
-	ADD	A,0FFH	;X1：CY＝1、turbo：CY＝0
-	SBC	A,A	;X1：FFH、turbo：00H
-	CPL		;X1：00H、turbo：FFH
-	LD	(X1TFLG),A
-
 ;	vram_address_of_topの初期化
 	LD	HL,3000H
 	LD	(vram_address_of_top),HL
@@ -6976,12 +6596,6 @@ STADVS:
 	LD	A,00H	;0000H
 	LD	(size_of_special_work_of_memory),A
 
-;	クリック音とジョイスティック
-	LD	A,0FFH
-	LD	(CLKFLG),A
-	LD	A,0FFH
-	LD	(JOYFLG),A
-
 ;	コールド･スタートします
 	LD	HL,0100H	;仮スタック
 	LD	(_STKAD),HL
@@ -6989,7 +6603,5 @@ STADVS:
 	LD	(0001H),HL
 	LD	(0067H),HL
 	JP	0000H
-
-
 
 	END
