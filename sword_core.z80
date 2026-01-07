@@ -707,6 +707,7 @@ LPTON:
 	RET
 
 ; #LPTOF(1FD6H)の本体
+; 未実装
 LPTOF:
 	RET
 
@@ -837,7 +838,7 @@ HLHEX:
 ;入力	なし
 ;出力	L←x座標、H←y座標
 ;破壊	HL
-;注：フィジカル･ルーチンCALC_CURSOL_XYを呼び出します。
+;注：CALC_CURSOL_XYを呼び出します。
 CSR:
 	PUSH	AF
 	PUSH	DE
