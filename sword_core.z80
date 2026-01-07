@@ -215,12 +215,12 @@ cursol_offset_last_top_of_line:	DS	2	;最終行先頭のカーソル･オフセ
 vram_address_of_top:	DS	2	;テキストVRAM先頭アドレス（未使用の場合あり）
 vram_address_of_top_of_last_line:	DS	2	;最終行先頭のテキストVRAMアドレス（未使用の場合あり）
 locate_of_cursol_overlap_character:	DS	1	;カーソルと重なった位置の文字の保存（未使用の場合あり）
-screen_width:	DS	1	;＝00Hで40桁、＝FFHで80桁
+screen_width:	DS	1	;＝00Hで40桁、＝FFHで80桁 -> M23では80桁固定なので、常にscreen_width=FFHとなる。
 CSRADD:	DS	2	;（行数－1）×256＋桁数
-CSRNXI:	DS	1	;256－桁数 '[CSRNX]の初期値
-CSRNYI:	DS	1	;256－行数 '[CSRNY]の初期値
-CSRNX:	DS	1	;x座標-[_WIDTH]
-CSRNY:	DS	1	;y座標-[_MXLIN]
+CSRNXI:	DS	1	;256－桁数 '[CSRNX]の初期値 -> M23では桁数80固定なので、CSRNXI=CSRNXとなる。
+CSRNYI:	DS	1	;256－行数 '[CSRNY]の初期値-> M23では行数25固定なので、CSRNYI=CSRNYとなる。
+CSRNX:	DS	1	;x座標-[_WIDTH] _WIDTHは80
+CSRNY:	DS	1	;y座標-[_MXLIN] _MXLINは25
 display_cursol_XY_not_use:	DS	2	;カーソル座標（使用しません）
 number_of_character_after_CR:	DS	1	;改行してからの文字数（未使用）
 insert_mode_flag:	DS	1	;＝00Hで通常、＝FFHでインサート･モード
@@ -359,11 +359,11 @@ COLD:
 	LD	SP,(_STKAD)
 	CALL cold_start_entity	;固有の初期化
 	LD	SP,(_STKAD)
-	CALL _LPTOF
-	LD	A,255
-	CALL _WIDCH	;表示幅の初期化 'LINCHを先に呼び出すように改良
-	LD	A,255
-	CALL LINCH	;表示行数の初期化
+	; CALL _LPTOF
+	; LD	A,255
+	; CALL _WIDCH	;表示幅の初期化 'LINCHを先に呼び出すように改良
+	; LD	A,255
+	; CALL LINCH	;表示行数の初期化
 
 ;	ディスクのパラメータの初期化
 	LD	HL,000EH
@@ -513,7 +513,7 @@ TABRE2:	POP	DE
 PRNTS:
 	PUSH	AF
 	LD	A,' '
-	CALL	_PRINT
+	CALL _PRINT
 	POP	AF
 	RET
 
@@ -526,62 +526,97 @@ PRNTS:
 LTNL:
 	PUSH	AF
 	LD	A,0DH
-	CALL	_PRINT
+	CALL _PRINT
 	POP	AF
 	RET
 
 
 ;#NL（1FEBH）の本体
-; 論理行頭でなければ、改行します。
+; 行頭でなければ、改行します。
 ;入力	なし
 ;出力	なし
 ;破壊	なし
 ;注：
-; 論理行頭でなければ改行します。
-; #PRCNT（1F7AH）は無視します。
+; 行頭でなければ改行します。
+; このサブルーチンを書いて下さい。
 NL:
-	PUSH	AF
-	PUSH	HL
-	PUSH	DE
-	PUSH	BC
-	CALL	GTPRC
-	LD	A,H
-	OR	L
-	LD	A,0DH
-	CALL	NZ,_PRINT
-NLJMP:	POP	BC	;#MSG（1FE8H）などからジャンプしてきます
+	PUSH DE
+	PUSH BC
+
+	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
+	; CURSOL_XY_ADDRからX座標を取得
+	LD	HL,(CURSOL_XY_ADDR)		; HLにX座標をロード (2バイト)
+	; CURSOL_XY_ADDR+2からY座標を取得
+	LD	DE,(CURSOL_XY_ADDR+2)		; DEにY座標をロード (2バイト)
+	OR	A ; フラグをクリア
+	CP	L ; X座標が0かチェック
+	JR	Z,NLRET	; X座標が0ならリターン
+	CALL LTNL ; 改行を実行
+NLRET:
+	POP	BC
 	POP	DE
-	POP	HL
-	POP	AF
+	RET
+;
+; CURSOL_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
+;
+CALC_CURSOL_XY:
+	PUSH AF
+	PUSH BC
+	PUSH DE
+	PUSH HL
+	LD HL,VRAM_TXT_TOP ; 画面左上端アドレスをHLにロード
+	EX DE,HL ; DEとHLを交換。HL=CURSOL_LOCATE, DE=VRAM_TXT_TOP
+	SBC HL,DE ; HL = CURSOL_LOCATE - VRAM_TXT_TOP
+	OR A ; フラグをクリア
+	LD BC,0 ; B=Y座標カウンタ初期化
+Y_CALC_LOOP:
+	LD DE,WIDTH_SCREEN ; 50H = 画面の桁数(80d)
+	SBC HL,DE ;	HL - 50H
+	JR C,Y_CALC_END ; HLが負ならループ終了
+	INC B ; Y座標カウンタをインクリメント
+	JR Y_CALC_LOOP
+Y_CALC_END:
+	ADD HL,DE ; 余り復元（これがX座標）
+    LD A,B
+    LD (CURSOL_XY_ADDR),A   ; Y座標保存
+    LD A,L
+    LD (CURSOL_XY_ADDR+2),A   ; X座標保存
+	POP HL
+	POP DE
+	POP BC
+	POP AF
 	RET
 
-
+;
 ;#MSG（1FE8H）の本体
-; 文字列出力（エンド･コード0DH）。
+; DEレジスタの示すアドレスから0DHが出現するまでアスキーコードとみなし文字列表示する。
 ;入力	DE←文字列先頭アドレス
 ;出力	なし
 ;破壊	F（実際なし）
 ;注：0DHは表示しません。
+; このサブルーチンを完成させてください。
 MSG:
 	PUSH	AF
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
 
-MSGLP:	LD	A,(DE)
-	CP	20H
-	JR	C,MSGSKP
-	CALL	BPRNT
+MSGLP:
+	LD	A,(DE) ; 文字を取得
+	CP	0DH ; 改行コードか？
+	JR	Z,MSGSKP	; 改行コードなら終了へ
+	CALL PRINT ; 文字を表示
+	INC	DE	; アドレスを一つ進める
 	JR	MSGLP
-MSGSKP:	CP	0DH
-	JR	Z,NLJMP	;#NL（1FEBH）の一部へジャンプします
-	CALL	_PRINT
-	INC	DE
-	JR	MSGLP
-
+MSGSKP:	
+	POP	BC
+	POP	DE
+	POP	HL
+	POP	AF
+	RET
 
 ;#MSX（1FE5H）の本体
-; 文字列出力（エンド･コード00H）。
+; DEレジスタの示すアドレスから00Hが出現するまでアスキーコードとみなし文字列表示する。
 ;入力	DE←文字列先頭アドレス
 ;出力	なし
 ;破壊	F（実際なし）
@@ -592,55 +627,92 @@ MSX:
 	PUSH	DE
 	PUSH	BC
 
-MSXLP:	LD	A,(DE)
-	CP	20H
-	JR	C,MSXSKP
-	CALL BPRNT
+MSXLP:
+	LD	A,(DE) ; 文字を取得
+	CP	00H ; 終了コードか？
+	JR	Z,MSXSKP	; 終了コードなら終了へ
+	CALL PRINT ; 文字を表示
+	INC	DE	; アドレスを一つ進める
 	JR	MSXLP
-MSXSKP:	OR	A
-	JR	Z,NLJMP	;#NL（1FEBH）の一部へジャンプします
-	CALL _PRINT
-	INC	DE
-	JR	MSXLP
-
+MSXSKP:	
+	POP	BC
+	POP	DE
+	POP	HL
+	POP	AF
+	RET
 
 ;#MPRNT（1FE2H）本体
-; インライン文字列出力（エンド･コード00H）。
-;入力	「CALL ＃MPRNT」の次のアドレス～←文字列
+; このサブルーチンをコールした次のアドレスから00Hが出現するまでアスキーコードとみなし、文字列表示する。
+;入力	「CALL ＃MPRNT」の次のアドレス～←文字列とみなす
 ;出力	なし
 ;破壊	AF，DE（実際AF）
 ;注：
 ; 00Hは表示しません。
 ; 「REDA」などがDE保存を期待しているので、DEを保存します。
+; このサブルーチンを完成させてください。
 MPRNT:
 	EX	(SP),HL	;HL←インライン･パラのアドレス，スタック←HL
-	PUSH	DE
-	PUSH	BC
-	EX	DE,HL
+	PUSH DE
+	PUSH BC
+	EX	DE,HL ; DE←インライン･パラのアドレス
+	CALL MSX ; DEの指す文字列を表示
 
-MPRLP:	LD	A,(DE)
-	CP	20H
-	JR	C,MPRSKP
-	CALL	BPRNT
-	JR	MPRLP
-MPRSKP:	OR	A
-	JR	Z,MPRRET
-	CALL	_PRINT
-	INC	DE
-	JR	MPRLP
-
-MPRRET:	EX	DE,HL
+MPRRET:
+	EX	DE,HL ; HL←インライン･パラのアドレス，DE←元の値
 	POP	BC
 	POP	DE
 	EX	(SP),HL	;スタック←インライン･パラの次のアドレス，HL←元の値
 ;	XOR	A
 	RET
 
+; TAB(1FDFH)の本体
+; Bレジスタの値と、カーソルのX座標との差を計算して、その結果の数だけスペースを表示する。
+ TAB:
+	PUSH	AF
+	PUSH	HL
+	PUSH	DE
+	PUSH	BC
+	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
+	; CURSOL_XY_ADDRからX座標を取得
+	LD	HL,(CURSOL_XY_ADDR)		; HLにX座標をロード (2バイト)
+	; Bレジスタの値とX座標との差を計算
+	LD	A,B
+	SUB	L	; A = B - X座標
+	JR	C,TABERR	; 結果が負ならエラー
+	LD	L,A	; Lにスペース数をセット
+	TABLP2:
+	LD	A,' '
+	CALL	_PRINT
+	DEC	L
+	JR	NZ,TABLP2 ; スペース数分ループ
+	XOR	A	; CY=0
+	JR	TABRET
+TABERR:
+	SCF	; CY=1
+TABRET:
+	POP	BC
+	POP	DE
+	POP	HL
+	POP	AF
+	RET
+
+; #LPRINT(1FDCH)の本体
+; 未実装
+LPRINT:
+	RET
+
+; #LPTON(1FD9H)の本体
+; 未実装
+LPTON:
+	RET
+
+; #LPTOF(1FD6H)の本体
+LPTOF:
+	RET
 
 ;===============
 ;16進数
 ;===============
-
 
 ;#print_hex_2_digit（1FC1H）の本体
 ; 16進2桁表示。
@@ -649,16 +721,10 @@ MPRRET:	EX	DE,HL
 ;破壊	AF
 print_hex_2_digit:
 	PUSH	AF
-	RLCA
-	RLCA
-	RLCA
-	RLCA		;上位
-	CALL	_ASC
-	CALL	_PRINT
-	POP	AF	;下位
-	CALL	_ASC
-	CALL	_PRINT
-	OR	A	;CY←0
+	SRL	A
+	SRL	A
+	SRL	A
+	SRL	A	;Acc上位4ビット←データ
 	RET
 
 
@@ -675,23 +741,25 @@ print_hex_4_digit:
 
 
 ;#ASC（1FBBH）の本体
-; 4ビット･バイナリ→16進1文字。
+; Aレジスタの下位4ビットの値を16進数で表したときのアスキーコードに変換してAレジスタに格納する。
 ;入力	Acc下位4ビット←データ
-;出力	Acc←16進文字
+;出力	Acc←16進数表示のアスキーコード
 ;破壊	AF
+; このサブルーチンを書いてください。
 ASC:
-	AND	0FH
-	ADD	A,'0'
-	CP	3AH	;「9」＋1
-	CCF		;CY＝0でリターンするため
-	RET	NC
-	ADD	A,'A'-3AH	;CY←0
+	AND	0FH	; 下位4ビットを取得
+	CP	10
+	JR	C,ASCNUM
+	ADD	A,'A'-10	; 10以上なら'A'～'F'に変換
+	JR	ASCRET ; リターン
+ASCNUM:
+	ADD	A,'0'	; 0～9なら'0'～'9'に変換
+ASCRET:
 	RET
 
-
 ;#HEX（1FB8H）の本体
-; 16進1文字→4ビット･バイナリ。
-;入力	Acc←16進文字
+; Aレジスタの内容を16進数で表したときのアスキーコードとしてバイナリに変換し、Aレジスタに格納する。
+;入力	Acc←16進数文字(アスキーコードで表現)
 ;出力	Acc←データ（0～15）
 ;	CY＝1（Acc＝14）ならエラー
 ;破壊	AF
@@ -700,63 +768,63 @@ ASC:
 ; 汎用ルーチンconvert_lower_case_to_upper_case（AF破壊）を呼び出します。
 HEX:
 	CALL	convert_lower_case_to_upper_case
-	SUB	'0'
-	JR	C,HEXERR
-	CP	10
-	JR	C,HEXESC
+	SUB	'0' ; '0'のコードを引く
+	JR	C,HEXERR ; '0'未満はエラー
+	CP	10 ; 10未満か？
+	JR	C,HEXESC ; 10未満なら正常終了
 	CP	10+7	;7＝「A」－（「9」＋1）
 	JR	C,HEXERR
-	SUB	7
-	CP	16
+	SUB	7 ; 10以上なら'A'～'F'を0～5に変換
+	CP	16 ; 16以上はエラー
 	JR	NC,HEXERR
-HEXESC:	OR	A
+HEXESC:	OR	A ; CY←0
 	RET
 
 HEXERR:	LD	A,14	;Bad Data
-	SCF
+	SCF ; CY←1
 	RET
 
-
 ;#2HEX（1FB5H）の本体
-; 文字列の16進2桁→1バイト･バイナリ。
+; DEレジスタの示すアドレスから2バイトの内容を、2桁の16進数で表現するアスキーコードとして、バイナリに変換し、HLに格納する。エラーがあればキャリフラグがセットされる。
 ;入力	[DE～]←16進文字2桁
 ;出力	Acc←データ
 ;	DEはカウント･アップ（エラーを発生した時点でカウント･アップは停止）
 ;	CY＝1ならエラー
 ;破壊	AF，DE
 ;注：小文字に対応。
+; このサブルーチンを完成させてください。
 AHEX:
-	LD	A,(DE)
-	CALL	_HEX
-	RET	C
-	INC	DE
-	RLCA
-	RLCA
-	RLCA
-	RLCA
-	LD	(AHXPAT+1),A
-	LD	A,(DE)
-	CALL	_HEX
-	RET	C
-	INC	DE
-AHXPAT:	OR	0
+	LD	A,(DE) ; 16進1桁目取得
+	CALL	HEX ; 1桁目変換
+	JR	C,HEXERR ; エラーならリターン
+	INC	DE ; DEカウントアップ
+	LD	H,A ; Hに格納
+	LD	A,(DE) ; 16進2桁目取得
+	CALL	HEX ; 2桁目変換
+	JR	C,HEXERR ; エラーならリターン
+	INC	DE ; DEカウントアップ
+	LD	L,A ; Lに格納
 	RET
 
 
 ;#HLHEX（1FB2H）の本体
-; 文字列の16進4桁→2バイト･バイナリ。
+; DEレジスタの示すアドレスから4バイトの内容を、4桁の16進数で表現するアスキーコードとして、バイナリに変換し、HLに格納する。エラーがあればキャリフラグがセットされる。
 ;入力	[DE～]←16進文字4桁
 ;出力	HL←データ
 ;	DEはカウント･アップ（エラーを発生した時点でカウント･アップは停止）
 ;	CY＝1ならエラー
 ;破壊	AF，HL，DE
 ;注：小文字に対応。
+; このサブルーチンを完成させてください。
 HLHEX:
-	CALL	_2HEX
-	LD	H,A
-	CALL	NC,_2HEX
-	LD	L,A
+	CALL	_2HEX ; 先頭2桁を変換
+	JR	C,HEXERR ; エラーならリターン
+	LD	H,L ; HLの上位に格納
+	CALL	_2HEX ; 次の2桁を変換
+	JR	C,HEXERR ; エラーならリターン
+	LD	L,A ; HLの下位に格納
 	RET
+
 
 
 ;===============
@@ -769,12 +837,16 @@ HLHEX:
 ;入力	なし
 ;出力	L←x座標、H←y座標
 ;破壊	HL
-;注：フィジカル･ルーチンget_cursol_XY_entity（AF，HL，DE，BC破壊）を呼び出します。
+;注：フィジカル･ルーチンCALC_CURSOL_XYを呼び出します。
 CSR:
 	PUSH	AF
 	PUSH	DE
 	PUSH	BC
-	CALL	get_cursol_XY_entity
+	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
+	; CURSOL_XY_ADDRからX座標を取得
+	LD	L,(CURSOL_XY_ADDR)		; LにX座標をロード (2バイト)
+	; CURSOL_XY_ADDR+2からY座標を取得
+	LD	H,(CURSOL_XY_ADDR+2)	; HにY座標をロード (2バイト)
 	POP	BC
 	POP	DE
 	POP	AF
@@ -805,18 +877,20 @@ LOC:
 
 
 ;#SCRN（201BH）の本体
-; 指定座標の文字を読み込みます。
+; HレジスタにY座標、LレジスタにX座標を格納してコールすると、画面上におけるその座標の文字を読み込み、Aレジスタに格納する。
 ;入力	L←x座標、H←y座標
 ;出力	Acc←文字
 ;破壊	AF
 ;注：
 ; CYをクリアします。
-; フィジカル･ルーチンget_character_XY_entity（AF，HL，DE，BC破壊）を呼び出します。
+; このサブルーチンを完成させてください。
 SCRN:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-	CALL	get_character_XY_entity
+
+
+
 	POP	BC
 	POP	DE
 	POP	HL
@@ -833,10 +907,8 @@ SCRN:
 ; フィジカル･ルーチンchange_width_entity（AF，HL，DE，BC破壊）を呼び出します。
 ; CY＝0でリターンします（ディスク･モジュールのため）。
 WIDCH:
-	; SWORDでは、80桁表示をサポートしません。
-	XOR	A	;CY←0（Acc←0）
+	; SORD M23ではサポートしません。
 	RET
-
 
 ;LINCH（203CH）の本体
 ; 表示行数を変更します。
@@ -1692,22 +1764,22 @@ printer_output_mode_off_entity:
 	LD	(_LPSW),A
 
 ;	#PRINT（1FF4H）のため'
-	LD	HL,PRINT
-	LD	(_PRINT+1),HL
-	LD	HL,BPRNT0
-	LD	(BPRNT+1),HL
+	; LD	HL,PRINT
+	; LD	(_PRINT+1),HL
+	; LD	HL,BPRNT0
+	; LD	(BPRNT+1),HL
 
 	RET
 
 
 ;1文字プリント前処理
 LPREB:
-	PUSH	HL
-	LD	HL,PRINT
-	LD	(_PRINT+1),HL
-	LD	HL,BPRNT0
-	LD	(BPRNT+1),HL
-	POP	HL
+	; PUSH	HL
+	; LD	HL,PRINT
+	; LD	(_PRINT+1),HL
+	; LD	HL,BPRNT0
+	; LD	(BPRNT+1),HL
+	; POP	HL
 ;	JP	LPPR
 
 
@@ -1715,7 +1787,7 @@ LPREB:
 LPPR:
 	CALL	PRINT
 	PUSH	AF
-	CALL	_LPRNT
+	; CALL	_LPRNT
 	POP	AF
 	RET
 
@@ -1920,6 +1992,11 @@ SETPRN:
 ;BC	ライン･ターミナル･テーブルの先頭＋y座標
 ;HL	論理桁位置カウンタ
 get_logical_column:
+	;テキストVRAMのスタートアドレスが0F800Hであり、一行の桁数は80dであるので、
+	;論理桁位置は、(y座標×80d)+x座標で求められます。
+
+
+
 	RET
 
 ;論理行頭の座標を得ます
@@ -2148,18 +2225,15 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 ;破壊	全レジスタ
  cold_start_entity:
 	DI
-	IM	2
-	LD	HL,KEYINT	;キー入力割り込み処理エントリ
-	LD	(0052H),HL	;X1モニタと同じ
+	; IM	2
 	CALL initialize_CRTC		;CRTCを初期化します
-	LD	A,00H		;割り込み処理ルーチンのテーブル
 	EI
-	LD	I,A
-;
-	LD	A,0E4H	;キー入力割り込みベクタのセット
-	; CALL	SCPUTR	;データ送信（Z80→サブCPU）
-	LD	A,52H	;キー入力割り込みベクタ
-	; CALL	SCPUTR	;データ送信（Z80→サブCPU）
+; 	LD	I,A
+; ;
+; 	LD	A,0E4H	;キー入力割り込みベクタのセット
+; 	; CALL	SCPUTR	;データ送信（Z80→サブCPU）
+; 	LD	A,52H	;キー入力割り込みベクタ
+; 	; CALL	SCPUTR	;データ送信（Z80→サブCPU）
 
 ;	スタックの設定など
 	LD	HL,0FFFFH
@@ -2172,8 +2246,8 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 ;	LD	(DIOVDR),A
 ;	LD	A,(VDPW)
 ;	LD	(DIOVDW),A
-	LD	HL,(top_of_ram_disk_of_vram)
-	LD	(DIOETP),HL	;RAMディスクのVRAMアドレス先頭（256バイト単位）
+	; LD	HL,(top_of_ram_disk_of_vram)
+	; LD	(DIOETP),HL	;RAMディスクのVRAMアドレス先頭（256バイト単位）
 
 ;	特殊ワークのサイズの初期化
 	LD	A,(size_of_special_work_of_vram)
@@ -2189,16 +2263,16 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	; LD	(_ETRK),A	;[_ETRK]の初期化
 
 ;	文字色の初期化
-	LD	A,7
-	LD	(foreground_color),A
-	LD	A,0
-	LD	(background_color),A
-	LD	A,0
-	LD	(BDR_color),A
-	CALL	change_color
+	; LD	A,7
+	; LD	(foreground_color),A
+	; LD	A,0
+	; LD	(background_color),A
+	; LD	A,0
+	; LD	(BDR_color),A
+	; CALL	change_color
 
 ;	ディスクI／O初期化
-	CALL	SOSSI
+	; CALL	SOSSI
 
 ;	キー入力バッファのクリア
 	DI
@@ -2211,13 +2285,6 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 ;コールド･スタート時のメッセージ
 title_message:
 	DB	'<<<<< S-OS  SWORD >>>>>',0DH
-	DB	'SWX1TC V1.10  1994-06-29',0DH
-	DB	'Programmed by Takahiro Chikushi & Oh!X(Oh!MZ)',0DH
-	DB	'MAIN		(C)T.Chikushi	1994-06-29',0DH
-	DB	'DOS MODULE	(C)T.T. 	1985-10-25',0DH
-	DB	'RUN&SUBMIT	(C)TITY SOFT	1987-02-22',0DH
-	DB	'DISK I/O	Oh!MZ 1987-02	?',0DH
-	DB	'RAM DISK I/O	(C)T.T.		1987-03-02',0DH
 	DB	00H
 
 
@@ -2315,8 +2382,8 @@ bell_entity:
 ;出力	L←x座標、H←y座標
 ;破壊	AF，HL，DE，BC
 get_cursol_XY_entity:
-	LD	DE,(CSRADD)
-	LD	HL,(CSRNX)
+	LD	DE,(CSRADD) ; CSRADDの値をDEへ
+	LD	HL,(CSRNX) ; CSRNXの値をHLへ
 	ADD	HL,DE
 	RET
 
@@ -2400,56 +2467,16 @@ PREPR:	PUSH	HL
 ;#PRINT	159ts（39.750μs）
 ;＋CALL	176ts（44.000μs）
 PRINT:
-	CP	20H	; 7ts
-	JR	C,PRNCTL	; 7ts 'コントロール･コード
-
-PRNPA0:
-	PUSH	HL	;11ts
-	PUSH	BC	;11ts
-	LD	L,A	; 4ts
-	LD	H,LSXTBL/100H	; 7ts
-	DB	01H	;10ts '「LD BC,n」
-TXTADR:
-	DS	2	;3000H～37FFH
-	INC	B	; 4ts
-	OUTI		;16ts
-	INC	BC	; 6ts
-	LD	(TXTADR),BC	;14ts '[TXTADR]のカウント･アップ
-	LD	HL,CSRNX	;10t
-	INC	(HL)	;11t '[CSRNX]のカウント･アップ
-	POP	BC	;10ts
-	POP	HL	;10ts
-	RET	NZ	;11ts
-
-;	最終桁の場合
-	PUSH	AF
-	PUSH	HL
-	LD	HL,CSRNX
-	LD	A,(CSRNXI)
-	LD	(HL),A	;カーソルを行頭へ
-	INC	L	;HL←CSRNY
-	LD	A,(_MXLIN)
-	ADD	A,(HL)	;Acc←y座標 '（y座標－行数）＋行数
-	LD	L,A
-	LD	H,LINTTB/100H	;HL←対応するターミナル･テーブルのアドレス
-	LD	(HL),0FFH	;行を連結します
-	LD	HL,CSRNY
-	INC	(HL)	;[CSRNY]のカウント･アップ
-	JR	Z,PRNLL	;最終行だった
-	POP	HL
-	POP	AF
-	RET
-
-;	最終行の場合
-PRNLL:
-	LD	(HL),0FFH	;最終行
-	PUSH	DE
-	PUSH	BC
-	CALL	control_code_ROLL_UP
+	CALL PUTCHAR
+	
+	PUSH HL
+	PUSH BC
+	PUSH DE
+	LD	HL,CSRNX ;10t
+	INC (HL) ;4ts	
 	POP	BC
 	POP	DE
 	POP	HL
-	POP	AF
 	RET
 
 
@@ -2478,112 +2505,112 @@ PRNLL:
 ;〈実行時間〉
 ;最内ループ53ts（13.250μs）
 BPRNT0:
-	PUSH	IX
-;	共通の設定
-	LD	A,(_WIDTH)
-	SRL	A
-	DB	0DDH
-	LD	H,A	;「LD IXH,A」 'IXH←桁数÷2 '定数
-	LD	BC,(TXTADR)	;BC←現在テキストVRAMアドレス
-	LD	(BPRRSP),SP
-;	最初の行の設定
-	LD	A,(CSRNX)
-	CPL
-	ADD	A,2	;Acc←現在行の残り文字数＋1，CY←0
-	RRA		;Acc←現在行の残り文字数÷2切り上げ，CY←端数の反転
-	DB	0DDH
-	LD	L,A	;「LD IXL,A」 'IXL←初期ループ･カウンタ
-	EX	DE,HL
-	DI
-	LD	SP,HL	;SP←文字列の先頭
-	LD	H,LSXTBL/100H	;HL←文字変換テーブルのアドレス
-	LD	A,20H-1	;コントロール･コード･チェック用
-	JR	C,BPRL12
-;	端数処理
-	DEC	SP
-	POP	DE	;D←最初の文字
-	JR	BPRL1J
+; 	PUSH	IX
+; ;	共通の設定
+; 	LD	A,(_WIDTH)
+; 	SRL	A
+; 	DB	0DDH
+; 	LD	H,A	;「LD IXH,A」 'IXH←桁数÷2 '定数
+; 	LD	BC,(TXTADR)	;BC←現在テキストVRAMアドレス
+; 	LD	(BPRRSP),SP
+; ;	最初の行の設定
+; 	LD	A,(CSRNX)
+; 	CPL
+; 	ADD	A,2	;Acc←現在行の残り文字数＋1，CY←0
+; 	RRA		;Acc←現在行の残り文字数÷2切り上げ，CY←端数の反転
+; 	DB	0DDH
+; 	LD	L,A	;「LD IXL,A」 'IXL←初期ループ･カウンタ
+; 	EX	DE,HL
+; 	DI
+; 	LD	SP,HL	;SP←文字列の先頭
+; 	LD	H,LSXTBL/100H	;HL←文字変換テーブルのアドレス
+; 	LD	A,20H-1	;コントロール･コード･チェック用
+; 	JR	C,BPRL12
+; ;	端数処理
+; 	DEC	SP
+; 	POP	DE	;D←最初の文字
+; 	JR	BPRL1J
 
-BPRL11:
-	DB	0DDH
-	LD	L,H	;「LD IXL,IXH」 'IXL←ループ･カウンタ（桁数÷2）
-	LD	H,LSXTBL/100H	;HL←文字変換テーブルのアドレス
-	LD	A,20H-1	;コントロール･コード･チェック用
+; BPRL11:
+; 	DB	0DDH
+; 	LD	L,H	;「LD IXL,IXH」 'IXL←ループ･カウンタ（桁数÷2）
+; 	LD	H,LSXTBL/100H	;HL←文字変換テーブルのアドレス
+; 	LD	A,20H-1	;コントロール･コード･チェック用
 
-;	1ループ106ts（53ts×2）
-BPRL12:
-	POP	DE	;10ts
-	CP	E	; 4ts
-	JR	NC,BPRRE1	; 7ts 'コントロール･コードがきました
-	LD	L,E	; 4ts
-	LD	E,(HL)	; 7ts
-	OUT	(C),E	;12ts
-	INC	C	; 4ts
-BPRL1J:
-	CP	D	; 4ts
-	JR	NC,BPRRE2	; 7ts 'コントロール･コードがきました
-	LD	L,D	; 4ts
-	LD	D,(HL)	; 7ts
-	OUT	(C),D	;12ts
-	INC	BC	; 6ts
-	DB	0DDH
-	DEC	L	; 8ts
-	JP	NZ,BPRL12	;10ts
+; ;	1ループ106ts（53ts×2）
+; BPRL12:
+; 	POP	DE	;10ts
+; 	CP	E	; 4ts
+; 	JR	NC,BPRRE1	; 7ts 'コントロール･コードがきました
+; 	LD	L,E	; 4ts
+; 	LD	E,(HL)	; 7ts
+; 	OUT	(C),E	;12ts
+; 	INC	C	; 4ts
+; BPRL1J:
+; 	CP	D	; 4ts
+; 	JR	NC,BPRRE2	; 7ts 'コントロール･コードがきました
+; 	LD	L,D	; 4ts
+; 	LD	D,(HL)	; 7ts
+; 	OUT	(C),D	;12ts
+; 	INC	BC	; 6ts
+; 	DB	0DDH
+; 	DEC	L	; 8ts
+; 	JP	NZ,BPRL12	;10ts
 
-	LD	HL,CSRNX
-	LD	A,(CSRNXI)
-	LD	(HL),A	;カーソルを行頭へ
-	INC	L	;HL←CSRNY
-	LD	A,(_MXLIN)
-	ADD	A,(HL)	;Acc←y座標 '（y座標－行数）＋行数
-	LD	L,A
-	LD	H,LINTTB/100H	;HL←対応するターミナル･テーブルのアドレス
-	LD	(HL),0FFH	;行を連結します
-	LD	HL,CSRNY
-	INC	(HL)	;[CSRNY]のカウント･アップ
-	JR	NZ,BPRL11
+; 	LD	HL,CSRNX
+; 	LD	A,(CSRNXI)
+; 	LD	(HL),A	;カーソルを行頭へ
+; 	INC	L	;HL←CSRNY
+; 	LD	A,(_MXLIN)
+; 	ADD	A,(HL)	;Acc←y座標 '（y座標－行数）＋行数
+; 	LD	L,A
+; 	LD	H,LINTTB/100H	;HL←対応するターミナル･テーブルのアドレス
+; 	LD	(HL),0FFH	;行を連結します
+; 	LD	HL,CSRNY
+; 	INC	(HL)	;[CSRNY]のカウント･アップ
+; 	JR	NZ,BPRL11
 
-;	最終行の場合
-	LD	(HL),0FFH	;最終行
-	LD	(BPRLSP),SP
-	EI
-	LD	SP,(BPRRSP)
-	CALL	control_code_ROLL_UP
-	LD	BC,(vram_address_of_top_of_last_line)	;BC←最終行先頭のVRAMアドレス
-	DI
-	DB	31H	;「LD SP,n」
-BPRLSP:
-	DS	2
-	JR	BPRL11
+; ;	最終行の場合
+; 	LD	(HL),0FFH	;最終行
+; 	LD	(BPRLSP),SP
+; 	EI
+; 	LD	SP,(BPRRSP)
+; 	CALL	control_code_ROLL_UP
+; 	LD	BC,(vram_address_of_top_of_last_line)	;BC←最終行先頭のVRAMアドレス
+; 	DI
+; 	DB	31H	;「LD SP,n」
+; BPRLSP:
+; 	DS	2
+; 	JR	BPRL11
 
-;	コントロール･コードがきた場合（偶数）
-BPRRE1:
-	XOR	A
-	DB	0DDH
-	SUB	L	;「SUB IXL」
-	DB	0DDH
-	SUB	L	;「SUB IXL」 'Acc←x座標－桁数
-	LD	HL,-2
-	JR	BPRRET
-;	コントロール･コードがきた場合（端数）
-BPRRE2:
-	LD	A,1
-	DB	0DDH
-	SUB	L	;「SUB IXL」
-	DB	0DDH
-	SUB	L	;「SUB IXL」 'Acc←x座標－桁数
-	LD	HL,-1
-BPRRET:
-	LD	(TXTADR),BC	;[TXTADR]の更新
-	LD	(CSRNX),A	;[CSRNX]を更新
-	ADD	HL,SP
-	OR	A	;CY←0
-	EX	DE,HL	;DE←コントロール･コードのアドレス
-	EI
-	DB	31H	;「LD SP,」
-BPRRSP:
-	DS	2
-	POP	IX
+; ;	コントロール･コードがきた場合（偶数）
+; BPRRE1:
+; 	XOR	A
+; 	DB	0DDH
+; 	SUB	L	;「SUB IXL」
+; 	DB	0DDH
+; 	SUB	L	;「SUB IXL」 'Acc←x座標－桁数
+; 	LD	HL,-2
+; 	JR	BPRRET
+; ;	コントロール･コードがきた場合（端数）
+; BPRRE2:
+; 	LD	A,1
+; 	DB	0DDH
+; 	SUB	L	;「SUB IXL」
+; 	DB	0DDH
+; 	SUB	L	;「SUB IXL」 'Acc←x座標－桁数
+; 	LD	HL,-1
+; BPRRET:
+; 	LD	(TXTADR),BC	;[TXTADR]の更新
+; 	LD	(CSRNX),A	;[CSRNX]を更新
+; 	ADD	HL,SP
+; 	OR	A	;CY←0
+; 	EX	DE,HL	;DE←コントロール･コードのアドレス
+; 	EI
+; 	DB	31H	;「LD SP,」
+; BPRRSP:
+; 	DS	2
+; 	POP	IX
 	RET
 
 
