@@ -457,12 +457,11 @@ BOOT:
 ;95H	SORD M23
 ;〈S-OSのバージョン〉
 ; SWORDでは、「20H」。
-; フィジカル･ルーチン vertion_entity（AF，HL，DE，BC破壊）を呼び出します。
 VER:
 	PUSH	AF
 	PUSH	DE
 	PUSH	BC
-	CALL	vertion_entity	;フィジカル･ルーチン vertion_entity
+	LD	HL,9520H	;SORD M23，S-OS V2.0
 	POP	BC
 	POP	DE
 	POP	AF
@@ -473,36 +472,6 @@ VER:
 ;表示ルーチン
 ;===============
 
-
-;#TAB（1FDFH）の本体
-; 指定論理桁位置まで、スペースを表示します。
-;入力	B←論理桁位置
-;出力	CY＝1（Acc＝14）なら、値が不正だった
-;破壊	AF
-;注：[_PRCNT]を参照しません。
-TAB:
-	PUSH	HL
-	PUSH	DE
-	PUSH	BC
-	CALL	GTPRC
-	POP	BC
-	EX	DE,HL	;DE←現在の論理桁位置
-	LD	L,B
-	LD	H,0	;HL←新しい論理桁位置
-	OR	A
-	SBC	HL,DE	;HL←表示するスペース数（1～255）
-	JR	Z,TABRE1	;スペース数0だった
-	JR	C,TABRE2	;値が不正だった 'CY＝1
-	LD	A,' '
-
-TABLP:	CALL	_PRINT
-	DEC	L
-	JR	NZ,TABLP
-
-TABRE1:	XOR	A	;CY←0
-TABRE2:	POP	DE
-	POP	HL
-	RET
 
 
 ;#PRNTS（1FF1H）の本体
@@ -545,9 +514,9 @@ NL:
 
 	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
 	; CURSOL_XY_ADDRからX座標を取得
-	LD	HL,(CURSOL_XY_ADDR)		; HLにX座標をロード (2バイト)
+	LD	HL,(CURSOL_XY_ADDR+2)		; HLにX座標をロード (2バイト)
 	; CURSOL_XY_ADDR+2からY座標を取得
-	LD	DE,(CURSOL_XY_ADDR+2)		; DEにY座標をロード (2バイト)
+	LD	DE,(CURSOL_XY_ADDR)		; DEにY座標をロード (2バイト)
 	OR	A ; フラグをクリア
 	CP	L ; X座標が0かチェック
 	JR	Z,NLRET	; X座標が0ならリターン
@@ -556,36 +525,7 @@ NLRET:
 	POP	BC
 	POP	DE
 	RET
-;
-; CURSOL_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
-;
-CALC_CURSOL_XY:
-	PUSH AF
-	PUSH BC
-	PUSH DE
-	PUSH HL
-	LD HL,VRAM_TXT_TOP ; 画面左上端アドレスをHLにロード
-	EX DE,HL ; DEとHLを交換。HL=CURSOL_LOCATE, DE=VRAM_TXT_TOP
-	SBC HL,DE ; HL = CURSOL_LOCATE - VRAM_TXT_TOP
-	OR A ; フラグをクリア
-	LD BC,0 ; B=Y座標カウンタ初期化
-Y_CALC_LOOP:
-	LD DE,WIDTH_SCREEN ; 50H = 画面の桁数(80d)
-	SBC HL,DE ;	HL - 50H
-	JR C,Y_CALC_END ; HLが負ならループ終了
-	INC B ; Y座標カウンタをインクリメント
-	JR Y_CALC_LOOP
-Y_CALC_END:
-	ADD HL,DE ; 余り復元（これがX座標）
-    LD A,B
-    LD (CURSOL_XY_ADDR),A   ; Y座標保存
-    LD A,L
-    LD (CURSOL_XY_ADDR+2),A   ; X座標保存
-	POP HL
-	POP DE
-	POP BC
-	POP AF
-	RET
+
 
 ;
 ;#MSG（1FE8H）の本体
@@ -600,12 +540,11 @@ MSG:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-
 MSGLP:
 	LD	A,(DE) ; 文字を取得
 	CP	0DH ; 改行コードか？
 	JR	Z,MSGSKP	; 改行コードなら終了へ
-	CALL PRINT ; 文字を表示
+	CALL _PRINT ; 文字を表示
 	INC	DE	; アドレスを一つ進める
 	JR	MSGLP
 MSGSKP:	
@@ -626,7 +565,6 @@ MSX:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-
 MSXLP:
 	LD	A,(DE) ; 文字を取得
 	CP	00H ; 終了コードか？
@@ -656,7 +594,6 @@ MPRNT:
 	PUSH BC
 	EX	DE,HL ; DE←インライン･パラのアドレス
 	CALL MSX ; DEの指す文字列を表示
-
 MPRRET:
 	EX	DE,HL ; HL←インライン･パラのアドレス，DE←元の値
 	POP	BC
@@ -667,14 +604,14 @@ MPRRET:
 
 ; TAB(1FDFH)の本体
 ; Bレジスタの値と、カーソルのX座標との差を計算して、その結果の数だけスペースを表示する。
- TAB:
+TAB:
 	PUSH	AF
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
 	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
 	; CURSOL_XY_ADDRからX座標を取得
-	LD	HL,(CURSOL_XY_ADDR)		; HLにX座標をロード (2バイト)
+	LD	HL,(CURSOL_XY_ADDR+2)		; HLにX座標をロード (2バイト)
 	; Bレジスタの値とX座標との差を計算
 	LD	A,B
 	SUB	L	; A = B - X座標
@@ -701,44 +638,44 @@ TABRET:
 LPRINT:
 	RET
 
-; #LPTON(1FD9H)の本体
-; 未実装
-LPTON:
-	RET
-
-; #LPTOF(1FD6H)の本体
-; 未実装
-LPTOF:
-	RET
-
 ;===============
 ;16進数
 ;===============
 
-;#print_hex_2_digit（1FC1H）の本体
-; 16進2桁表示。
+;#PRTHX print_hex_2_digit（1FC1H）の本体
+; Aレジスタの値を16進2桁で画面に表示する
 ;入力	Acc←データ
 ;出力	なし
 ;破壊	AF
+; このサブルーチンを完成させてください。
 print_hex_2_digit:
-	PUSH	AF
-	SRL	A
-	SRL	A
-	SRL	A
-	SRL	A	;Acc上位4ビット←データ
+	PUSH AF	;保存
+	LD	B,A	;Bにデータを保存
+	SRL	A	;上位4ビットを取得
+	SRL	A	; さらに1ビット右シフト
+	SRL	A	; さらに1ビット右シフト
+	SRL	A	; さらに1ビット右シフト
+	CALL	ASC	; 上位4ビットを16進数アスキーコードに変換
+	CALL	_PRINT	; 文字表示
+	LD	A,B	;Bから元のデータを取得
+	AND	0FH	; 下位4ビットを取得
+	CALL	ASC	; 下位4ビットを16進数アスキーコードに変換
+	CALL	_PRINT	; 文字表示
+	POP	AF	;復元
 	RET
 
 
 ;#print_hex_4_digit（1FBEH）の本体
-; 16進4桁表示。
+; HLレジスタの値を16進4桁で表示する。
 ;入力	HL←データ
 ;出力	なし
 ;破壊	AF
+; このサブルーチンを完成させてください。
 print_hex_4_digit:
-	LD	A,H
-	CALL	_print_hex_2_digit
-	LD	A,L
-	JP	_print_hex_2_digit
+	LD	A,H ; HLの上位バイトをAにロード
+	CALL	_print_hex_2_digit ; 2桁表示
+	LD	A,L ; HLの下位バイトをAにロード
+	JP	_print_hex_2_digit ; 2桁表示
 
 
 ;#ASC（1FBBH）の本体
@@ -844,10 +781,7 @@ CSR:
 	PUSH	DE
 	PUSH	BC
 	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
-	; CURSOL_XY_ADDRからX座標を取得
-	LD	L,(CURSOL_XY_ADDR)		; LにX座標をロード (2バイト)
-	; CURSOL_XY_ADDR+2からY座標を取得
-	LD	H,(CURSOL_XY_ADDR+2)	; HにY座標をロード (2バイト)
+	LD	HL,(CURSOL_XY_ADDR)		; LにX座標をロード (2バイト)
 	POP	BC
 	POP	DE
 	POP	AF
@@ -855,25 +789,28 @@ CSR:
 
 
 ;#LOC（201EH）の本体
-; カーソル位置を指定座標へ。
+; HLレジスタの値(L=X座標、H=Y座標)で指定するXY座標へカーソルの位置をセットする。
 ;入力	L←x座標、H←y座標
 ;出力	なし
 ;破壊	AF（実際F）
 ;注：
 ; 「WALRUS」がAccの保存を期待しているので、Accは保存します。
 ; 「ELFES IV」「TANGERINE」などでCYクリアが必要。
-; フィジカル･ルーチンmove_cursol_XY_entity（AF，HL，DE，BC破壊）を呼び出します。
+; このサブルーチンを完成させてください。
 LOC:
 	PUSH	AF
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-	CALL	move_cursol_XY_entity
+	; 現在HLが移動したいカーソルの位置を指さしている。
+	; PRINT_CURSOLはDEに現在のカーソルの位置が入っていることを期待している。
+	EX DE,HL	; DE←移動先カーソル位置
+	CALL	PRINT_CURSOL ; カーソル位置を設定
 	POP	BC
 	POP	DE
 	POP	HL
 	POP	AF
-	OR	A	;CY←0
+	OR A	;CY←0
 	RET
 
 
@@ -889,9 +826,9 @@ SCRN:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-
-
-
+; VRAMにアクセスして、カーソル位置DEにある通常文字のアスキーコードを得る。
+	OUT (0D2H),A ; access to RAM page 1
+	LD A,(DE) ; get character
 	POP	BC
 	POP	DE
 	POP	HL
@@ -900,25 +837,22 @@ SCRN:
 
 
 ;#WIDCH（2030H）の本体
-; 表示桁数を変更します。
+; 表示桁数を変更します。SORD M23ではサポートしません。
 ;入力	Acc←桁数
 ;出力	なし
 ;破壊	AF，HL，DE，BC
-;注：
-; フィジカル･ルーチンchange_width_entity（AF，HL，DE，BC破壊）を呼び出します。
 ; CY＝0でリターンします（ディスク･モジュールのため）。
 WIDCH:
-	; SORD M23ではサポートしません。
+	OR A	;CY←0
 	RET
 
 ;LINCH（203CH）の本体
-; 表示行数を変更します。
+; 表示行数を変更します。 SORD M23ではサポートしません。
 ;入力	Acc←行数
 ;	[_WIDTH]参照
 ;出力	なし
 ;破壊	AF，HL，DE，BC
 LINCH0:
-	; SWORDではサポートしません。
 	RET
 
 ;=======================
@@ -931,7 +865,6 @@ LINCH0:
 ;入力	なし
 ;出力	なし
 ;破壊	AF
-;注：フィジカル･ルーチンbell_entity（AF，HL，DE，BC破壊）を呼び出します。
 BELL:
 	RET
 
@@ -942,35 +875,30 @@ BELL:
 
 
 ;#LPRNT（1FDCH）本体
-; プリンタ1文字出力。
+; プリンタ1文字出力。SORD M23ではサポートしません。
 ;入力	Acc←文字
 ;出力	CY＝1ならエラー（Acc＝1）
 ;破壊	AF
 ;注：
-; 旧X1版SWORDと同じく、エラーが起これば、[#LPSW]をオフにします。
-; フィジカル･ルーチンlprint_entity（AF破壊）を呼び出します。
 ; 0DHは、0DH＋0AHに変換します。
 ; 00H、0AH、1AHは、無視します。
 LPRNT:
 	RET
 
 ;#LPTON（1FD9H）の本体
-; 表示をプリンタ出力モードにします。
+; 表示をプリンタ出力モードにします。SORD M23ではサポートしません。
 ;入力	なし
 ;出力	[_LPSW]←1
 ;破壊	なし
 ;注：
-; 旧X1版SWORDと同じく、[#LPSW]に1を書きます。
-; フィジカル･ルーチンprinter_output_mode_on_entity（AF，HL，DE，BC破壊）を呼び出します。
 LPTON:
 	RET
 
 ;#LPTOF（1FD6H）の本体
-; 表示を非プリンタ出力モードにします。
+; 表示を非プリンタ出力モードにします。SORD M23ではサポートしません。
 ;入力	なし
 ;出力	[_LPSW]←0
 ;破壊	なし
-;注：フィジカル･ルーチンprinter_output_mode_off_entity（AF，HL，DE，BC破壊）を呼び出します。
 LPTOF:
 	RET
 
@@ -978,7 +906,6 @@ LPTOF:
 ;===============
 ;入力ルーチン
 ;===============
-
 
 ;#GETKY（1FD0H）の本体
 ; キー入力（入力待ちなし、エコー･バックなし）。
@@ -1993,11 +1920,10 @@ SETPRN:
 ;BC	ライン･ターミナル･テーブルの先頭＋y座標
 ;HL	論理桁位置カウンタ
 get_logical_column:
-	;テキストVRAMのスタートアドレスが0F800Hであり、一行の桁数は80dであるので、
+	;テキストVRAMのスタートアドレスがF800Hであり、一行の桁数は80dであるので、
 	;論理桁位置は、(y座標×80d)+x座標で求められます。
-
-
-
+	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
+	LD	HL,(CURSOL_XY_ADDR) ; 
 	RET
 
 ;論理行頭の座標を得ます
@@ -2005,6 +1931,8 @@ get_logical_column:
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
 get_Y_top_of_logical_line:
+	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
+	LD	HL,(CURSOL_XY_ADDR+2) ;
 	RET
 
 
@@ -2301,14 +2229,6 @@ boot_entity:
 	LD	A,1DH
 	JP	0FFFEH
 
-
-;Hに機種別情報、LにS-OSのバージョンを返します
-;入力	なし
-;出力	H←機種別情報、L←S-OSのバージョン
-;破壊	AF，HL，DE，BC
- vertion_entity:
-	LD	HL,9520H	;SORD M23，S-OS V2.0
-	RET
 
 ;===============================================
 ;フィジカル･ルーチン･プリンタ関係（機種依存）
