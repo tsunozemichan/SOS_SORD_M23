@@ -11,13 +11,17 @@ DMA_ADDRESS 	EQU 0C4H
 FDC_CONTROL_REG EQU 0C5H
 DMA_BANK_SEL 	EQU 0C6H
 
-DMA_TRANS_ADDRESS EQU 0A5DH
+; DMA転送アドレスが書かれているコマンドチェーン内のアドレスを指している。
+; コードを修正するとずれるので、ラベルを付けて、かつ分けている。
+; OSのロード先アドレスを変更したい場合は、このアドレスがさす内容を書き換えること。
+DMA_TRANS_ADDRESS_L EQU dma_dist_address
+DMA_TRANS_ADDRESS_H EQU DMA_TRANS_ADDRESS_L + 1
 
 
 READBUF EQU 01500H
 RESULT  EQU 01400H
 
-DEST_ADDRESS EQU 3000H ; LOADER DESTINATION ADDRESS
+DEST_ADDRESS EQU E000H ; LOADER DESTINATION ADDRESS
 
 ;
 ; CRTC
@@ -40,7 +44,7 @@ DEL:	EQU	0x7F
 	ORG 0H
 	DI
 START:
-	LD HL,01000H
+	LD HL,F000H
 	LD SP,HL ; stack pointer
 	LD HL,DEST_ADDRESS ; destination address
 	EX DE,HL
@@ -107,7 +111,7 @@ FDC_WAIT_LOOP3:	DJNZ FDC_WAIT_LOOP3
 ;
 ; 1st SEEK
 ;
-	LD E,39  ; TARGET TRACK No.22, at SOS SYS
+	LD E,3  ; TARGET TRACK No.3, at SOS SYS
 ;
 DO_FIRST_SEEK:
 	CALL SEEK
@@ -134,25 +138,26 @@ WAIT_FIRST_READ_LOOP:
 	OUT (DMA_BANK_SEL), A
 	POP AF
 ;
-	LD B,08 ; LOOP COUNT is 8 sectors
-	LD C,09 ; INITIAL SECTOR NO. is 9 to 16 sector reading
+	LD B,16 ; LOOP COUNT is 16 sectors
+	LD C,01 ; INITIAL SECTOR NO. is 1 to 16 sector reading
 ;
 READ_FIRST_LOOP:
 	CALL GO_DMA_AND_READ
 	INC C
-	LD A,(DMA_TRANS_ADDRESS) ; memory address of DMA transfer address
+	LD A,(DMA_TRANS_ADDRESS_H) ; memory address of DMA transfer address
 	INC A ; 256 byte incriment
-	LD (DMA_TRANS_ADDRESS),A
+	LD (DMA_TRANS_ADDRESS_H),A
 	DJNZ READ_FIRST_LOOP
 
 	PUSH AF
 	LD A,"1"
 	CALL PUTCHAR
 	POP AF
+
 ;
 ; 2nd SEEK
 ;
-	LD E,37  ; TARGET TRACK No.23, at SOS SYS
+	LD E,4  ; TARGET TRACK No.4, at SOS SYS
 ;
 DO_SECOND_SEEK:
 	CALL SEEK
@@ -169,56 +174,32 @@ GO_SECOND_DMA:
 READ_SECOND_LOOP:
 	CALL GO_DMA_AND_READ
 	INC C
-	LD A,(DMA_TRANS_ADDRESS) ; memory address of DMA transfer address
+	LD A,(DMA_TRANS_ADDRESS_H) ; memory address of DMA transfer address
 	INC A ; 256 byte incriment
-	LD (DMA_TRANS_ADDRESS),A
+	LD (DMA_TRANS_ADDRESS_H),A
 	DJNZ READ_SECOND_LOOP
 ;
 ; 3nd SEEK
 ;
-	LD E,38  ; TARGET TRACK No.24, at SOS SYS
+	LD E,5  ; TARGET TRACK No.5, at SOS SYS
 ;
 DO_THIRD_SEEK:
 	CALL SEEK
 	JR Z,GO_THIRD_DMA
 	JR DO_THIRD_SEEK
 GO_THIRD_DMA:
-	LD B,8 ; LOOP COUNT is 8 sectors
-	LD C,01 ; INITIAL SECTOR NO. is 1 to 16 sector reading
+	LD B,14 ; LOOP COUNT is 14 sectors
+	LD C,01 ; INITIAL SECTOR NO. is 1 to 14 sector reading
 ;
 READ_THIRD_LOOP:
 	CALL GO_DMA_AND_READ
 	INC C
-	LD A,(DMA_TRANS_ADDRESS) ; memory address of DMA transfer address
+	LD A,(DMA_TRANS_ADDRESS_H) ; memory address of DMA transfer address
 	INC A ; 256 byte incriment
-	LD (DMA_TRANS_ADDRESS),A
+	LD (DMA_TRANS_ADDRESS_H),A
 	DJNZ READ_THIRD_LOOP
 
-;
-; 4th SEEK
-;
-	LD E,39  ; TARGET TRACK No.24, at SOS SYS
-;
-DO_FOURTH_SEEK:
-	CALL SEEK
-	JR Z,GO_FOURTH_DMA
-	JR DO_FOURTH_SEEK
-GO_FOURTH_DMA:
-	LD B,8 ; LOOP COUNT is 8 sectors
-	LD C,01 ; INITIAL SECTOR NO. is 1 to 16 sector reading
-;
-READ_FOURTH_LOOP:
-	CALL GO_DMA_AND_READ
-	INC C
-	LD A,(DMA_TRANS_ADDRESS) ; memory address of DMA transfer address
-	INC A ; 256 byte incriment
-	LD (DMA_TRANS_ADDRESS),A
-	DJNZ READ_FOURTH_LOOP
-
 	JP 0H ; Jump 0H @ startup SOS SYSTEM
-
-
-
 
 ;	HALT
 ;
@@ -539,8 +520,8 @@ DMA_COMMANDS:
 	DB 0BBH,01H,0BFH
 	DB 06DH
 	DB 0C3H,0FFH,00H,02CH,010H,08DH
-	; DB 00H,0CCH ; CC00H is 58K MEMORY MODEL
-	DB 00H,00H ; 0000H is SOS
+	; DB 00H,0CCH ; CC00H is CP/M 58K MEMORY MODEL
+dma_dist_address:	DB 00H,00H ; 0000H is SOS
 	DB 8AH
 	DB 0CFH,87H
 
