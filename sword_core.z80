@@ -18,7 +18,7 @@ VRAM_ATR_TOP EQU 0F000H
 CRTC_ADD EQU 0F0H
 CRTC_VAL EQU 0F1H
 WIDTH_SCREEN EQU 50H ; 80文字モードの1行のバイト数
-CURSOL_XY_ADDR EQU 0FFF0H ; カーソルのX,Y座標を保存するアドレス
+CURSOR_XY_ADDR EQU 0FFF0H ; カーソルのX,Y座標を保存するアドレス
 
 ; Ascii code Constants
 CR	EQU	0DH ; Carriage Return
@@ -169,12 +169,11 @@ INTSTK:
 ;カーソル･オフセット計算用テーブル下位
 ;=======================================
 ;y座標に対応するカーソル･オフセットを得ます
-;カーソル･オフセット←[cursol_offset_for_Y_table＋256＋y座標]×256＋[cursol_offset_for_Y_table＋y座標]
+;カーソル･オフセット←[cursor_offset_for_Y_table＋256＋y座標]×256＋[cursor_offset_for_Y_table＋y座標]
 
 
 ;	0020H（32バイト）
-cursol_offset_for_Y_table:	DS	32
-
+cursor_offset_for_Y_table:	DS	32
 
 
 ;===============================
@@ -194,7 +193,7 @@ system_stack_area:
 ;カーソル･オフセット計算用テーブル上位
 ;=======================================
 ; y座標に対応するカーソル･オフセットを得ます。
-;カーソル･オフセット←[cursol_offset_for_Y_table＋256＋y座標]×256＋[cursol_offset_for_Y_table＋y座標]
+;カーソル･オフセット←[cursor_offset_for_Y_table＋256＋y座標]×256＋[cursor_offset_for_Y_table＋y座標]
 
 
 ;	0020H（32バイト）
@@ -211,17 +210,17 @@ fcb_buffer:	DS	32	;S-OSのFCBバッファ（[_IBFAD]でポイント）
 
 ;	通常（42バイト）
 total_number_of_character_display:	DS	2	;画面の表示文字数
-cursol_offset_last_top_of_line:	DS	2	;最終行先頭のカーソル･オフセット
+cursor_offset_last_top_of_line:	DS	2	;最終行先頭のカーソル･オフセット
 vram_address_of_top:	DS	2	;テキストVRAM先頭アドレス（未使用の場合あり）
 vram_address_of_top_of_last_line:	DS	2	;最終行先頭のテキストVRAMアドレス（未使用の場合あり）
-locate_of_cursol_overlap_character:	DS	1	;カーソルと重なった位置の文字の保存（未使用の場合あり）
+locate_of_cursor_overlap_character:	DS	1	;カーソルと重なった位置の文字の保存（未使用の場合あり）
 screen_width:	DS	1	;＝00Hで40桁、＝FFHで80桁 -> M23では80桁固定なので、常にscreen_width=FFHとなる。
 CSRADD:	DS	2	;（行数－1）×256＋桁数
 CSRNXI:	DS	1	;256－桁数 '[CSRNX]の初期値 -> M23では桁数80固定なので、CSRNXI=CSRNXとなる。
 CSRNYI:	DS	1	;256－行数 '[CSRNY]の初期値-> M23では行数25固定なので、CSRNYI=CSRNYとなる。
 CSRNX:	DS	1	;x座標-[_WIDTH] _WIDTHは80
 CSRNY:	DS	1	;y座標-[_MXLIN] _MXLINは25
-display_cursol_XY_not_use:	DS	2	;カーソル座標（使用しません）
+display_cursor_XY_not_use:	DS	2	;カーソル座標（使用しません）
 number_of_character_after_CR:	DS	1	;改行してからの文字数（未使用）
 insert_mode_flag:	DS	1	;＝00Hで通常、＝FFHでインサート･モード
 foreground_color:	DS	1	;前景色
@@ -512,11 +511,11 @@ NL:
 	PUSH DE
 	PUSH BC
 
-	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
-	; CURSOL_XY_ADDRからX座標を取得
-	LD	HL,(CURSOL_XY_ADDR+2)		; HLにX座標をロード (2バイト)
-	; CURSOL_XY_ADDR+2からY座標を取得
-	LD	DE,(CURSOL_XY_ADDR)		; DEにY座標をロード (2バイト)
+	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	; cursor_XY_ADDRからX座標を取得
+	LD	HL,(cursor_XY_ADDR+2)		; HLにX座標をロード (2バイト)
+	; cursor_XY_ADDR+2からY座標を取得
+	LD	DE,(cursor_XY_ADDR)		; DEにY座標をロード (2バイト)
 	OR	A ; フラグをクリア
 	CP	L ; X座標が0かチェック
 	JR	Z,NLRET	; X座標が0ならリターン
@@ -569,6 +568,7 @@ MSXLP:
 	LD	A,(DE) ; 文字を取得
 	CP	00H ; 終了コードか？
 	JR	Z,MSXSKP	; 終了コードなら終了へ
+
 	CALL PRINT ; 文字を表示
 	INC	DE	; アドレスを一つ進める
 	JR	MSXLP
@@ -609,9 +609,9 @@ TAB:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
-	; CURSOL_XY_ADDRからX座標を取得
-	LD	HL,(CURSOL_XY_ADDR+2)		; HLにX座標をロード (2バイト)
+	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	; cursor_XY_ADDRからX座標を取得
+	LD	HL,(cursor_XY_ADDR+2)		; HLにX座標をロード (2バイト)
 	; Bレジスタの値とX座標との差を計算
 	LD	A,B
 	SUB	L	; A = B - X座標
@@ -775,13 +775,13 @@ HLHEX:
 ;入力	なし
 ;出力	L←x座標、H←y座標
 ;破壊	HL
-;注：CALC_CURSOL_XYを呼び出します。
+;注：CALC_cursor_XYを呼び出します。
 CSR:
 	PUSH	AF
 	PUSH	DE
 	PUSH	BC
-	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
-	LD	HL,(CURSOL_XY_ADDR)		; LにX座標をロード (2バイト)
+	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	LD	HL,(cursor_XY_ADDR)		; LにX座標をロード (2バイト)
 	POP	BC
 	POP	DE
 	POP	AF
@@ -803,9 +803,9 @@ LOC:
 	PUSH	DE
 	PUSH	BC
 	; 現在HLが移動したいカーソルの位置を指さしている。
-	; PRINT_CURSOLはDEに現在のカーソルの位置が入っていることを期待している。
+	; PRINT_cursorはDEに現在のカーソルの位置が入っていることを期待している。
 	EX DE,HL	; DE←移動先カーソル位置
-	CALL	PRINT_CURSOL ; カーソル位置を設定
+	CALL	PRINT_cursor ; カーソル位置を設定
 	POP	BC
 	POP	DE
 	POP	HL
@@ -1424,10 +1424,10 @@ TDIR:
 ;出力	Acc←文字
 ;破壊	AF，HL，DE，BC
 input_one_character_entity:
-	CALL	display_cursol
+	CALL	display_cursor
 	CALL	_INKEY
 	PUSH	AF
-	CALL	erase_cursol
+	CALL	erase_cursor
 	POP	AF
 	RET
 
@@ -1527,27 +1527,27 @@ GTINS:	CP	20H
 	LD	A,(_MXLIN)
 	LD	L,0
 	LD	H,A
-	LD	(final_plus_one_cursol_XY),HL
-	CALL	get_offset_from_cursol_XY
-	LD	(offset_plus_one_cursol_XY),HL
+	LD	(final_plus_one_cursor_XY),HL
+	CALL	get_offset_from_cursor_XY
+	LD	(offset_plus_one_cursor_XY),HL
 	CALL	get_Y_next_logical_line
-	LD	(next_cursol_XY_top_of_next_logical_line),HL
-	CALL	get_offset_from_cursol_XY
-	LD	(next_cursol_offset_top_of_next_logical_line),HL
+	LD	(next_cursor_XY_top_of_next_logical_line),HL
+	CALL	get_offset_from_cursor_XY
+	LD	(next_cursor_offset_top_of_next_logical_line),HL
 	CALL	_CSR
-	LD	(now_cursol_XY),HL
-	CALL	get_offset_from_cursol_XY
-	LD	(now_cursol_offset),HL
-	LD	HL,(next_cursol_offset_top_of_next_logical_line)
+	LD	(now_cursor_XY),HL
+	CALL	get_offset_from_cursor_XY
+	LD	(now_cursor_offset),HL
+	LD	HL,(next_cursor_offset_top_of_next_logical_line)
 	DEC	HL	;HL←行末のカーソル･オフセット
 	CALL	read_character_offset_address
 	LD	(line_end_character),A
 	SUB	' '	;0，0以外
 	ADD	A,0FFH	;CY＝0， CY＝1
 	SBC	A,A	;00H，FFH
-	LD	(cursol_line_end),A
-	LD	DE,(now_cursol_offset)
-	LD	HL,(next_cursol_offset_top_of_next_logical_line)
+	LD	(cursor_line_end),A
+	LD	DE,(now_cursor_offset)
+	LD	HL,(next_cursor_offset_top_of_next_logical_line)
 	DEC	HL	;HL←行末のカーソル･オフセット
 	OR	A
 	SBC	HL,DE
@@ -1556,29 +1556,29 @@ GTINS:	CP	20H
 	ADD	A,0FFH	;CY＝1，CY＝0
 	SBC	A,A	;FFH，00H
 	CPL		;00H，FFH
-	LD	HL,cursol_line_end
+	LD	HL,cursor_line_end
 	OR	(HL)
 	LD	(HL),A
 
 ;	転送します
-	LD	DE,(now_cursol_offset)
-	LD	HL,(next_cursol_offset_top_of_next_logical_line)
+	LD	DE,(now_cursor_offset)
+	LD	HL,(next_cursor_offset_top_of_next_logical_line)
 	DEC	HL	;HL←行末のカーソル･オフセット
 	OR	A
 	SBC	HL,DE
 	LD	C,L
 	LD	B,H	;BC←転送文字数
-	LD	HL,(now_cursol_offset)	;HL←転送元カーソル･オフセット
+	LD	HL,(now_cursor_offset)	;HL←転送元カーソル･オフセット
 	LD	E,L
 	LD	D,H
 	INC	DE	;DE←転送先カーソル･オフセット
 	JR	Z,$+5
 	; CALL	VBTRNS
 	CALL	_CSR
-	CALL	get_offset_from_cursol_XY
+	CALL	get_offset_from_cursor_XY
 	LD	A,' '
 	CALL	write_character_offset_address
-	LD	A,(cursol_line_end)
+	LD	A,(cursor_line_end)
 	OR	A
 	JR	NZ,$+4
 	POP	AF
@@ -1586,7 +1586,7 @@ GTINS:	CP	20H
 
 ;	1物理行を注入する必要がある場合
 	LD	A,(_MXLIN)
-	LD	HL,next_cursol_XY_top_of_next_logical_line+1
+	LD	HL,next_cursor_XY_top_of_next_logical_line+1
 	SUB	(HL)	;Acc←画面残り物理行数
 	JR	Z,GTIRU	;論理的に綱がっている最終物理行が、画面最終物理最終行と等しい
 	DEC	A
@@ -1594,7 +1594,7 @@ GTINS:	CP	20H
 ;	ライン･ターミナル･テーブルの転送
 	LD	C,A
 	LD	B,0	;BC←転送行数－1
-	LD	HL,next_cursol_XY_top_of_next_logical_line+1
+	LD	HL,next_cursor_XY_top_of_next_logical_line+1
 	ADD	A,(HL)
 	LD	E,A
 	LD	D,LINTTB/100H	;DE←転送先
@@ -1605,8 +1605,8 @@ GTINS:	CP	20H
 	EX	DE,HL
 	LD	(HL),B	;新行と次の行の連結解除
 ;	画面の転送
-	LD	DE,(next_cursol_offset_top_of_next_logical_line)
-	LD	HL,(offset_plus_one_cursol_XY)
+	LD	DE,(next_cursor_offset_top_of_next_logical_line)
+	LD	HL,(offset_plus_one_cursor_XY)
 	OR	A
 	SBC	HL,DE
 	LD	DE,(line_length)
@@ -1614,23 +1614,23 @@ GTINS:	CP	20H
 	SBC	HL,DE
 	LD	C,L
 	LD	B,H	;BC←転送バイト数
-	LD	HL,(next_cursol_offset_top_of_next_logical_line)
-	EX	DE,HL	;HL←[line_length]，DE←[next_cursol_offset_top_of_next_logical_line]
+	LD	HL,(next_cursor_offset_top_of_next_logical_line)
+	EX	DE,HL	;HL←[line_length]，DE←[next_cursor_offset_top_of_next_logical_line]
 	ADD	HL,DE
 	EX	DE,HL	;HL←転送元，DE←転送先
 	; CALL	VBTRNS
 
 ;	新行を書き込みます
-write_new_line:	LD	HL,(next_cursol_offset_top_of_next_logical_line)
+write_new_line:	LD	HL,(next_cursor_offset_top_of_next_logical_line)
 	LD	BC,(line_length)
 	LD	A,' '
 	; CALL	FILVRM
-write_new_line_1:	LD	HL,next_cursol_XY_top_of_next_logical_line+1
+write_new_line_1:	LD	HL,next_cursor_XY_top_of_next_logical_line+1
 	LD	L,(HL)
 	DEC	L
 	LD	H,LINTTB/100H
 	LD	(HL),0FFH	;新物理行と前の物理行を連結
-	LD	HL,(next_cursol_offset_top_of_next_logical_line)
+	LD	HL,(next_cursor_offset_top_of_next_logical_line)
 	LD	A,(line_end_character)
 	CALL	write_character_offset_address
 	POP	AF
@@ -1638,26 +1638,26 @@ write_new_line_1:	LD	HL,next_cursol_XY_top_of_next_logical_line+1
 
 ;	論理的に綱がっている最終物理行が、画面最終物理最終行と等しい場合
 GTIRU:	CALL	control_code_ROLL_UP
-	LD	HL,(now_cursol_XY)
+	LD	HL,(now_cursor_XY)
 	DEC	H
 	JP	M,$+6
 	CALL	_LOC
-	LD	HL,(next_cursol_XY_top_of_next_logical_line)
+	LD	HL,(next_cursor_XY_top_of_next_logical_line)
 	DEC	H
-	LD	(next_cursol_XY_top_of_next_logical_line),HL
-	CALL	get_offset_from_cursol_XY
-	LD	(next_cursol_offset_top_of_next_logical_line),HL
+	LD	(next_cursor_XY_top_of_next_logical_line),HL
+	CALL	get_offset_from_cursor_XY
+	LD	(next_cursor_offset_top_of_next_logical_line),HL
 	JR	write_new_line_1
 
 line_end_character:	DS	1	;行末の文字
-cursol_line_end:	DS	1	;＝FFH（≠0）で行末の文字がスペースでないか、カーソルが行末にあります
+cursor_line_end:	DS	1	;＝FFH（≠0）で行末の文字がスペースでないか、カーソルが行末にあります
 line_length:	DS	2	;1行の桁数
-now_cursol_XY:	DS	2	;現在カーソル座標
-now_cursol_offset:	DS	2	;現在カーソル･オフセット
-next_cursol_XY_top_of_next_logical_line:	DS	2	;次の論理行頭カーソル座標
-next_cursol_offset_top_of_next_logical_line:	DS	2	;次の論理行頭のカーソル･オフセット
-final_plus_one_cursol_XY:	DS	2	;最終＋1のカーソル座標
-offset_plus_one_cursol_XY:	DS	2	;最終＋1のカーソル･オフセット
+now_cursor_XY:	DS	2	;現在カーソル座標
+now_cursor_offset:	DS	2	;現在カーソル･オフセット
+next_cursor_XY_top_of_next_logical_line:	DS	2	;次の論理行頭カーソル座標
+next_cursor_offset_top_of_next_logical_line:	DS	2	;次の論理行頭のカーソル･オフセット
+final_plus_one_cursor_XY:	DS	2	;最終＋1のカーソル座標
+offset_plus_one_cursor_XY:	DS	2	;最終＋1のカーソル･オフセット
 
 
 ;=======================================
@@ -1746,13 +1746,13 @@ INPUTL:
 ;	読み出しアドレスの設定
 ;出力	DE←現在行の行頭のカーソル･オフセット、BC←現在行の最大文字数
 	CALL	get_Y_top_of_logical_line	;論理行頭の座標を得ます
-	CALL	get_offset_from_cursol_XY
+	CALL	get_offset_from_cursor_XY
 	EX	DE,HL	;DE←現在行の行頭のカーソル･オフセット
 	CALL	get_Y_next_logical_line	;次の論理行の座標を得ます
 	DEC	H
 	CALL	_LOC	;カーソルを論理的に綱がっている最後の物理行へ
 	INC	H
-	CALL	get_offset_from_cursol_XY
+	CALL	get_offset_from_cursor_XY
 	OR	A
 	SBC	HL,DE
 	LD	C,L
@@ -1922,8 +1922,8 @@ SETPRN:
 get_logical_column:
 	;テキストVRAMのスタートアドレスがF800Hであり、一行の桁数は80dであるので、
 	;論理桁位置は、(y座標×80d)+x座標で求められます。
-	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
-	LD	HL,(CURSOL_XY_ADDR) ; 
+	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	LD	HL,(cursor_XY_ADDR) ; 
 	RET
 
 ;論理行頭の座標を得ます
@@ -1931,8 +1931,8 @@ get_logical_column:
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
 get_Y_top_of_logical_line:
-	CALL CALC_CURSOL_XY ; CURSOL_LOCATEからX,Y座標を計算して、CURSOL_XY_ADDRに保存する。
-	LD	HL,(CURSOL_XY_ADDR+2) ;
+	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	LD	HL,(cursor_XY_ADDR+2) ;
 	RET
 
 
@@ -1948,8 +1948,8 @@ get_Y_next_logical_line:
 ;入力	L←x座標、H←y座標
 ;出力	HL←オフセット
 ;破壊	AF，HL
-;注：cursol_offset_for_Y_tableは、y座標→カーソル･オフセット対応表。
-get_offset_from_cursol_XY:
+;注：cursor_offset_for_Y_tableは、y座標→カーソル･オフセット対応表。
+get_offset_from_cursor_XY:
 	RET
 
 
@@ -1957,29 +1957,29 @@ get_offset_from_cursol_XY:
 ;入力	HL←カーソル･オフセット
 ;出力	L←x座標,H←y座標
 ;破壊	AF，HL
-get_cursol_XY_from_offset_address:
+get_cursor_XY_from_offset_address:
 	RET
 
 
 ;カーソルのオフセット計算用テーブルを生成します
 ;入力	[_WIDTH]参照
-;出力	[cursol_offset_for_Y_table～]←オフセット
+;出力	[cursor_offset_for_Y_table～]←オフセット
 ;破壊	AF，HL，DE，BC
 ;〈レジスタ･マップ〉
 ;DE	テーブル･アドレス
 ;BC	定数[_WIDTH]
 ;HL	カーソル･オフセット
 ;Acc	ループ･カウンタ
-generate_cursol_offset_table:
+generate_cursor_offset_table:
 	RET
 
 
 ;カーソル制御用ワークの初期化
 ;入力	[_WIDTH]、[_WIDTH]、[_MXLIN]、[vram_address_of_top]参照
-;出力	[CSRADD]、[CSRNXI]、[CSRNYI]、[cursol_offset_last_top_of_line]、[total_number_of_character_display]、[vram_address_of_top_of_last_line]、
+;出力	[CSRADD]、[CSRNXI]、[CSRNYI]、[cursor_offset_last_top_of_line]、[total_number_of_character_display]、[vram_address_of_top_of_last_line]、
 ;	ライン･ターミナル･テーブル初期化
 ;破壊	AF，HL，DE，BC
-initialize_cursol_control_work_area:
+initialize_cursor_control_work_area:
 	RET
 
 
@@ -2207,6 +2207,14 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 	DI
 	CALL	clear_key_buffer
 	EI
+;	カーソル位置の変数(CURSOR_LOCATE)の初期値(F800)を格納すコードを書いて下さい。
+	PUSH	HL
+	LD HL,CURSOR_LOCATE
+	LD (HL),0H
+	INC HL
+	LD (HL),0F8H
+	POP	HL
+
 
 	RET
 	DS	3
@@ -2302,7 +2310,7 @@ bell_entity:
 ;入力	なし
 ;出力	L←x座標、H←y座標
 ;破壊	AF，HL，DE，BC
-get_cursol_XY_entity:
+get_cursor_XY_entity:
 	LD	DE,(CSRADD) ; CSRADDの値をDEへ
 	LD	HL,(CSRNX) ; CSRNXの値をHLへ
 	ADD	HL,DE
@@ -2312,7 +2320,7 @@ get_cursol_XY_entity:
 ;入力	L←x座標、H←y座標
 ;出力	なし
 ;破壊	AF，HL，DE，BC
-move_cursol_XY_entity:
+move_cursor_XY_entity:
 	LD	DE,(CSRNXI)	;256-桁数 '[CSRNX]の初期値
 	ADD	HL,DE
 	LD	(CSRNX),HL ;ｘ座標-[_WIDTH]
@@ -2323,7 +2331,7 @@ move_cursol_XY_entity:
 ;出力	Acc←文字
 ;破壊	AF，HL，DE，BC
 get_character_XY_entity:
-	CALL get_offset_from_cursol_XY
+	CALL get_offset_from_cursor_XY
 	JP read_character_offset_address
 
 ;画面のクリア
@@ -2629,11 +2637,11 @@ read_character_offset_address:
 
 ;カーソルを表示します
 ;入力	[insert_mode_flag]参照
-;出力	[locate_of_cursol_overlap_character]←カーソル位置の文字
+;出力	[locate_of_cursor_overlap_character]←カーソル位置の文字
 ;破壊	AF，HL，DE，BC
-display_cursol:
-	CALL	get_cursol_XY_entity
-	CALL	get_offset_from_cursol_XY
+display_cursor:
+	CALL	get_cursor_XY_entity
+	CALL	get_offset_from_cursor_XY
 	LD	C,L
 	LD	A,20H	;アトリビュートVRAM先頭（2000H）
 	ADD	A,H
@@ -2649,12 +2657,12 @@ display_cursol:
 
 
 ;カーソルを消去します
-;入力	[locate_of_cursol_overlap_character]、[insert_mode_flag]参照
+;入力	[locate_of_cursor_overlap_character]、[insert_mode_flag]参照
 ;出力	なし
 ;破壊	AF，HL，DE，BC
-erase_cursol:
-	CALL	get_cursol_XY_entity
-	CALL	get_offset_from_cursol_XY
+erase_cursor:
+	CALL	get_cursor_XY_entity
+	CALL	get_offset_from_cursor_XY
 	LD	C,L
 	LD	A,20H	;アトリビュートVRAM先頭（2000H）
 	ADD	A,H
@@ -2768,8 +2776,8 @@ VBLLP:	DEC	BC	; 6ts
 ;入力	L←x座標、H←y座標
 ;出力	BC←テキストVRAMアドレス
 ;破壊	AF，HL，BC
-get_vram_address_from_cursol_XY:
-	CALL	get_offset_from_cursol_XY
+get_vram_address_from_cursor_XY:
+	CALL	get_offset_from_cursor_XY
 	LD	C,L
 	LD	A,30H	;テキストVRAM先頭（3000H）
 	ADD	A,H
@@ -3548,13 +3556,13 @@ CRT_INIT:
 	OUT (CRTC_VAL),A
 
 ; カーソルの形状と点滅の設定
-	LD A,0AH ; R10 (cursol start address)
+	LD A,0AH ; R10 (cursor start address)
 	OUT (CRTC_ADD),A
 ;	LD A,C0H ; 点滅、豆腐カーソル
 	LD A,C7H ; 点滅、アンスコカーソル
 ;	LD A,0H ; 表示せず。
 	OUT (CRTC_VAL),A
-	LD A,0BH ; R11 (cursol end address)
+	LD A,0BH ; R11 (cursor end address)
 	OUT (CRTC_ADD),A
 	LD A,0AH
 ;	LD A,0H ; 表示せず。
@@ -3574,7 +3582,7 @@ CLEAR_ALL_LINE:
 	JR NZ,CLEAR_ALL_LINE
 
 	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
-	LD (CURSOL_LOCATE),DE
+	LD (cursor_LOCATE),DE
 	LD (TOP_VIEW),DE
 	LD DE, 0FFD0H
 	LD (NEED_DO_SCROLL_POINT),DE
@@ -3588,8 +3596,8 @@ CLEAR_ALL_LINE:
 
 ;
 ; VRAM_TXT_TOP : VRAMテキストエリアの先頭(F800H)
-; CURSOL_LOCATE : 現在のカーソル位置
-; CR_NOW_CURSOL_LOCATE : CRコードが入った時のカーソル位置
+; cursor_LOCATE : 現在のカーソル位置
+; CR_NOW_cursor_LOCATE : CRコードが入った時のカーソル位置
 ; TOP_VIEW : 画面左上端のアドレス(スクロールによって動的に変化する)
 ; CR_BASE_ADDRESS : CR後のカーソル位置
 ; CR_NEW_ORIGIN : FFFFHの境界を越え、更に画面右端を超えた時にCRアドレス計算の原点になるアドレス
@@ -3603,7 +3611,7 @@ CLEAR_ALL_LINE:
 PUTCHAR:
 	AND A
 	JR Z, PUTCHAR_RET ; NULL文字なら何もしないで戻る
-	LD DE,(CURSOL_LOCATE) ; 現在のカーソル位置をDEにロード
+	LD DE,(cursor_LOCATE) ; 現在のカーソル位置をDEにロード
 	CP CR ; キャリッジリターンか？
 	JP Z, DO_CR ; CRの処理
 	CP LF ; ラインフィードか？
@@ -3641,20 +3649,20 @@ DO_CR_LF_BS_RETURN: ; CR,LF,BSの処理で戻ってくる
 	POP DE
 	POP AF
 	POP HL
-	LD (CURSOL_LOCATE),DE ; 現在のカーソル位置を更新。
-	CALL PRINT_CURSOL ; カーソル表示
-	CALL CALC_CURSOL_XY ; カーソルのX,Y座標計算
+	LD (cursor_LOCATE),DE ; 現在のカーソル位置を更新。
+	CALL PRINT_cursor ; カーソル表示
+	CALL CALC_cursor_XY ; カーソルのX,Y座標計算
 PUTCHAR_RET:
 	RET
 
 ;
-; カーソルをCURSOL_LOCATE=DEの位置に表示する(HD46505Sの機能)
+; カーソルをcursor_LOCATE=DEの位置に表示する(HD46505Sの機能)
 ;
-PRINT_CURSOL:
+PRINT_cursor:
 	PUSH AF
 	PUSH DE
 	PUSH HL
-	EX DE,HL ; HL=CURSOL_LOCATE
+	EX DE,HL ; HL=cursor_LOCATE
 	LD A,0EH ; R14 (cursor H)
 	OUT (CRTC_ADD),A
 	LD A,H
@@ -3669,16 +3677,16 @@ PRINT_CURSOL:
 	RET
 
 ;
-; CURSOL_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
+; cursor_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
 ;
-CALC_CURSOL_XY:
+CALC_cursor_XY:
 	PUSH AF
 	PUSH BC
 	PUSH DE
 	PUSH HL
 	LD HL,VRAM_TXT_TOP ; 画面左上端アドレスをHLにロード
-	EX DE,HL ; DEとHLを交換。HL=CURSOL_LOCATE, DE=VRAM_TXT_TOP
-	SBC HL,DE ; HL = CURSOL_LOCATE - VRAM_TXT_TOP
+	EX DE,HL ; DEとHLを交換。HL=cursor_LOCATE, DE=VRAM_TXT_TOP
+	SBC HL,DE ; HL = cursor_LOCATE - VRAM_TXT_TOP
 	OR A ; フラグをクリア
 	LD BC,0 ; B=Y座標カウンタ初期化
 Y_CALC_LOOP:
@@ -3690,9 +3698,9 @@ Y_CALC_LOOP:
 Y_CALC_END:
 	ADD HL,DE ; 余り復元（これがX座標）
     LD A,B
-    LD (CURSOL_XY_ADDR),A   ; Y座標保存
+    LD (cursor_XY_ADDR),A   ; Y座標保存
     LD A,L
-    LD (CURSOL_XY_ADDR+2),A   ; X座標保存
+    LD (cursor_XY_ADDR+2),A   ; X座標保存
 	POP HL
 	POP DE
 	POP BC
@@ -3713,18 +3721,18 @@ DO_CR:
 	PUSH HL
 	PUSH BC
 	XOR A ; A=0にする
-	LD (CR_NOW_CURSOL_LOCATE),DE ; 現在のカーソル位置保存
+	LD (CR_NOW_cursor_LOCATE),DE ; 現在のカーソル位置保存
 	LD HL,(TOP_VIEW) ; 左上端をロード
 	EX DE,HL
 	SBC HL,DE ; 左上端アドレス - 現在のカーソル位置
 	JR NC,CONTINUE_CR ; オーバーフローしていないなら単純処理
 ;
-;   TOP_VIEWがCR_NOW_CURSOL_LOCATEよりも大きいとき。
+;   TOP_VIEWがCR_NOW_cursor_LOCATEよりも大きいとき。
 ;	この状況は、スクロールされた時に発生する。
 ;	つまり、殆どの場合、この処理が実行される。
 ;
 	LD HL,(TOP_VIEW)
-	LD DE,(CR_NOW_CURSOL_LOCATE) ; CRコードが入った時のカーソル位置
+	LD DE,(CR_NOW_cursor_LOCATE) ; CRコードが入った時のカーソル位置
 	LD BC,WIDTH_SCREEN ;  50H =  画面の桁数(80d)
 	LD (CR_BASE_ADDRESS),HL ; 初期値は左上端アドレス
 CR_SCAN_0:
@@ -3755,12 +3763,12 @@ CR_SCAN_0:
 			; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
 	LD (CR_NEW_ORIGIN),HL ; 新しいCR評価位置になる
 	LD (CR_BASE_ADDRESS),HL ; CR_BASE_ADDRESSに新しい値を入れる
-	LD DE,(CR_NOW_CURSOL_LOCATE) ; CR命令を受けた時のカーソル位置
+	LD DE,(CR_NOW_cursor_LOCATE) ; CR命令を受けた時のカーソル位置
 
 	;
 	; 例えば現在カーソル位置がF819Hで新しいCR評価位置がF820Hのときに、
 	; CR_2_NEW_SCAN_0のループを通ると+50Hされてしまうので、バイパスする処理。
-	SBC HL,DE ; (CR_NEW_ORIGIN) > CR_NOW_CURSOL_LOCATE ?
+	SBC HL,DE ; (CR_NEW_ORIGIN) > CR_NOW_cursor_LOCATE ?
 	JP P,CR_BOUNDARY_RETURN ; 正であれば、ジャンプ
 	;
 	;
@@ -3771,7 +3779,7 @@ CR_NEW_SCAN_0:
 	LD (CR_BASE_ADDRESS_PRE),HL ; HL=CR_NEW_ORIGIN
 	ADD HL,BC ; CR_NEW_ORIGIN + 50H +...
 	LD (CR_BASE_ADDRESS),HL
-	SBC HL,DE ; (CR_NEW_ORIGIN + 50H +...) > CR_NOW_CURSOL_LOCATE ?
+	SBC HL,DE ; (CR_NEW_ORIGIN + 50H +...) > CR_NOW_cursor_LOCATE ?
 	JP M, CR_NEW_SCAN_0 ; DEの方が大きければループ
 	JP Z, CR_NEW_SCAN_0 ; 完全に一致したときも1回ループを回す
 	LD HL,(CR_BASE_ADDRESS_PRE) ; HL>DE。50Hを足す一つ前の値をHLに入れる。
@@ -3779,11 +3787,11 @@ CR_NEW_SCAN_0:
 	LD DE,(CR_BASE_ADDRESS) ; CR後のアドレスをDEに入れる。
 	JR CR_END
 ;
-;	TOP_VIEWがCR_NOW_CURSOL_LOCATEよりも小さいとき
+;	TOP_VIEWがCR_NOW_cursor_LOCATEよりも小さいとき
 ;
 CONTINUE_CR:
 	LD HL,(TOP_VIEW)
-	LD DE,(CR_NOW_CURSOL_LOCATE)
+	LD DE,(CR_NOW_cursor_LOCATE)
 	LD BC,WIDTH_SCREEN ; 50H(80d) 
 	LD (CR_BASE_ADDRESS),HL
 CR_SCAN_1:
@@ -3821,10 +3829,10 @@ DO_LF:
 ;
 ;	BEYOND FFFFH BOUNDARY
 ;
-	LD HL,(CURSOL_LOCATE)
+	LD HL,(cursor_LOCATE)
 	LD DE,0FFFFH
-	EX DE,HL ; HL - CURSOL_LOCATE
-	SBC HL,DE ; FFFFH - CURSOL_LOCATE = A
+	EX DE,HL ; HL - cursor_LOCATE
+	SBC HL,DE ; FFFFH - cursor_LOCATE = A
 	LD DE,50H ; 50H(80d)
 	EX DE,HL ; DE - A
 	SBC HL,DE ; 50H - A = X
@@ -3896,7 +3904,7 @@ DO_BEL:
 ;
 
 DO_SCROLL:
-	LD (CURSOL_LOCATE),DE ; 現在のカーソル位置を更新
+	LD (cursor_LOCATE),DE ; 現在のカーソル位置を更新
 	LD HL,(TOP_VIEW) ; 左上端アドレス
 	LD DE,7D0H ; 全画面文字数
 	ADD HL,DE ; TOP_VIEW + 7D0H ; 
@@ -3916,11 +3924,11 @@ SCROLL_POINT_BEYOND_FFFF:
 SCROLL_POINT:
 	; update need_do_scroll_point
 	LD (NEED_DO_SCROLL_POINT),HL ; need_do_scroll_point = 新しいTOP_VIEW
-	LD DE,(CURSOL_LOCATE) ; 現在のカーソル位置
-	LD A,D ; need_do_scroll_point == CURSOL_LOCATE?
+	LD DE,(cursor_LOCATE) ; 現在のカーソル位置
+	LD A,D ; need_do_scroll_point == cursor_LOCATE?
 	CP H
 	RET NZ
-	LD A,E ; need_do_scroll_point == CURSOL_LOCATE?
+	LD A,E ; need_do_scroll_point == cursor_LOCATE?
 	CP L
 	RET NZ ; スクロール不要なら終了
 ;
@@ -4007,7 +4015,7 @@ SCROLL_END:
 ; for CRT control
 ;
 
-CURSOL_LOCATE: ; カーソル位置を保存する変数
+cursor_LOCATE: ; カーソル位置を保存する変数
 	DS 02H
 
 TOP_VIEW: ; 画面左上端のアドレスを保存する変数
@@ -4022,7 +4030,7 @@ CR_BASE_ADDRESS: ; CRTコントローラのベースアドレス保存変数
 CR_BASE_ADDRESS_PRE: ; CRTコントローラのベースアドレス保存変数（前回値）
 	DS 02H
 
-CR_NOW_CURSOL_LOCATE: ; 現在のカーソル位置保存変数
+CR_NOW_cursor_LOCATE: ; 現在のカーソル位置保存変数
 	DS 02H
 
 CR_NEW_ORIGIN: ; 新しい表示開始アドレス保存変数
@@ -5118,7 +5126,7 @@ _DTADR:	DS	2	;1F70H ファイルの先頭アドレス。
 _SIZE:	DS	2	;1F72H ファイルサイズ。
 _IBFAD:	DW	fcb_buffer	;1F74H ファイルのインフォメーションブロックの先頭アドレス。同時にファイル属性のアドレスでもある。
 _KBFAD:	DW	keyboard_buffer	;1F76H キー入力に使えるバッファのアドレス。LD DE,(#KBFAD) CALL #GETLなどとする。P6版では内部ワークに81バイトの領域を確保してある。
-_XYADR:	DW	display_cursol_XY_not_use	;1F78H 'ダミー カーソル座標が格納してあるアドレス。
+_XYADR:	DW	display_cursor_XY_not_use	;1F78H 'ダミー カーソル座標が格納してあるアドレス。
 _PRCNT:	DW	number_of_character_after_CR	;1F7AH '未使用 改行後に表示した文字数を格納してあるアドレス。
 _LPSW:	DB	0	;1F7CH 0以外なら、表示ルーチンを呼ぶとプリンタにも出力する。
 _DVSW:	DB	0	;1F7CH 'S-OS 2400bps 'ダミー テープフォーマット。0:共通 1:各機種 3:QD。P6版では1がデフォルト。
@@ -7083,12 +7091,12 @@ START:
 	LD	(vram_address_of_top),HL
 
 ;	デフォルト･ドライブの設定
-	LD	A,(0FF87H)	;立ち上がったドライブ番号（下位ニブル）
-	AND	1111B
-	CP	4
-	JR	NC,STADVS
-	ADD	A,'A'	;Acc←立ち上がったドライブ名
-	LD	(_DFDV),A	;デフォルト･ドライブ
+	; LD	A,(0FF87H)	;立ち上がったドライブ番号（下位ニブル）
+	; AND	1111B
+	; CP	4
+	; JR	NC,STADVS
+	; ADD	A,'A'	;Acc←立ち上がったドライブ名
+	; LD	(_DFDV),A	;デフォルト･ドライブ
 STADVS:
 
 ;	[vram_size]の設定（VRAMのサイズ÷100H）
@@ -7112,14 +7120,14 @@ STADVS:
 ;	[top_of_ram_disk_of_vram]の設定（VRAM上のRAMディスクの先頭÷100H）
 ;〈VRAM上のRAMディスクの先頭〉
 ;008000H番地
-	LD	HL,0000H	;008000H
-	LD	(top_of_ram_disk_of_vram),HL
+	; LD	HL,0000H	;008000H
+	; LD	(top_of_ram_disk_of_vram),HL
 
 ;	[size_of_ram_disk_of_vram]の設定（VRAM上のRAMディスクのサイズ÷100H）
 ;〈VRAM上のRAMディスクのサイズ〉
 ;008000Hバイト
-	LD	HL,0000H	;008000H
-	LD	(size_of_ram_disk_of_vram),HL
+	; LD	HL,0000H	;008000H
+	; LD	(size_of_ram_disk_of_vram),HL
 
 ;	[top_of_special_work_of_memory]、[size_of_special_work_of_memory]の設定
 ;〈メモリ特殊ワークの先頭とサイズ〉
@@ -7135,6 +7143,6 @@ STADVS:
 	LD	HL,_COLD
 	LD	(0001H),HL
 	LD	(0067H),HL
-	JP	0000H
-
+	; JP	0000H
+	JP COLD
 	END
