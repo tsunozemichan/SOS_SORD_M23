@@ -6,19 +6,19 @@
 ; ERROR	EQU	286CH
 
 ;	バッチ処理バッファ
-BATBF	EQU	2D00H	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
-BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
+; BATBF	EQU	2D00H	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
+; BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
 
 
 ;
 ; CRTC ports
 ;
-VRAM_TXT_TOP EQU 0F800H
-VRAM_ATR_TOP EQU 0F000H
-CRTC_ADD EQU 0F0H
-CRTC_VAL EQU 0F1H
+VRAM_TXT_TOP EQU 0F800H ; VRAM上で画面左上を指すアドレス
+VRAM_ATR_TOP EQU 0F000H ; アトリビュートの先頭アドレス
+CRTC_ADD EQU 0F0H ; CRTCアドレス･ポート
+CRTC_VAL EQU 0F1H ; CRTCデータ･ポート
 WIDTH_SCREEN EQU 50H ; 80文字モードの1行のバイト数
-CURSOR_XY_ADDR EQU 0FFF0H ; カーソルのX,Y座標を保存するアドレス
+CURSOR_XY_ADDR EQU FF00H ; カーソルのX,Y座標を保存するアドレス
 
 ; Ascii code Constants
 CR	EQU	0DH ; Carriage Return
@@ -55,9 +55,6 @@ ESC EQU 1BH ; Escape
 BUFFER:	DS	256
 
 
-;*******	256バイト境界	********
-
-
 ;=======================
 ;文字列入力バッファ
 ;=======================
@@ -65,41 +62,6 @@ BUFFER:	DS	256
 
 ;	0100Hバイト
 keyboard_buffer:	DS	256
-
-
-;*******	256バイト境界	********
-
-
-;=======================================
-;S-OS文字<->X1文字変換テーブル
-;=======================================
-
-
-;〈変換する文字〉
-;5CHと9FH	「\」「＼」
-;7BHと87H	「{」「■」
-;7DHとF0H	「}」「チェッカー■」
-;7FH		「π」
-LSXTBL:
-	DB	 00H, 01H, 02H, 03H, 04H, 05H, 06H, 07H, 08H, 09H, 0AH, 0BH, 0CH, 0DH, 0EH, 0FH	;00
-	DB	 10H, 11H, 12H, 13H, 14H, 15H, 16H, 17H, 18H, 19H, 1AH, 1BH, 1CH, 1DH, 1EH, 1FH	;10
-	DB	 20H, 21H, 22H, 23H, 24H, 25H, 26H, 27H, 28H, 29H, 2AH, 2BH, 2CH, 2DH, 2EH, 2FH	;20
-	DB	 30H, 31H, 32H, 33H, 34H, 35H, 36H, 37H, 38H, 39H, 3AH, 3BH, 3CH, 3DH, 3EH, 3FH	;30
-	DB	 40H, 41H, 42H, 43H, 44H, 45H, 46H, 47H, 48H, 49H, 4AH, 4BH, 4CH, 4DH, 4EH, 4FH	;40
-	DB	 50H, 51H, 52H, 53H, 54H, 55H, 56H, 57H, 58H, 59H, 5AH, 5BH, 9FH, 5DH, 5EH, 5FH	;50
-	DB	 60H, 61H, 62H, 63H, 64H, 65H, 66H, 67H, 68H, 69H, 6AH, 6BH, 6CH, 6DH, 6EH, 6FH	;60
-	DB	 70H, 71H, 72H, 73H, 74H, 75H, 76H, 77H, 78H, 79H, 7AH, 87H, 7CH,0F0H, 7EH, 7FH	;70
-	DB	 80H, 81H, 82H, 83H, 84H, 85H, 86H, 7BH, 88H, 89H, 8AH, 8BH, 8CH, 8DH, 8EH, 8FH	;80
-	DB	 90H, 91H, 92H, 93H, 94H, 95H, 96H, 97H, 98H, 99H, 9AH, 9BH, 9CH, 9DH, 9EH, 5CH	;90
-	DB	0A0H,0A1H,0A2H,0A3H,0A4H,0A5H,0A6H,0A7H,0A8H,0A9H,0AAH,0ABH,0ACH,0ADH,0AEH,0AFH	;A0
-	DB	0B0H,0B1H,0B2H,0B3H,0B4H,0B5H,0B6H,0B7H,0B8H,0B9H,0BAH,0BBH,0BCH,0BDH,0BEH,0BFH	;B0
-	DB	0C0H,0C1H,0C2H,0C3H,0C4H,0C5H,0C6H,0C7H,0C8H,0C9H,0CAH,0CBH,0CCH,0CDH,0CEH,0CFH	;C0
-	DB	0D0H,0D1H,0D2H,0D3H,0D4H,0D5H,0D6H,0D7H,0D8H,0D9H,0DAH,0DBH,0DCH,0DDH,0DEH,0DFH	;D0
-	DB	0E0H,0E1H,0E2H,0E3H,0E4H,0E5H,0E6H,0E7H,0E8H,0E9H,0EAH,0EBH,0ECH,0EDH,0EEH,0EFH	;E0
-	DB	 7DH,0F1H,0F2H,0F3H,0F4H,0F5H,0F6H,0F7H,0F8H,0F9H,0FAH,0FBH,0FCH,0FDH,0FEH,0FFH	;F0
-
-
-;*******	256バイト境界	********
 
 
 ;=======================
@@ -150,19 +112,6 @@ control_code_jump_tabel:
 	DW	control_code_Left	;^］ ←
 	DW	control_code_Up		;^＾ ↑
 	DW	control_code_Down	;^＿ ↓
-
-
-;===============================
-;割り込みルーチン用スタック
-;===============================
-
-
-;	0040H（64バイト）
-	DS	64
-INTSTK:
-
-
-;*******	256バイト境界	********
 
 
 ;=======================================
@@ -248,47 +197,42 @@ IO1FD0:	DS	1	;I／O 1FD0Hのバッファ
 ;割り込みルーチン
 ;-----------------------
 
-
-; 省メモリのため、テーブル･エリアに移動してきました。
-
-
 ;=======================
 ;キー･スキャン･ルーチン
 ;=======================
 
-
 ;キー入力割り込み処理
 KEYINT:
-	LD	(KYIRSP),SP
-	LD	SP,INTSTK	;割り込み用スタック
-	PUSH	AF
-	PUSH	HL
-	PUSH	DE
-	PUSH	BC
+; 	LD	(KYIRSP),SP
+; 	LD	SP,INTSTK	;割り込み用スタック
+; 	PUSH	AF
+; 	PUSH	HL
+; 	PUSH	DE
+; 	PUSH	BC
 
-;	キーが有効かチェックします
-	LD	A,(KEYDAT)	;ファンクション
-	BIT	6,A
-	JR	NZ,KYIRET	;キーがはなされた
-	AND	00100000B	;b5
-	JR	NZ,KYISKP
-	LD	A,(pointer_for_write_key_buffer)
-	OR	A
-	JR	NZ,KYIRET	;バッファにカラでないときは、リピート禁止
+; ;	キーが有効かチェックします
+; 	LD	A,(KEYDAT)	;ファンクション
+; 	BIT	6,A
+; 	JR	NZ,KYIRET	;キーがはなされた
+; 	AND	00100000B	;b5
+; 	JR	NZ,KYISKP
+; 	LD	A,(pointer_for_write_key_buffer)
+; 	OR	A
+; 	JR	NZ,KYIRET	;バッファにカラでないときは、リピート禁止
 KYISKP:
 ;	キー入力バッファに書き込みます
-	LD	A,(real_time_key)	;Acc←入力文字
-	CALL	write_one_character_to_key_buffer
-	JR	C,KYIRET	;バッファがいっぱいだった
+	; LD	A,(real_time_key)	;Acc←入力文字
+	; CALL	write_one_character_to_key_buffer
+	; JR	C,KYIRET	;バッファがいっぱいだった
 
 KYIRET:
-	POP	BC
-	POP	DE
-	POP	HL
-	POP	AF
-	DB	31H	;「LD SP,」
+	; POP	BC
+	; POP	DE
+	; POP	HL
+	; POP	AF
+	; DB	31H	;「LD SP,」
 KYIRSP:	DS	2
-	EI
+	; EI
 	RETI
 
 
@@ -302,18 +246,18 @@ KYIRSP:	DS	2
 ; キー入力バッファは、00xxHから始まる127バイトで、
 ;＋127の部分がpointer_for_write_key_bufferにあたります。
 write_one_character_to_key_buffer:
-	LD	HL,pointer_for_write_key_buffer
-	LD	E,(HL)
-	LD	D,H	;DE←書き込みポイント
-	LD	(DE),A	;キー入力バッファ←文字
-	INC	E
-	JP	M,PKYBRK
-	LD	(HL),E	;[pointer_for_write_key_buffer]のカウント･アップ
-	OR	A	;CY←0
+	; LD	HL,pointer_for_write_key_buffer
+	; LD	E,(HL)
+	; LD	D,H	;DE←書き込みポイント
+	; LD	(DE),A	;キー入力バッファ←文字
+	; INC	E
+	; JP	M,PKYBRK
+	; LD	(HL),E	;[pointer_for_write_key_buffer]のカウント･アップ
+	; OR	A	;CY←0
 	RET
 PKYBRK:
-	LD	(HL),L	;[pointer_for_write_key_buffer]を元に戻します
-	SCF
+	; LD	(HL),L	;[pointer_for_write_key_buffer]を元に戻します
+	; SCF
 	RET
 
 
@@ -356,27 +300,45 @@ LINTTB:	DS	32
 COLD:
 ;	初期化
 	LD	SP,(_STKAD)
-	CALL cold_start_entity	;固有の初期化
-	LD	SP,(_STKAD)
-	; CALL _LPTOF
-	; LD	A,255
-	; CALL _WIDCH	;表示幅の初期化 'LINCHを先に呼び出すように改良
-	; LD	A,255
-	; CALL LINCH	;表示行数の初期化
+	DI
+	; IM	2
+	CALL CRT_INIT			;CRTCの初期化
+	EI
+
+;	スタックの設定など
+	LD	HL,FFFFH
+	LD	(_MEMAX),HL	;使用可能メモリの上限
+	LD	HL,system_stack_area
+	LD	(_STKAD),HL
+
+;	特殊ワークのサイズの初期化
+	LD	A,(size_of_special_work_of_vram)
+	LD	L,0
+	LD	H,A	;HL←特殊ワークのサイズ
+	LD	(_WKSIZ),HL	;[_WKSIZ]の初期化
+
+
+;	キー入力バッファのクリア
+	CALL	clear_key_buffer ; インデックスポインタを0にしているだけ。
 
 ;	ディスクのパラメータの初期化
-	LD	HL,000EH
-	LD	(_FATPS),HL
-	LD	HL,0010H
-	LD	(_DIRPS),HL
-	LD	HL,2E00H
-	LD	(_FATBF),HL
-	LD	HL,2F00H
-	LD	(_DTBUF),HL
-	LD	A,80
-	LD	(_MXTRK),A
+	; LD	HL,000EH ; 
+	; LD	(_FATPS),HL
+	; LD	HL,0010H ; ディレクトリ情報が記録されているトラック番号
+	; LD	(_DIRPS),HL
+	; LD	HL,2E00H
+	; LD	(_FATBF),HL
+	; LD	HL,2F00H ; ディスクI／Oバッファ
+	; LD	(_DTBUF),HL
+	; LD	A,80 ; 最大トラック数
+	; LD	(_MXTRK),A
 
-;	タイトル
+;	ディスクI／O初期化
+	; CALL	SOSSI
+
+
+
+;	タイトル表示
 	LD	DE,title_message
 	CALL _MSX
 
@@ -419,6 +381,15 @@ COLD:
 ;#BOOT（2036H）の本体
 ; S-OSを終えます。
 ;注：フィジカル･ルーチンboot_entity（全レジスタ破壊）を呼び出します。
+
+	DS	3
+
+;コールド･スタート時のメッセージ
+title_message:
+	DB	'<<<<< S-OS  SWORD >>>>>',CR
+	DB	00H
+
+
 BOOT:
 	JP	boot_entity
 
@@ -511,7 +482,7 @@ NL:
 	PUSH DE
 	PUSH BC
 
-	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
 	; cursor_XY_ADDRからX座標を取得
 	LD	HL,(cursor_XY_ADDR+2)		; HLにX座標をロード (2バイト)
 	; cursor_XY_ADDR+2からY座標を取得
@@ -609,7 +580,7 @@ TAB:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
 	; cursor_XY_ADDRからX座標を取得
 	LD	HL,(cursor_XY_ADDR+2)		; HLにX座標をロード (2バイト)
 	; Bレジスタの値とX座標との差を計算
@@ -775,12 +746,12 @@ HLHEX:
 ;入力	なし
 ;出力	L←x座標、H←y座標
 ;破壊	HL
-;注：CALC_cursor_XYを呼び出します。
+;注：CALC_CURSOR_XYを呼び出します。
 CSR:
 	PUSH	AF
 	PUSH	DE
 	PUSH	BC
-	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
 	LD	HL,(cursor_XY_ADDR)		; LにX座標をロード (2バイト)
 	POP	BC
 	POP	DE
@@ -803,9 +774,9 @@ LOC:
 	PUSH	DE
 	PUSH	BC
 	; 現在HLが移動したいカーソルの位置を指さしている。
-	; PRINT_cursorはDEに現在のカーソルの位置が入っていることを期待している。
+	; PRINT_CURSORはDEに現在のカーソルの位置が入っていることを期待している。
 	EX DE,HL	; DE←移動先カーソル位置
-	CALL	PRINT_cursor ; カーソル位置を設定
+	CALL	PRINT_CURSOR ; カーソル位置を設定
 	POP	BC
 	POP	DE
 	POP	HL
@@ -1922,7 +1893,7 @@ SETPRN:
 get_logical_column:
 	;テキストVRAMのスタートアドレスがF800Hであり、一行の桁数は80dであるので、
 	;論理桁位置は、(y座標×80d)+x座標で求められます。
-	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
 	LD	HL,(cursor_XY_ADDR) ; 
 	RET
 
@@ -1931,7 +1902,7 @@ get_logical_column:
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
 get_Y_top_of_logical_line:
-	CALL CALC_cursor_XY ; cursor_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
+	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
 	LD	HL,(cursor_XY_ADDR+2) ;
 	RET
 
@@ -2146,85 +2117,6 @@ PEEK_LP:	INC	B	; 4ts '先行デクリメントのため
 ;システム･ルーチン（機種依存）
 ;===============================
 
-
-;コールド･スタート時の固有の初期化
-; 特殊ワークとRAMディスクの情報の初期化をします。
-;入力	なし
-;出力	なし
-;破壊	全レジスタ
- cold_start_entity:
-	DI
-	; IM	2
-	CALL initialize_CRTC		;CRTCを初期化します
-	EI
-; 	LD	I,A
-; ;
-; 	LD	A,0E4H	;キー入力割り込みベクタのセット
-; 	; CALL	SCPUTR	;データ送信（Z80→サブCPU）
-; 	LD	A,52H	;キー入力割り込みベクタ
-; 	; CALL	SCPUTR	;データ送信（Z80→サブCPU）
-
-;	スタックの設定など
-	LD	HL,0FFFFH
-	LD	(_MEMAX),HL	;使用可能メモリの上限
-	LD	HL,system_stack_area
-	LD	(_STKAD),HL
-
-;	「SWEMDIO2」のワークの初期化
-;	LD	A,(VDPR)
-;	LD	(DIOVDR),A
-;	LD	A,(VDPW)
-;	LD	(DIOVDW),A
-	; LD	HL,(top_of_ram_disk_of_vram)
-	; LD	(DIOETP),HL	;RAMディスクのVRAMアドレス先頭（256バイト単位）
-
-;	特殊ワークのサイズの初期化
-	LD	A,(size_of_special_work_of_vram)
-	LD	L,0
-	LD	H,A	;HL←特殊ワークのサイズ
-	LD	(_WKSIZ),HL	;[_WKSIZ]の初期化
-
-;	RAMディスクのクラスタ数の初期化
-	; LD	HL,(size_of_ram_disk_of_vram)	;HL←VRAM上のRAMディスクのサイズ÷100H
-	; LD	A,10H	;1000H '4Kバイト
-	; CALL	DIV68
-	; LD	A,L	;Acc←RAMディスクのクラスタ数
-	; LD	(_ETRK),A	;[_ETRK]の初期化
-
-;	文字色の初期化
-	; LD	A,7
-	; LD	(foreground_color),A
-	; LD	A,0
-	; LD	(background_color),A
-	; LD	A,0
-	; LD	(BDR_color),A
-	; CALL	change_color
-
-;	ディスクI／O初期化
-	; CALL	SOSSI
-
-;	キー入力バッファのクリア
-	DI
-	CALL	clear_key_buffer
-	EI
-;	カーソル位置の変数(CURSOR_LOCATE)の初期値(F800)を格納すコードを書いて下さい。
-	PUSH	HL
-	LD HL,CURSOR_LOCATE
-	LD (HL),0H
-	INC HL
-	LD (HL),0F8H
-	POP	HL
-
-
-	RET
-	DS	3
-
-;コールド･スタート時のメッセージ
-title_message:
-	DB	'<<<<< S-OS  SWORD >>>>>',0DH
-	DB	00H
-
-
 ;ブートします
 ;入力	なし
 ;出力	なし
@@ -2342,7 +2234,34 @@ get_character_XY_entity:
 ;E	クリア･データ（定数）
 ;BC	現在アトリビュートVRAMアドレス
 ;AD	高速ループ･カウンタ
+; 画面左上のアドレスはf800hです。
+; そこから、ffd0hまでをスペースキャラクタ(アスキーコード20h)で埋めて、画面をクリアするコードを書いて下さい。
+
 CLS:
+	PUSH HL
+	PUSH BC
+
+	LD HL,0F000H
+	LD BC,0800H
+
+	LD B,050H
+	LD DE,0FFFFH
+	LD A,20H ; スペースキャラクタ
+; CLEAR_ALL_LINE_CLS:
+.LOOP
+	OUT (0D2H),A ; VRAMへアクセスするためのポート
+	LD (HL),A ; VRAMへ20Hデータを書き込む
+	INC HL ; 書き込むべきアドレスをインクリメント
+	SBC HL,DE ; HL - DE
+	; JR NZ,CLEAR_ALL_LINE_CLS ; 全てのアドレスを書き込むまでループ
+	JR NZ,.LOOP ; 全てのアドレスを書き込むまでループ
+
+	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
+	LD (CURSOR_LOCATE),DE ; カーソル位置を左上隅に設定 F800H
+	LD (TOP_VIEW),DE
+	LD DE, 0FFD0H ; 画面最終文字位置
+	LD (NEED_DO_SCROLL_POINT),DE ; スクロールポイントを設定
+
 	RET
 
 
@@ -2396,16 +2315,26 @@ PREPR:	PUSH	HL
 ;#PRINT	159ts（39.750μs）
 ;＋CALL	176ts（44.000μs）
 PRINT:
-	CALL PUTCHAR
-	
+	PUSH AF
 	PUSH HL
-	PUSH BC
 	PUSH DE
-	LD	HL,CSRNX ;10t
-	INC (HL) ;4ts	
+	PUSH BC
+
+	CALL PUTCHAR
+
 	POP	BC
 	POP	DE
 	POP	HL
+	POP	AF
+
+	; PUSH HL
+	; PUSH BC
+	; PUSH DE
+	; LD	HL,CSRNX ;10t
+	; INC (HL) ;4ts	
+	; POP	BC
+	; POP	DE
+	; POP	HL
 	RET
 
 
@@ -2805,14 +2734,6 @@ write_data_to_CRTC:
 	POP	BC
 	RET
 
-
-;CRTCを初期化します
-;破壊	AF，HL，DE，BC
-;注：割り込み禁止して実行してください。
-initialize_CRTC:
-	DI
-	EI
-	RET
 
 
 ;---------------
@@ -3531,19 +3452,9 @@ DIOETP:
 	DS	2
 
 
-;	フィジカル･ディスクI／Oルーチン組み込み
-;	INCLUDE	SWEMDIO2
-
-
-; Disk I/O Sub routine
-
-
-
 CRT_INIT:
-
 	LD HL,0F000H ; VRAMの左上のアトリビュートアドレス
 	LD BC,0800H
-
 ; カーソル座標を00Hに設定する。
 ; 注：画面左上がカーソル座標では0000Hになる。VRAMにおけるテキスト画面左上(F800H)ではないことに注意。
 	LD A,0EH ; R14 (cursor H)
@@ -3574,15 +3485,17 @@ CRT_INIT:
 	LD B,050H
 	LD DE,0FFFFH
 	LD A,20H ; 20Hはアスキーコードでスペース
-CLEAR_ALL_LINE:
+.CLEAR_LOOP
+; CLEAR_ALL_LINE:
 	OUT (0D2H),A ; D2Hポートになにか書くと次の命令は別のページ(この場合はVRAMのページ)に行う。
 	LD (HL),A ; F000H～FFFFHまで20Hで埋めている。アトリビュートに20H書いても問題ないみたい。
 	INC HL
 	SBC HL,DE
-	JR NZ,CLEAR_ALL_LINE
+	; JR NZ,CLEAR_ALL_LINE
+	JR NZ,.CLEAR_LOOP
 
 	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
-	LD (cursor_LOCATE),DE
+	LD (CURSOR_LOCATE),DE
 	LD (TOP_VIEW),DE
 	LD DE, 0FFD0H
 	LD (NEED_DO_SCROLL_POINT),DE
@@ -3596,8 +3509,8 @@ CLEAR_ALL_LINE:
 
 ;
 ; VRAM_TXT_TOP : VRAMテキストエリアの先頭(F800H)
-; cursor_LOCATE : 現在のカーソル位置
-; CR_NOW_cursor_LOCATE : CRコードが入った時のカーソル位置
+; CURSOR_LOCATE : 現在のカーソル位置
+; CR_NOW_CURSOR_LOCATE : CRコードが入った時のカーソル位置
 ; TOP_VIEW : 画面左上端のアドレス(スクロールによって動的に変化する)
 ; CR_BASE_ADDRESS : CR後のカーソル位置
 ; CR_NEW_ORIGIN : FFFFHの境界を越え、更に画面右端を超えた時にCRアドレス計算の原点になるアドレス
@@ -3609,9 +3522,13 @@ CLEAR_ALL_LINE:
 ;
 
 PUTCHAR:
+	PUSH HL
+	PUSH AF
+	PUSH DE
+
 	AND A
 	JR Z, PUTCHAR_RET ; NULL文字なら何もしないで戻る
-	LD DE,(cursor_LOCATE) ; 現在のカーソル位置をDEにロード
+	LD DE,(CURSOR_LOCATE) ; 現在のカーソル位置をDEにロード
 	CP CR ; キャリッジリターンか？
 	JP Z, DO_CR ; CRの処理
 	CP LF ; ラインフィードか？
@@ -3642,27 +3559,24 @@ CURSOR_BOUNDARY_END:
 	POP AF
 	INC DE ; カーソル位置を1つ進める
 DO_CR_LF_BS_RETURN: ; CR,LF,BSの処理で戻ってくる
-	PUSH HL
-	PUSH AF
-	PUSH DE
 	CALL DO_SCROLL ; 1行スクロール処理
+	LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新。
+	CALL PRINT_CURSOR ; カーソル表示
+	CALL CALC_CURSOR_XY ; カーソルのX,Y座標計算
+PUTCHAR_RET:
 	POP DE
 	POP AF
 	POP HL
-	LD (cursor_LOCATE),DE ; 現在のカーソル位置を更新。
-	CALL PRINT_cursor ; カーソル表示
-	CALL CALC_cursor_XY ; カーソルのX,Y座標計算
-PUTCHAR_RET:
 	RET
 
 ;
-; カーソルをcursor_LOCATE=DEの位置に表示する(HD46505Sの機能)
+; カーソルをCURSOR_LOCATE=DEの位置に表示する(HD46505Sの機能)
 ;
-PRINT_cursor:
+PRINT_CURSOR:
 	PUSH AF
 	PUSH DE
 	PUSH HL
-	EX DE,HL ; HL=cursor_LOCATE
+	EX DE,HL ; HL=CURSOR_LOCATE
 	LD A,0EH ; R14 (cursor H)
 	OUT (CRTC_ADD),A
 	LD A,H
@@ -3677,16 +3591,16 @@ PRINT_cursor:
 	RET
 
 ;
-; cursor_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
+; CURSOR_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
 ;
-CALC_cursor_XY:
+CALC_CURSOR_XY:
 	PUSH AF
 	PUSH BC
 	PUSH DE
 	PUSH HL
 	LD HL,VRAM_TXT_TOP ; 画面左上端アドレスをHLにロード
-	EX DE,HL ; DEとHLを交換。HL=cursor_LOCATE, DE=VRAM_TXT_TOP
-	SBC HL,DE ; HL = cursor_LOCATE - VRAM_TXT_TOP
+	EX DE,HL ; DEとHLを交換。HL=CURSOR_LOCATE, DE=VRAM_TXT_TOP
+	SBC HL,DE ; HL = CURSOR_LOCATE - VRAM_TXT_TOP
 	OR A ; フラグをクリア
 	LD BC,0 ; B=Y座標カウンタ初期化
 Y_CALC_LOOP:
@@ -3721,18 +3635,18 @@ DO_CR:
 	PUSH HL
 	PUSH BC
 	XOR A ; A=0にする
-	LD (CR_NOW_cursor_LOCATE),DE ; 現在のカーソル位置保存
+	LD (CR_NOW_CURSOR_LOCATE),DE ; 現在のカーソル位置保存
 	LD HL,(TOP_VIEW) ; 左上端をロード
 	EX DE,HL
 	SBC HL,DE ; 左上端アドレス - 現在のカーソル位置
 	JR NC,CONTINUE_CR ; オーバーフローしていないなら単純処理
 ;
-;   TOP_VIEWがCR_NOW_cursor_LOCATEよりも大きいとき。
+;   TOP_VIEWがCR_NOW_CURSOR_LOCATEよりも大きいとき。
 ;	この状況は、スクロールされた時に発生する。
 ;	つまり、殆どの場合、この処理が実行される。
 ;
 	LD HL,(TOP_VIEW)
-	LD DE,(CR_NOW_cursor_LOCATE) ; CRコードが入った時のカーソル位置
+	LD DE,(CR_NOW_CURSOR_LOCATE) ; CRコードが入った時のカーソル位置
 	LD BC,WIDTH_SCREEN ;  50H =  画面の桁数(80d)
 	LD (CR_BASE_ADDRESS),HL ; 初期値は左上端アドレス
 CR_SCAN_0:
@@ -3763,12 +3677,12 @@ CR_SCAN_0:
 			; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
 	LD (CR_NEW_ORIGIN),HL ; 新しいCR評価位置になる
 	LD (CR_BASE_ADDRESS),HL ; CR_BASE_ADDRESSに新しい値を入れる
-	LD DE,(CR_NOW_cursor_LOCATE) ; CR命令を受けた時のカーソル位置
+	LD DE,(CR_NOW_CURSOR_LOCATE) ; CR命令を受けた時のカーソル位置
 
 	;
 	; 例えば現在カーソル位置がF819Hで新しいCR評価位置がF820Hのときに、
 	; CR_2_NEW_SCAN_0のループを通ると+50Hされてしまうので、バイパスする処理。
-	SBC HL,DE ; (CR_NEW_ORIGIN) > CR_NOW_cursor_LOCATE ?
+	SBC HL,DE ; (CR_NEW_ORIGIN) > CR_NOW_CURSOR_LOCATE ?
 	JP P,CR_BOUNDARY_RETURN ; 正であれば、ジャンプ
 	;
 	;
@@ -3779,7 +3693,7 @@ CR_NEW_SCAN_0:
 	LD (CR_BASE_ADDRESS_PRE),HL ; HL=CR_NEW_ORIGIN
 	ADD HL,BC ; CR_NEW_ORIGIN + 50H +...
 	LD (CR_BASE_ADDRESS),HL
-	SBC HL,DE ; (CR_NEW_ORIGIN + 50H +...) > CR_NOW_cursor_LOCATE ?
+	SBC HL,DE ; (CR_NEW_ORIGIN + 50H +...) > CR_NOW_CURSOR_LOCATE ?
 	JP M, CR_NEW_SCAN_0 ; DEの方が大きければループ
 	JP Z, CR_NEW_SCAN_0 ; 完全に一致したときも1回ループを回す
 	LD HL,(CR_BASE_ADDRESS_PRE) ; HL>DE。50Hを足す一つ前の値をHLに入れる。
@@ -3787,11 +3701,11 @@ CR_NEW_SCAN_0:
 	LD DE,(CR_BASE_ADDRESS) ; CR後のアドレスをDEに入れる。
 	JR CR_END
 ;
-;	TOP_VIEWがCR_NOW_cursor_LOCATEよりも小さいとき
+;	TOP_VIEWがCR_NOW_CURSOR_LOCATEよりも小さいとき
 ;
 CONTINUE_CR:
 	LD HL,(TOP_VIEW)
-	LD DE,(CR_NOW_cursor_LOCATE)
+	LD DE,(CR_NOW_CURSOR_LOCATE)
 	LD BC,WIDTH_SCREEN ; 50H(80d) 
 	LD (CR_BASE_ADDRESS),HL
 CR_SCAN_1:
@@ -3829,10 +3743,10 @@ DO_LF:
 ;
 ;	BEYOND FFFFH BOUNDARY
 ;
-	LD HL,(cursor_LOCATE)
+	LD HL,(CURSOR_LOCATE)
 	LD DE,0FFFFH
-	EX DE,HL ; HL - cursor_LOCATE
-	SBC HL,DE ; FFFFH - cursor_LOCATE = A
+	EX DE,HL ; HL - CURSOR_LOCATE
+	SBC HL,DE ; FFFFH - CURSOR_LOCATE = A
 	LD DE,50H ; 50H(80d)
 	EX DE,HL ; DE - A
 	SBC HL,DE ; 50H - A = X
@@ -3904,7 +3818,7 @@ DO_BEL:
 ;
 
 DO_SCROLL:
-	LD (cursor_LOCATE),DE ; 現在のカーソル位置を更新
+	LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新
 	LD HL,(TOP_VIEW) ; 左上端アドレス
 	LD DE,7D0H ; 全画面文字数
 	ADD HL,DE ; TOP_VIEW + 7D0H ; 
@@ -3924,11 +3838,11 @@ SCROLL_POINT_BEYOND_FFFF:
 SCROLL_POINT:
 	; update need_do_scroll_point
 	LD (NEED_DO_SCROLL_POINT),HL ; need_do_scroll_point = 新しいTOP_VIEW
-	LD DE,(cursor_LOCATE) ; 現在のカーソル位置
-	LD A,D ; need_do_scroll_point == cursor_LOCATE?
+	LD DE,(CURSOR_LOCATE) ; 現在のカーソル位置
+	LD A,D ; need_do_scroll_point == CURSOR_LOCATE?
 	CP H
 	RET NZ
-	LD A,E ; need_do_scroll_point == cursor_LOCATE?
+	LD A,E ; need_do_scroll_point == CURSOR_LOCATE?
 	CP L
 	RET NZ ; スクロール不要なら終了
 ;
@@ -4015,7 +3929,7 @@ SCROLL_END:
 ; for CRT control
 ;
 
-cursor_LOCATE: ; カーソル位置を保存する変数
+CURSOR_LOCATE: ; カーソル位置を保存する変数
 	DS 02H
 
 TOP_VIEW: ; 画面左上端のアドレスを保存する変数
@@ -4030,7 +3944,7 @@ CR_BASE_ADDRESS: ; CRTコントローラのベースアドレス保存変数
 CR_BASE_ADDRESS_PRE: ; CRTコントローラのベースアドレス保存変数（前回値）
 	DS 02H
 
-CR_NOW_cursor_LOCATE: ; 現在のカーソル位置保存変数
+CR_NOW_CURSOR_LOCATE: ; 現在のカーソル位置保存変数
 	DS 02H
 
 CR_NEW_ORIGIN: ; 新しい表示開始アドレス保存変数
@@ -4654,37 +4568,37 @@ run_auto_execute_batch:
 ;　バッチ変数があれば、バッチ変数バッファに格納します。
 ;　DEは、コマンドまたはバッチ変数の次のアドレスを示しています。
 BATCH:
-	POP	DE	;DE←パラメータのアドレス
-	CALL	BOFF	;[BATFLG]をクリアします
-	CP	6	;ファイル属性の不一致
-	SCF
-	RET	NZ
+; 	POP	DE	;DE←パラメータのアドレス
+; 	CALL	BOFF	;[BATFLG]をクリアします
+; 	CP	6	;ファイル属性の不一致
+; 	SCF
+; 	RET	NZ
 
-;	01H以外のファイル属性のファイル
-	LD	HL,(_IBFAD)
-	LD	A,(HL)	;Acc←ファイル属性
-;注：
-;　ここはソースとコメントのリセットするビットが違います。
-;ソースはb6（書き込み禁止属性）、コメントはb5（ベリファイON属性）。
-	AND	0BFH	;「1101 1111」←オリジナルのコメント（多分間違い）
-	CP	4
-	LD	A,6	;Bad File Mode
-	SCF
-	RET	NZ	;アスキー･ファイルでなかった
+; ;	01H以外のファイル属性のファイル
+; 	LD	HL,(_IBFAD)
+; 	LD	A,(HL)	;Acc←ファイル属性
+; ;注：
+; ;　ここはソースとコメントのリセットするビットが違います。
+; ;ソースはb6（書き込み禁止属性）、コメントはb5（ベリファイON属性）。
+; 	AND	0BFH	;「1101 1111」←オリジナルのコメント（多分間違い）
+; 	CP	4
+; 	LD	A,6	;Bad File Mode
+; 	SCF
+; 	RET	NZ	;アスキー･ファイルでなかった
 
-;	アスキー･ファイルだった
-	LD	BC,1EH
-	ADD	HL,BC	;HL←FCBバッファのクラスタ番号の部分
-	CALL	STTRK	;[BTRK]と[BREC]を設定します
-	CALL	STPARA	;バッチ変数をバッチ変数バッファを読み込みます
-	LD	A,(_DSK)
-	LD	(BDEV),A	;バッチ･ファイルのあるデバイス
-	LD	A,16+1
-	LD	(BCNT),A	;バッチ･ファイルの現在クラスタの残りレコード数＋1
-	XOR	A
-	DEC	A	;Acc←FFH
-	LD	(BTPNT),A	;バッチ･ファイルのバッファの前回のリード位置
-	LD	(BATFLG),A	;＝FFH（0以外）でバッチ･ファイル実行中
+; ;	アスキー･ファイルだった
+; 	LD	BC,1EH
+; 	ADD	HL,BC	;HL←FCBバッファのクラスタ番号の部分
+; 	CALL	STTRK	;[BTRK]と[BREC]を設定します
+; 	CALL	STPARA	;バッチ変数をバッチ変数バッファを読み込みます
+; 	LD	A,(_DSK)
+; 	LD	(BDEV),A	;バッチ･ファイルのあるデバイス
+; 	LD	A,16+1
+; 	LD	(BCNT),A	;バッチ･ファイルの現在クラスタの残りレコード数＋1
+; 	XOR	A
+; 	DEC	A	;Acc←FFH
+; 	LD	(BTPNT),A	;バッチ･ファイルのバッファの前回のリード位置
+; 	LD	(BATFLG),A	;＝FFH（0以外）でバッチ･ファイル実行中
 	RET
 
 
@@ -4711,48 +4625,48 @@ STTRK:
 ;破壊	AF，HL，DE，BC
 STPARA:
 ;	バッチ変数バッファをクリアします
-	LD	HL,BPRBF	;バッチ変数バッファ
-	LD	(HL),0
-	PUSH	DE
-	PUSH	HL
-	LD	D,H
-	LD	E,L
-	INC	DE	;DE←BPRBF＋1
-	LD	BC,179
-	LDIR		;[BPRBF～BPRBF＋179]をクリア
-	POP	HL	;HL←BPRBF
-	POP	DE	;DE←パラメータのアドレス
+; 	LD	HL,BPRBF	;バッチ変数バッファ
+; 	LD	(HL),0
+; 	PUSH	DE
+; 	PUSH	HL
+; 	LD	D,H
+; 	LD	E,L
+; 	INC	DE	;DE←BPRBF＋1
+; 	LD	BC,179
+; 	LDIR		;[BPRBF～BPRBF＋179]をクリア
+; 	POP	HL	;HL←BPRBF
+; 	POP	DE	;DE←パラメータのアドレス
 
-	LD	A,(DE)	;Acc←パラメータの先頭
-	CP	':'
-	JR	NZ,STP0
-	INC	DE	;「:」をスキップ
-STP0:	LD	C,9	;バッチ変数は￥1～￥9の9個
+; 	LD	A,(DE)	;Acc←パラメータの先頭
+; 	CP	':'
+; 	JR	NZ,STP0
+; 	INC	DE	;「:」をスキップ
+; STP0:	LD	C,9	;バッチ変数は￥1～￥9の9個
 
-STPAR0:	LD	B,19	;バッチ変数1個につき20バイト
+; STPAR0:	LD	B,19	;バッチ変数1個につき20バイト
 
-;	バッチ変数をバッチ変数バッファに転送します
-STPAR1:	LD	A,(DE)
-	OR	A
-	RET	Z
-	CP	' '	;バッチ変数の区切り
-	JR	Z,STPAR3	;区切りに達した
-	LD	(HL),A
-	INC	HL
-	INC	DE
-	DJNZ	STPAR1
+; ;	バッチ変数をバッチ変数バッファに転送します
+; STPAR1:	LD	A,(DE)
+; 	OR	A
+; 	RET	Z
+; 	CP	' '	;バッチ変数の区切り
+; 	JR	Z,STPAR3	;区切りに達した
+; 	LD	(HL),A
+; 	INC	HL
+; 	INC	DE
+; 	DJNZ	STPAR1
 
-STPAR2:	INC	HL
-	DEC	C
-	JR	NZ,STPAR0
+; STPAR2:	INC	HL
+; 	DEC	C
+; 	JR	NZ,STPAR0
 
 	RET
 
 ;	アドレスをスキップします
-STPAR3:	INC	DE
-STPAR4:	INC	HL
-	DJNZ	STPAR4
-	JR	STPAR2
+; STPAR3:	INC	DE
+; STPAR4:	INC	HL
+; 	DJNZ	STPAR4
+; 	JR	STPAR2
 
 
 ;バッチ･ファイルから1文字を得ます
@@ -4819,48 +4733,48 @@ BEND:	CALL	BOFF	;[BATFLG]をクリアします
 ;	Acc＝0なら、バッチ･ファイルから読み込めなかった
 ;破壊	AF，HL，AF'
 get_one_byte_fro_batch_file:
-	CALL	_BRKEY
-	LD	A,0
-	RET	Z	;ブレイク･キーを押されていた
+; 	CALL	_BRKEY
+; 	LD	A,0
+; 	RET	Z	;ブレイク･キーを押されていた
 
-	LD	HL,BTPNT	;バッチ･ファイルのバッファの前回のリード位置
-	INC	(HL)
-	JR	NZ,read_one_byte_from_buffer_of_batch_file	;バッチ･ファイルのバッファから読み込み可能
+; 	LD	HL,BTPNT	;バッチ･ファイルのバッファの前回のリード位置
+; 	INC	(HL)
+; 	JR	NZ,read_one_byte_from_buffer_of_batch_file	;バッチ･ファイルのバッファから読み込み可能
 
-;	バッチ･ファイルのリード･バッファが空
-	LD	HL,BCNT	;バッチ･ファイルの現在クラスタの残りレコード数＋1
-	DEC	(HL)
-	JR	NZ,read_next_record_from_batch_file	;次のレコードを読みます
+; ;	バッチ･ファイルのリード･バッファが空
+; 	LD	HL,BCNT	;バッチ･ファイルの現在クラスタの残りレコード数＋1
+; 	DEC	(HL)
+; 	JR	NZ,read_next_record_from_batch_file	;次のレコードを読みます
 
-;	次のクラスタを読みます
-	LD	(HL),16	;[BCNT]←16
-	PUSH	DE
-	LD	DE,(_FATPS)
-	LD	HL,BATBF	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
-	CALL	RSREAD	;バッチ･ファイルを読みます
-	JR	C,error_read_from_buffer_of_batch_file	;リード･エラー
-	LD	A,(BTRK)	;バッチ･ファイルの現在クラスタ番号
-	LD	E,A
-	LD	D,0	;DE←バッチ･ファイルの現在クラスタ番号
-	ADD	HL,DE	;HL←バッチ･ファイルのバッファの次のクラスタ番号の部分
-	CALL	STTRK	;[BTRK]と[BREC]を設定します
-	POP	DE
+; ;	次のクラスタを読みます
+; 	LD	(HL),16	;[BCNT]←16
+; 	PUSH	DE
+; 	LD	DE,(_FATPS)
+; 	LD	HL,BATBF	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
+; 	CALL	RSREAD	;バッチ･ファイルを読みます
+; 	JR	C,error_read_from_buffer_of_batch_file	;リード･エラー
+; 	LD	A,(BTRK)	;バッチ･ファイルの現在クラスタ番号
+; 	LD	E,A
+; 	LD	D,0	;DE←バッチ･ファイルの現在クラスタ番号
+; 	ADD	HL,DE	;HL←バッチ･ファイルのバッファの次のクラスタ番号の部分
+; 	CALL	STTRK	;[BTRK]と[BREC]を設定します
+; 	POP	DE
 
-;	次のレコードを読みます
-read_next_record_from_batch_file:
-	PUSH	DE
-	LD	DE,(BREC)	;バッチ･ファイルの現在レコード番号
-	LD	HL,BATBF	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
-	CALL	RSREAD	;バッチ･ファイルを読みます
-	JR	C,error_read_from_buffer_of_batch_file	;リード･エラー
-	INC	DE
-	LD	(BREC),DE	;バッチ･ファイルの現在レコード番号
-	POP	DE
+; ;	次のレコードを読みます
+; read_next_record_from_batch_file:
+; 	PUSH	DE
+; 	LD	DE,(BREC)	;バッチ･ファイルの現在レコード番号
+; 	LD	HL,BATBF	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
+; 	CALL	RSREAD	;バッチ･ファイルを読みます
+; 	JR	C,error_read_from_buffer_of_batch_file	;リード･エラー
+; 	INC	DE
+; 	LD	(BREC),DE	;バッチ･ファイルの現在レコード番号
+; 	POP	DE
 
-;	バッチ･ファイルのバッファより、1バイト取り出します
-read_one_byte_from_buffer_of_batch_file:
-	LD	HL,(BTPNT)	;バッチ･ファイルのバッファの前回のリード位置
-	LD	A,(HL)
+; ;	バッチ･ファイルのバッファより、1バイト取り出します
+; read_one_byte_from_buffer_of_batch_file:
+; 	LD	HL,(BTPNT)	;バッチ･ファイルのバッファの前回のリード位置
+; 	LD	A,(HL)
 	RET
 
 ;	バッチ･ファイルから読み込めなかった
@@ -4893,49 +4807,49 @@ RSREAD:
 ;出力	CY＝1ならバッチ変数でなかった（Acc←キャラ）
 ;破壊	AF，HL，BC，AF'
 PARAQ:
-	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
-	CP	'0'
-	RET	C
-	CP	'9'+1
-	CCF
-	RET	C
+; 	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
+; 	CP	'0'
+; 	RET	C
+; 	CP	'9'+1
+; 	CCF
+; 	RET	C
 
-;	バッチ変数￥0～￥9
-	SUB	'0'
-	JR	Z,PAR00	;「\0」だった
+; ;	バッチ変数￥0～￥9
+; 	SUB	'0'
+; 	JR	Z,PAR00	;「\0」だった
 
-;	バッチ変数￥1～￥9
-	LD	L,A
-	LD	H,0	;HL←1～9
-	ADD	HL,HL
-	ADD	HL,HL	;HL←(1～9)×4
-	LD	B,H
-	LD	C,L	;BC←(1～9)×4
-	ADD	HL,HL
-	ADD	HL,HL	;HL←(1～9)×16
-	ADD	HL,BC	;HL←(1～9)×20
-	LD	BC,BPRBF-20	;バッチ変数バッファ
-	ADD	HL,BC	;HL←バッチ変数に対応するバッファのアドレス
-	LD	(BTPNT2),HL	;バッチ変数の現在アドレス
-	XOR	A	;CY←0
-	INC	A	;Acc←1
-	LD	(PARAF),A	;＝1（0以外）でバッチ変数アクセス中
-	RET
+; ;	バッチ変数￥1～￥9
+; 	LD	L,A
+; 	LD	H,0	;HL←1～9
+; 	ADD	HL,HL
+; 	ADD	HL,HL	;HL←(1～9)×4
+; 	LD	B,H
+; 	LD	C,L	;BC←(1～9)×4
+; 	ADD	HL,HL
+; 	ADD	HL,HL	;HL←(1～9)×16
+; 	ADD	HL,BC	;HL←(1～9)×20
+; 	LD	BC,BPRBF-20	;バッチ変数バッファ
+; 	ADD	HL,BC	;HL←バッチ変数に対応するバッファのアドレス
+; 	LD	(BTPNT2),HL	;バッチ変数の現在アドレス
+; 	XOR	A	;CY←0
+; 	INC	A	;Acc←1
+; 	LD	(PARAF),A	;＝1（0以外）でバッチ変数アクセス中
+; 	RET
 
-;	バッチ変数￥0（BGETルーチンを呼び出したルーチンにCY＝1で戻ります）
-PAR00:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
-	OR	A
-	JR	Z,PAR01
-	CP	0DH	;RET
-	JR	NZ,PAR00	;CRコードのスキップ
-PAR01:	POP	HL	;戻り番地のキャンセル
+; ;	バッチ変数￥0（BGETルーチンを呼び出したルーチンにCY＝1で戻ります）
+; PAR00:	CALL	get_one_byte_fro_batch_file	;バッチ･ファイルから1バイト取り出します
+; 	OR	A
+; 	JR	Z,PAR01
+; 	CP	0DH	;RET
+; 	JR	NZ,PAR00	;CRコードのスキップ
+; PAR01:	POP	HL	;戻り番地のキャンセル
 
-;	BGETルーチンのスタックに保存したレジスタをもとに戻します
-	POP	HL
-	POP	BC
+; ;	BGETルーチンのスタックに保存したレジスタをもとに戻します
+; 	POP	HL
+; 	POP	BC
 
-	CALL	_BELL
-	SCF
+; 	CALL	_BELL
+; 	SCF
 	RET
 
 
@@ -5053,7 +4967,7 @@ BDEV:	DS	1	;バッチ･ファイルのあるデバイス
 BTRK:	DS	1	;バッチ･ファイルの現在クラスタ番号
 BREC:	DS	2	;バッチ･ファイルの現在レコード番号
 BCNT:	DS	1	;バッチ･ファイルの現在クラスタの残りレコード数＋1
-BTPNT:	DW	BATBF	;下位はバッチ･ファイルのバッファの前回のリード位置
+; BTPNT:	DW	BATBF	;下位はバッチ･ファイルのバッファの前回のリード位置
 BTPNT2:	DS	2	;バッチ変数の現在アドレス
 BATFLG:	DS	1	;＝FFH（0以外）でバッチ･ファイル実行中
 PARAF:	DS	1	;＝1（0以外）でバッチ変数アクセス中
