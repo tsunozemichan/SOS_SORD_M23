@@ -511,11 +511,11 @@ MSG:
 	PUSH	DE
 	PUSH	BC
 MSGLP:
-	LD	A,(DE) ; 文字を取得
-	CP	0DH ; 改行コードか？
-	JR	Z,MSGSKP	; 改行コードなら終了へ
+	LD	A,(DE)	; 文字を取得
+	CP	CR 		; 改行コードか？
+	JR	Z,MSGSKP; 改行コードなら終了へ
 	CALL _PRINT ; 文字を表示
-	INC	DE	; アドレスを一つ進める
+	INC	DE		; アドレスを一つ進める
 	JR	MSGLP
 MSGSKP:	
 	POP	BC
@@ -564,7 +564,12 @@ MPRNT:
 	PUSH DE
 	PUSH BC
 	EX	DE,HL ; DE←インライン･パラのアドレス
+MRPLP:
+	CP 00H
+	JR	Z,MPRRET ; もし最初の文字が00Hなら何も表示せずにリターン
 	CALL MSX ; DEの指す文字列を表示
+	INC	DE ; 次のアドレスへ
+	JR	MRPLP
 MPRRET:
 	EX	DE,HL ; HL←インライン･パラのアドレス，DE←元の値
 	POP	BC
@@ -2322,6 +2327,12 @@ PRINT:
 
 	CALL PUTCHAR
 
+	; Aレジスタに格納された値がCR（0DH）かどうかをチェック
+	CP	CR
+	JR	Z,ADD_LF; CRならLFの処理もする。SOSはCRをCR+LFとして扱うため。
+
+PRINT_END:
+
 	POP	BC
 	POP	DE
 	POP	HL
@@ -2335,8 +2346,21 @@ PRINT:
 	; POP	BC
 	; POP	DE
 	; POP	HL
-	RET
 
+	RET ; 
+
+ADD_LF:
+	PUSH AF
+	PUSH HL
+	PUSH DE
+	PUSH BC
+	LD A, LF; LFのASCIIコード
+	CALL PUTCHAR
+	POP	BC
+	POP	DE
+	POP	HL
+	POP AF
+	JR	PRINT_END
 
 ;===============================
 ;文字列表示ルーチン（機種依存）
@@ -5034,7 +5058,7 @@ _MXTRK:	DB	80	;1F66H 80トラック
 _DIRNO:	DS	1	;1F67H _FCBで使用するワーク。何番目のファイルか。
 _WKSIZ:	DW	0	;1F68H 256バイト単位 特殊ワークのサイズ。P6版では2800hがデフォルト。
 _MEMAX:	DS	2	;1F6AH メモリの上限 	ユーザエリアの上限 (最終アドレス+1)。P6版ではD000hがデフォルト。
-_STKAD:	DW	0100H	;1F6CH '通常のスタック スタックの初期値。P6版ではF900hがデフォルト。
+_STKAD:	DW	0F900H	;1F6CH '通常のスタック スタックの初期値。P6版ではF900hがデフォルト。
 _EXADR:	DS	2	;1F6EH ファイルの実行アドレス。
 _DTADR:	DS	2	;1F70H ファイルの先頭アドレス。
 _SIZE:	DS	2	;1F72H ファイルサイズ。
@@ -6998,7 +7022,7 @@ _PARCS:
 
 START:
 	DI
-	LD	SP,0100H	;仮スタック
+	LD	SP,F900H	;仮スタック
 
 ;	vram_address_of_topの初期化
 	LD	HL,F800H ; SORD M23のTXT VRAMの先頭アドレス
@@ -7052,7 +7076,7 @@ STADVS:
 	LD	(size_of_special_work_of_memory),A
 
 ;	コールド･スタートします
-	LD	HL,0100H	;仮スタック
+	LD	HL,F900H	;仮スタック
 	LD	(_STKAD),HL
 	LD	HL,_COLD
 	LD	(0001H),HL
