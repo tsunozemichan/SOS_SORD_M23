@@ -306,7 +306,7 @@ COLD:
 	EI
 
 ;	スタックの設定など
-	LD	HL,FFFFH
+	LD	HL,C000H
 	LD	(_MEMAX),HL	;使用可能メモリの上限
 	LD	HL,system_stack_area
 	LD	(_STKAD),HL
@@ -345,8 +345,8 @@ COLD:
 ;	メモリの情報を表示
 	CALL _MPRNT
 	DB	'MAIN 3000H-',00H
-	LD	HL,(_MEMAX)
-	DEC	HL
+	LD	HL,(_MEMAX) ; _MEMAX = 仕様メモリの上限
+	DEC	HL ; －1して、最後の使用可能アドレスにする
 	CALL _print_hex_4_digit
 	CALL _MPRNT
 	DB	'H',0DH,00H
@@ -376,6 +376,9 @@ COLD:
 	EX	DE,HL	;HL←ジャンプ先
 	LD	DE,(_KBFAD)	;DE←[_KBFAD]
 	XOR	A
+
+	HALT
+
 	JP	(HL)	;旧[_USR]の内容にジャンプ
 
 ;#BOOT（2036H）の本体
@@ -560,21 +563,36 @@ MSXSKP:
 ; 「REDA」などがDE保存を期待しているので、DEを保存します。
 ; このサブルーチンを完成させてください。
 MPRNT:
-	EX	(SP),HL	;HL←インライン･パラのアドレス，スタック←HL
+	EX	(SP),HL	; CALLの次のアドレスをHLにロード
 	PUSH DE
 	PUSH BC
-	EX	DE,HL ; DE←インライン･パラのアドレス
+	EX	DE,HL ; DEとHLを入れ替えて、DEに表示すべきデータの先頭アドレスが入る
 MRPLP:
-	CP 00H
+	LD	A,(DE) ; 最初の文字を取得
+	CP 00H ; もし最初の文字が00Hなら終了
 	JR	Z,MPRRET ; もし最初の文字が00Hなら何も表示せずにリターン
-	CALL MSX ; DEの指す文字列を表示
-	INC	DE ; 次のアドレスへ
-	JR	MRPLP
+
+	PUSH	AF
+	PUSH	HL
+	PUSH	BC
+MPLP2:
+	LD	A,(DE) ; 文字を取得
+	CP	00H ; 終了コードか？
+	JR	Z,MPLP2SKP	; 終了コードなら終了へ
+
+	CALL PRINT ; 文字を表示
+	INC	DE	; アドレスを一つ進める
+	JR	MPLP2
+MPLP2SKP:	
+	POP	BC
+	POP	HL
+	POP	AF
+
 MPRRET:
-	EX	DE,HL ; HL←インライン･パラのアドレス，DE←元の値
+	EX	DE,HL ; DEは表示すべきデータの末尾の次のアドレスが入っている。つまりリターンアドレスが入っている
 	POP	BC
 	POP	DE
-	EX	(SP),HL	;スタック←インライン･パラの次のアドレス，HL←元の値
+	EX	(SP),HL	;HLをスタックに戻す（リターン先アドレス）
 ;	XOR	A
 	RET
 
@@ -626,8 +644,7 @@ LPRINT:
 ; このサブルーチンを完成させてください。
 print_hex_2_digit:
 	PUSH AF	;保存
-	LD	B,A	;Bにデータを保存
-	SRL	A	;上位4ビットを取得
+	SRL	A	; 上位4ビットを取得
 	SRL	A	; さらに1ビット右シフト
 	SRL	A	; さらに1ビット右シフト
 	SRL	A	; さらに1ビット右シフト
@@ -662,7 +679,7 @@ print_hex_4_digit:
 ; このサブルーチンを書いてください。
 ASC:
 	AND	0FH	; 下位4ビットを取得
-	CP	10
+	CP	10 ; 10未満か？
 	JR	C,ASCNUM
 	ADD	A,'A'-10	; 10以上なら'A'～'F'に変換
 	JR	ASCRET ; リターン
