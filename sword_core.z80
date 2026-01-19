@@ -3955,9 +3955,18 @@ DRDSB:
 	;D←トラック番号、E←セクタ番号、Acc'←レコード数
 	CALL	get_track_number_and_sector_number_from_record_number
 	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
+	PUSH AF ; レコード数を退避
+	PUSH BC
+	PUSH DE
+	PUSH HL
 	CALL	RESTORE	;ディスク･ドライブをリストアします
+	POP	HL
+	POP	DE
+	POP	BC
+	POP	AF ; レコード数を復帰
 
 	PUSH AF ; レコード数をスタックに入れる
+	PUSH DE ; Eレジスタに入っているセクタ番号を退避する
 	LD A, D 	;目的のシリンダ(トラック)番号をAレジスタにセット
 	LD E, A 	;Eレジスタに目的のシリンダ(トラック)番号をセット
 	CALL SEEK	;目的のシリンダ(トラック)へシークします
@@ -3966,17 +3975,18 @@ DRDSB:
 	; DMA Bank Select
 	XOR A ; A=0
 	OUT (DMA_BANK_SEL), A
+	POP DE ; 読み込み開始セクタを復帰
 	POP AF ; レコード数をAレジスタに取り出す
 
 	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
-	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定
+	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定 セクタ番号は1以上の数
 ;
 READ_FIRST_LOOP:
 	CALL GO_DMA_AND_READ0 ; DMA転送と読み込みを開始します
 	INC C ; 次のセクタ番号へ
-	LD A,(_DTBUF.@H) ; memory address of DMA transfer address
+	LD A,(dma_dist_address) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
 	INC A ; 256 byte incriment
-	LD (_DTBUF.@H),A
+	LD (dma_dist_address),A
 	DJNZ READ_FIRST_LOOP
 
 	; エラーハンドリングは後で書く
@@ -4073,6 +4083,7 @@ RLLOP:
 	AND	0FH
 	INC	A
 	LD	E,A	;E←セクタ番号
+	EX	AF,AF'	;AF
 	RET
 
 
@@ -4081,6 +4092,7 @@ RLLOP:
 ;出力	D←シリンダ番号、[disk_unit_number b4]←サイド、B←0FH
 ;破壊	AF，BC
 get_ready_to_access_disk:
+	; 未実装。必要性？
 	RET
 
 
@@ -4336,8 +4348,8 @@ DMA_COMMANDS:
 	DB 0BBH,01H,0BFH
 	DB 6DH
 	DB 0C3H,0FFH,00H,2CH,010H,8DH
-	DB BUFFER.@L
-	DB BUFFER.@H ; this address is buffer address !!!!
+	DB BUFFER.@L; DMAで読み込む先のバッファのアドレスL
+dma_dist_address:	DB BUFFER.@H ; DMAで読み込む先のバッファのアドレスH。これが256byte毎にインクリメントされる。
 	DB 8AH
 	DB 0CFH,87H
 DMA_WRITE_COMMANDS:
@@ -5754,7 +5766,7 @@ DIR:
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスク
-	CALL	FATRED	;FATを読みます
+	CALL	FATRED	; FATを読みます
 	RET	C	;エラー
 	LD	A,'$'
 	CALL	PRINT
@@ -6349,11 +6361,19 @@ DSAVE3:	INC	A	;Acc←書き込みセクタ数
 FATRED:
 	PUSH	DE
 	PUSH	HL
-	LD	DE,(_FATPS)
-	LD	HL,(_FATBF)
-	LD	A,1
+	LD	DE,(_FATPS) ; FATの読み込み先レコード(トラック)番号
+	LD	HL,(_FATBF) ; FATのバッファの先頭アドレス
+	LD	A,1 ; 読み込むレコード数
 	; HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
+	PUSH AF
+	PUSH BC
+	PUSH DE
+	PUSH HL
 	CALL 	RESTORE
+	POP HL
+	POP DE
+	POP BC
+	POP AF
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
 	POP	HL
 	POP	DE
