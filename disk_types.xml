@@ -1,0 +1,1515 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DiskTypes version="3.0">
+	<DiskType name="1Sx2-40-16-1">
+		<Reversible>true</Reversible>
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="ALL" />
+		<DiskBasicTypes>
+			<Type>L3-1S</Type>
+		</DiskBasicTypes>
+		<DensityName>1S x2(has sideA/B)</DensityName>
+		<DensityName lang="ja">1S x2(AB面あり)</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="1Sx2-40-16-3">
+		<Reversible>true</Reversible>
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>3</Interleave>
+		<SingleDensity track="ALL" />
+		<DiskBasicTypes>
+			<Type p="major">L3-1S</Type>
+		</DiskBasicTypes>
+		<DensityName>1S x2(has sideA/B)</DensityName>
+		<DensityName lang="ja">1S x2(AB面あり)</DensityName>
+		<Description>[LEVEL-3 3inch]</Description>
+		<Description lang="ja">[レベル3 3インチ]</Description>
+	</DiskType>
+	<DiskType name="1S-40-16-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="ALL" />
+		<DiskBasicTypes>
+			<Type>L3-1S</Type>
+		</DiskBasicTypes>
+		<DensityName>1S</DensityName>
+		<DensityName lang="ja">1S</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="1S-40-16-3">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>3</Interleave>
+		<SingleDensity track="ALL" />
+		<DiskBasicTypes>
+			<Type>L3-1S</Type>
+		</DiskBasicTypes>
+		<DensityName>1S</DensityName>
+		<DensityName lang="ja">1S</DensityName>
+		<Description>[LEVEL-3 5inch]</Description>
+		<Description lang="ja">[レベル3 5インチ]</Description>
+	</DiskType>
+	<DiskType name="2S-40-16-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="ALL" />
+		<DiskBasicTypes>
+			<Type>L3-1S</Type>
+		</DiskBasicTypes>
+		<DensityName>2S</DensityName>
+		<DensityName lang="ja">2S</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="1D-35-13-1-AP">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>13</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<SectorNumberBase>0</SectorNumberBase>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>APDOS-1D-13</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+		<Description>[AppleII]</Description>
+	</DiskType>
+	<DiskType name="1D-35-16-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>N66-1D</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+		<Description>[PC-66]</Description>
+		<Description lang="ja">[PC-66]</Description>
+	</DiskType>
+	<DiskType name="1D-35-16-1-AP">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<SectorNumberBase>0</SectorNumberBase>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>APDOS-1D</Type>
+			<Type>PRODOS-1D</Type>
+			<Type>CPMAP-1D-4</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+		<Description>[AppleII]</Description>
+		<Description lang="ja">[AppleII]</Description>
+	</DiskType>
+	<DiskType name="1D-35-18-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-1D-18</Type>
+			<Type>FLEX-1D-18</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+	</DiskType>
+	<DiskType name="1D-35-21-17-1-CO">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>21</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<VariableSectorsPerTrack>true</VariableSectorsPerTrack>
+		<TrackNumberBase>1</TrackNumberBase>
+		<SectorNumberBase>0</SectorNumberBase>
+		<ParticularTrack track="18" side="0" tracks="7" sectors="19" size="256" />
+		<ParticularTrack track="25" side="0" tracks="6" sectors="18" size="256" />
+		<ParticularTrack track="31" side="0" tracks="5" sectors="17" size="256" />
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>C1541-1D</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<Description>, variable number of sectors [Commodore 1541]</Description>
+		<Description lang="ja">可変数セクタ [Commodore 1541]</Description>
+	</DiskType>
+	<DiskType name="1D-40-8-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>CPM86-1D-512-2</Type>
+			<Type>CPM86-1D-512-4</Type>
+			<Type>CPM86-1D-AT</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+	</DiskType>
+	<DiskType name="1D-40-10-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-1D-10</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+	</DiskType>
+	<DiskType name="1D-40-16-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>N66-1D</Type>
+			<Type>X1HU-1D</Type>
+			<Type>DOS80-1D</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+		<Description>[PC-66]</Description>
+		<Description lang="ja">[PC-66]</Description>
+	</DiskType>
+	<DiskType name="1D-40-16-3">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>3</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-1D</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+		<Description>[FM OS-9]</Description>
+		<Description lang="ja">[FM OS-9]</Description>
+	</DiskType>
+	<DiskType name="1D-40-18-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-1D-18</Type>
+			<Type>FLEX-1D-18</Type>
+		</DiskBasicTypes>
+		<DensityName>1D</DensityName>
+		<DensityName lang="ja">1D</DensityName>
+	</DiskType>
+	<DiskType name="2D-35-10-2-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>2</Interleave>
+		<NumberingSector>track</NumberingSector>
+		<DiskBasicTypes>
+			<Type>CPMMZ-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[MZ CP/M]</Description>
+		<Description lang="ja">[MZ CP/M]</Description>
+	</DiskType>
+	<DiskType name="2D-35-16-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">MZ-2D</Type>
+			<Type>N66-1D</Type>
+			<Type>MZFD-2D</Type>
+			<Type>MZHU-2D</Type>
+			<Type>MZHU-2D-INV</Type>
+			<Type p="major">CDOS-2D</Type>
+			<Type p="major">CDOS-2D-INV</Type>
+			<Type>PA-2D</Type>
+			<Type>CPMX1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="2D-35-16-1-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type>MZ-2D</Type>
+			<Type>N66-1D</Type>
+			<Type>MZFD-2D</Type>
+			<Type>CDOS-2D</Type>
+			<Type>CDOS-2D-INV</Type>
+			<Type p="major">PA-2D</Type>
+			<Type>CPMX1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is single density [PASOPIA]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [パソピア]</Description>
+	</DiskType>
+	<DiskType name="2D-35-16-4">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>4</Interleave>
+		<DiskBasicTypes>
+			<Type>MZ-2D</Type>
+			<Type p="major">MZFD-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[MZ FDOS]</Description>
+		<Description lang="ja">[MZ FDOS]</Description>
+	</DiskType>
+	<DiskType name="2D-35-18-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-2D-18</Type>
+			<Type>OS9-1D-18</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+	</DiskType>
+	<DiskType name="2D-35-18-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>35</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<NumberingSector>track</NumberingSector>
+		<DiskBasicTypes>
+			<Type>FLEX-2D-18</Type>
+			<Type>FLEX-1D-18</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-40-5-1-MD">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<DiskBasicTypes>
+			<Type>MDOS-2D</Type>
+			<Type>FALCOM-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is 16sectors</Description>
+		<Description lang="ja">トラック0,サイド0は16セクタ</Description>
+	</DiskType>
+	<DiskType name="2D-40-6-1-FR">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>6</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<ParticularSector track="ALL" side="ALL" sector="6" size="512">
+			<Exclude track="0" side="0" />
+		</ParticularSector>
+		<DiskBasicTypes>
+			<Type>FROST-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Last sector is 512bytes, Track0 and side0 is 16sectors [Frost-DOS]</Description>
+		<Description lang="ja">最終セクタは512バイト、トラック0,サイド0は16セクタ [Frost-DOS]</Description>
+	</DiskType>
+	<DiskType name="2D-40-8-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSDOS-2D</Type>
+			<Type>CPM86-2D-512-2</Type>
+			<Type>CPM86-2D-512-4</Type>
+			<Type>CPM68-2D-512-2</Type>
+			<Type>CPM68-2D-512-4</Type>
+			<Type>CPM86-1D-512-2</Type>
+			<Type>CPM86-1D-512-4</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+	</DiskType>
+	<DiskType name="2D-40-9-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSDOS-2D</Type>
+			<Type>CDOS2-2D</Type>
+			<Type>LOSA-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[MS-DOS]</Description>
+		<Description lang="ja">[MS-DOS]</Description>
+	</DiskType>
+	<DiskType name="2D-40-9-1-C2">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="10" size="512" />
+		<ParticularSector track="0" side="0" sector="10" size="256" id_r="1" />
+		<DiskBasicTypes>
+			<Type>CDOS2-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is 10sectors [CDOS II]</Description>
+		<Description lang="ja">トラック0,サイド0は10セクタ [CDOS II]</Description>
+	</DiskType>
+	<DiskType name="2D-40-10-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<NumberingSector>track</NumberingSector>
+		<DiskBasicTypes>
+			<Type>FLEX-2D-10</Type>
+			<Type>FLEX-1D-10</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-40-10-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSDOS-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+	</DiskType>
+	<DiskType name="2D-40-10-1-MA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<DiskBasicTypes>
+			<Type p="major">MAGICAL-2D</Type>
+			<Type p="major">XDOS-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is 16sectors [X-DOS/Magical DOS]</Description>
+		<Description lang="ja">トラック0,サイド0は16セクタ [X-DOS/Magical DOS]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">FM-2D</Type>
+			<Type p="major">X1HU-2D</Type>
+			<Type p="major">X1HU-2D-S</Type>
+			<Type p="major">MZHU-2D</Type>
+			<Type p="major">MZHU-2D-INV</Type>
+			<Type p="major">N88-2D</Type>
+			<Type p="major">MZ-2D</Type>
+			<Type>N66-1D</Type>
+			<Type>FLEX-1D-S1</Type>
+			<Type>OS9-2D</Type>
+			<Type>DOS80-2D</Type>
+			<Type>TFDOS-2D-INV</Type>
+			<Type>TFDOS-2D</Type>
+			<Type p="major">CDOS-2D-FM</Type>
+			<Type p="major">CDOS-2D</Type>
+			<Type p="major">CDOS-2D-INV</Type>
+			<Type>SDOS10-2D</Type>
+			<Type>SDOS11-2D</Type>
+			<Type>SDOS11P-2D</Type>
+			<Type>SN88DOS-2D</Type>
+			<Type>L3S1-2D</Type>
+			<Type>MZFD-2D</Type>
+			<Type>PA-2D</Type>
+			<Type>FP-2D</Type>
+			<Type>CPM88-2D</Type>
+			<Type>CPMX1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[general]</Description>
+		<Description lang="ja">[汎用]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-1-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type>PA-2D</Type>
+			<Type>L3S1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is single density</Description>
+		<Description lang="ja">トラック0,サイド0は単密度</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-2">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>2</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">FP-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FP (C82-BASIC)]</Description>
+		<Description lang="ja">[FP(C82-BASIC)]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-3">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>3</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-2D</Type>
+			<Type>OS9-1D</Type>
+			<Type p="major">FM-2D</Type>
+			<Type>L3S1-2D</Type>
+			<Type>X1HU-2D</Type>
+			<Type>X1HU-2D-S</Type>
+			<Type>MZHU-2D</Type>
+			<Type>MZHU-2D-INV</Type>
+			<Type>N88-2D</Type>
+			<Type>MZ-2D</Type>
+			<Type>FLEX-1D-S1</Type>
+			<Type>CPM88-2D</Type>
+			<Type>CPMX1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FM (F-BASIC,OS-9)]</Description>
+		<Description lang="ja">[FM(F-BASIC,OS-9)]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-4">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>4</Interleave>
+		<DiskBasicTypes>
+			<Type>MZHU-2D</Type>
+			<Type>MZHU-2D-INV</Type>
+			<Type>MZ-2D</Type>
+			<Type p="major">MZFD-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[MZ FDOS]</Description>
+		<Description lang="ja">[MZ FDOS]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-5">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>5</Interleave>
+		<DiskBasicTypes>
+			<Type>CPMX1-2D</Type>
+			<Type>CPM88-2D</Type>
+			<Type>X1HU-2D</Type>
+			<Type>X1HU-2D-S</Type>
+			<Type>MZHU-2D</Type>
+			<Type>MZHU-2D-INV</Type>
+			<Type>N88-2D</Type>
+			<Type>FM-2D</Type>
+			<Type>L3S1-2D</Type>
+			<Type>MZ-2D</Type>
+			<Type>FLEX-1D-S1</Type>
+			<Type>OS9-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[X1 CP/M]</Description>
+		<Description lang="ja">[X1 CP/M]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-6">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>6</Interleave>
+		<DiskBasicTypes>
+			<Type>FM-2D</Type>
+			<Type p="major">L3S1-2D</Type>
+			<Type>X1HU-2D</Type>
+			<Type>X1HU-2D-S</Type>
+			<Type>MZHU-2D</Type>
+			<Type>MZHU-2D-INV</Type>
+			<Type>N88-2D</Type>
+			<Type>MZ-2D</Type>
+			<Type>FLEX-1D-S1</Type>
+			<Type>OS9-2D</Type>
+			<Type>CPM88-2D</Type>
+			<Type>CPMX1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[MB-S1/10,20]</Description>
+		<Description lang="ja">[MB-S1/10,20]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-6-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x00</Density>
+		<Interleave>6</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-6-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>6</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type p="major">L3S1-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is single density [LEVEL-3]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [レベル3]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-6-S0-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x00</Density>
+		<Interleave>6</Interleave>
+		<SingleDensity track="0" side="0" sectors="10" size="256" />
+		<DiskBasicTypes>
+			<Type>FLEX-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Track0 and side0 is single density [LEVEL-3 FLEX]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [レベル3 FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-40-16-9-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x00</Density>
+		<Interleave>9</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FM FLEX]</Description>
+		<Description lang="ja">[FM FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-40-18-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-2D-18</Type>
+			<Type>OS9-1D-18</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+	</DiskType>
+	<DiskType name="2D-40-18-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>40</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<NumberingSector>track</NumberingSector>
+		<DiskBasicTypes>
+			<Type>FLEX-2D-18</Type>
+			<Type>FLEX-1D-18</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2D-42-6-1-FR">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>42</TracksPerSide>
+		<SectorsPerTrack>6</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x00</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<ParticularSector track="ALL" side="ALL" sector="6" size="512">
+			<Exclude track="0" side="0" />
+		</ParticularSector>
+		<DiskBasicTypes>
+			<Type p="major">FROST-2D</Type>
+		</DiskBasicTypes>
+		<DensityName>2D</DensityName>
+		<DensityName lang="ja">2D</DensityName>
+		<Description>, Last sector is 512bytes, Track0 and side0 is 16sectors [Frost-DOS]</Description>
+		<Description lang="ja">最終セクタは512バイト、トラック0,サイド0は16セクタ [Frost-DOS]</Description>
+	</DiskType>
+	<DiskType name="1DD-70-16-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>70</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x30</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">SMC-1DD</Type>
+			<Type>X1HU-1DD</Type>
+		</DiskBasicTypes>
+		<DensityName>1DD</DensityName>
+		<DensityName lang="ja">1DD</DensityName>
+		<Description>[SMC-777]</Description>
+		<Description lang="ja">[SMC-777]</Description>
+	</DiskType>
+	<DiskType name="1DD-80-8-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSX-1DD8</Type>
+		</DiskBasicTypes>
+		<DensityName>1DD</DensityName>
+		<DensityName lang="ja">1DD</DensityName>
+		<Description>[MSX]</Description>
+		<Description lang="ja">[MSX]</Description>
+	</DiskType>
+	<DiskType name="1DD-80-9-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSX-1DD9</Type>
+		</DiskBasicTypes>
+		<DensityName>1DD</DensityName>
+		<DensityName lang="ja">1DD</DensityName>
+		<Description>[MSX]</Description>
+		<Description lang="ja">[MSX]</Description>
+	</DiskType>
+	<DiskType name="1DD-80-16-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>N66-1DD</Type>
+			<Type>SMC-1DD</Type>
+			<Type>X1HU-1DD</Type>
+			<Type>SORD-1DD-1</Type>
+			<Type>SORD-1DD-2</Type>
+			<Type>SORD-1DD-3</Type>
+		</DiskBasicTypes>
+		<DensityName>1DD</DensityName>
+		<DensityName lang="ja">1DD</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+
+
+
+
+	<DiskType name="1DD-80-16-2">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>2</Interleave>
+		<DiskBasicTypes>
+			<Type>SORD-1DD-1</Type>
+			<Type>SORD-1DD-2</Type>
+			<Type>SORD-1DD-3</Type>
+		</DiskBasicTypes>
+		<DensityName>1DD</DensityName>
+		<DensityName lang="ja">1DD</DensityName>
+		<Description>[SORD M23]</Description>
+		<Description lang="ja">[SORD M23]</Description>
+	</DiskType>
+
+
+
+
+	<DiskType name="2DD-70-16-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>70</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>SMC-1DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[SMC-777]</Description>
+		<Description lang="ja">[SMC-777]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-5-1-MD">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<DiskBasicTypes>
+			<Type>MDOS-2DD</Type>
+			<Type>FALCOM-2DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>, Track0 and side0 is 16sectors</Description>
+		<Description lang="ja">トラック0,サイド0は16セクタ</Description>
+	</DiskType>
+	<DiskType name="2DD-80-8-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSX-2DD8</Type>
+			<Type>MSX-1DD8</Type>
+			<Type>CPM86-2DD-8-512-4</Type>
+			<Type>CPM86-2DD-8-512-8</Type>
+			<Type>CPM86-1DD-8-512-4</Type>
+			<Type>CPM86-1DD-8-512-8</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[MSX]</Description>
+		<Description lang="ja">[MSX]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-9-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MSX-1DD9</Type>
+			<Type>MSX-2DD9</Type>
+			<Type>MSDOS-2DD</Type>
+			<Type>PCPM-1DD-9-512</Type>
+			<Type>PCPM-2DD-9-512</Type>
+			<Type>FALCOM-2DD-M</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[MSX / MS-DOS]</Description>
+		<Description lang="ja">[MSX / MS-DOS]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-10-1-MA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<DiskBasicTypes>
+			<Type>MAGICAL-2DD</Type>
+			<Type>XDOS-2DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>, Track0 and side0 is 16sectors [X-DOS/Magical DOS]</Description>
+		<Description lang="ja">トラック0,サイド0は16セクタ [X-DOS/Magical DOS]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-11-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>11</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>AMIGA-O-2DD</Type>
+			<Type>AMIGA-F-2DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[Amiga]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-8-12-1-AP">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>12</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<VariableSectorsPerTrack>true</VariableSectorsPerTrack>
+		<TrackNumberBase>0</TrackNumberBase>
+		<SectorNumberBase>0</SectorNumberBase>
+		<ParticularTrack track="16" side="ALL" tracks="16" sectors="11" size="512" />
+		<ParticularTrack track="32" side="ALL" tracks="16" sectors="10" size="512" />
+		<ParticularTrack track="48" side="ALL" tracks="16" sectors="9" size="512" />
+		<ParticularTrack track="64" side="ALL" tracks="16" sectors="8" size="512" />
+		<DiskBasicTypes>
+			<Type>PRODOS-2DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>, variable number of sector [Apple II]</Description>
+		<Description lang="ja">可変数セクタ [Apple II]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-16-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>FM-2DD</Type>
+			<Type>X1HU-2DD</Type>
+			<Type>MZHU-2DD</Type>
+			<Type>MZHU-2DD-INV</Type>
+			<Type p="major">MZ-2DD</Type>
+			<Type>N66-1DD</Type>
+			<Type>OS9-2DD</Type>
+			<Type>OS9-2DD-16</Type>
+			<Type>TFDOS-2DD-INV</Type>
+			<Type>TFDOS-2DD</Type>
+			<Type>CPMMZ-2DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[general]</Description>
+		<Description lang="ja">[汎用]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-16-3">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>3</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">FM-2DD</Type>
+			<Type>X1HU-2DD</Type>
+			<Type>MZHU-2DD</Type>
+			<Type>MZHU-2DD-INV</Type>
+			<Type>MZ-2DD</Type>
+			<Type>OS9-2DD</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[FM]</Description>
+		<Description lang="ja">[FM]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-18-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-2DD-18</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[OS-9]</Description>
+		<Description lang="ja">[OS-9]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-18-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x10</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-2DD-18</Type>
+		</DiskBasicTypes>
+		<DensityName>2DD</DensityName>
+		<DensityName lang="ja">2DD</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-5-1-MD">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="16" size="256" />
+		<DiskBasicTypes>
+			<Type>FALCOM-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+		<Description>, Track0 and side0 is 16sectors</Description>
+		<Description lang="ja">トラック0,サイド0は16セクタ</Description>
+	</DiskType>
+	<DiskType name="2HD-77-16-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>MAGICAL-2HD</Type>
+			<Type>XDOS-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+	</DiskType>
+	<DiskType name="2HD-77-16-1-S0-MA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="0" side="0" sectors="26" size="128" />
+		<DiskBasicTypes>
+			<Type p="major">MAGICAL-2HD</Type>
+			<Type>XDOS-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 and side0 is single density [Magical DOS]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [Magical DOS]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-16-1-S0-XD">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<ParticularTrack track="0" side="0" sectors="26" size="256" />
+		<DiskBasicTypes>
+			<Type p="major">XDOS-2HD</Type>
+			<Type>MAGICAL-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 and side0 is single density [X-DOS]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [X-DOS]</Description>
+	</DiskType>
+	<DiskType name="1HS-77-26-1">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="ALL" side="ALL" />
+		<DiskBasicTypes>
+			<Type>CPM-1HS</Type>
+			<Type>CPM-1HS-6</Type>
+		</DiskBasicTypes>
+		<DensityName>8inch1S</DensityName>
+		<DensityName lang="ja">8インチ1S</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="1HS-77-26-6">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>6</Interleave>
+		<SingleDensity track="ALL" side="ALL" />
+		<DiskBasicTypes>
+			<Type>CPM-1HS</Type>
+			<Type>CPM-1HS-6</Type>
+		</DiskBasicTypes>
+		<DensityName>8inch1S</DensityName>
+		<DensityName lang="ja">8インチ1S</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="2HS-77-26-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="ALL" side="ALL" />
+		<DiskBasicTypes>
+			<Type>CPM-2HS</Type>
+			<Type>CPM-2HS-6</Type>
+			<Type>CPM-1HS</Type>
+			<Type>CPM-1HS-6</Type>
+		</DiskBasicTypes>
+		<DensityName>8inch2S</DensityName>
+		<DensityName lang="ja">8インチ2S</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="2HS-77-26-6">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>128</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>6</Interleave>
+		<SingleDensity track="ALL" side="ALL" />
+		<DiskBasicTypes>
+			<Type>CPM-2HS</Type>
+			<Type>CPM-2HS-6</Type>
+			<Type>CPM-1HS</Type>
+			<Type>CPM-1HS-6</Type>
+		</DiskBasicTypes>
+		<DensityName>8inch2S</DensityName>
+		<DensityName lang="ja">8インチ2S</DensityName>
+		<Description></Description>
+		<Description lang="ja"></Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-1-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type>FM-2HD</Type>
+			<Type p="major">L3S1-2HD</Type>
+			<Type p="major">N88-2HD</Type>
+			<Type>X1HU-2HD</Type>
+			<Type>X1HU-2HD-2D</Type>
+			<Type>MZHU-2HD</Type>
+			<Type>MZHU-2HD-INV</Type>
+			<Type>OS9-2HD</Type>
+			<Type>CPM88-2HD</Type>
+			<Type>CPM68-2HD</Type>
+			<Type>CPM98-2HD</Type>
+			<Type>CPMFM-2HD</Type>
+			<Type>CPMSORD-2HD</Type>
+			<Type>CPMS1-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 and side0 is single density [general(MB-S1 etc.)]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [汎用(MB-S1など)]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-1-S0-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<SingleDensity track="0" side="ALL" sectors="15" size="256" />
+		<DiskBasicTypes>
+			<Type>FLEX-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 is single density [Level3/S1 FLEX]</Description>
+		<Description lang="ja">トラック0は単密度 [レベル3/S1 FLEX]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-2-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>2</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type>CPM88-2HD</Type>
+			<Type>CPM68-2HD</Type>
+			<Type>CPM98-2HD</Type>
+			<Type>CPMSORD-2HD</Type>
+			<Type>CPMFM-2HD</Type>
+			<Type>CPMS1-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 and side0 is single density</Description>
+		<Description lang="ja">トラック0,サイド0は単密度</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-5-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>5</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type>OS9-2HD</Type>
+			<Type>L3S1-2HD</Type>
+			<Type>CPMS1-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 and side0 is single density [MB-S1 OS-9]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [MB-S1 OS-9]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>N88-2HD</Type>
+			<Type>FM-2HD</Type>
+			<Type>L3S1-2HD</Type>
+			<Type p="major">X1HU-2HD</Type>
+			<Type p="major">X1HU-2HD-2D</Type>
+			<Type>OS9-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>[general]</Description>
+		<Description lang="ja">[汎用]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<NumberingSector>track</NumberingSector>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>[FLEX]</Description>
+		<Description lang="ja">[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-2">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>2</Interleave>
+		<DiskBasicTypes>
+			<Type>N88-2HD</Type>
+			<Type>OS9-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>[N88-BASIC etc.]</Description>
+		<Description lang="ja">[N88-BASICなど]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-26-4-S0">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>4</Interleave>
+		<SingleDensity track="0" side="0" />
+		<DiskBasicTypes>
+			<Type p="major">FM-2HD</Type>
+			<Type>L3S1-2HD</Type>
+			<Type>OS9-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD/8inch2D</DensityName>
+		<DensityName lang="ja">2HD/8インチ2D</DensityName>
+		<Description>, Track0 and side0 is single density [FM(F-BASIC,OS-9 etc.)]</Description>
+		<Description lang="ja">トラック0,サイド0は単密度 [FM(F-BASIC,OS-9など)]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-8-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">HU68K-2HD</Type>
+			<Type p="major">MSD98-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+		<Description>[PC-9801 DOS/Human68k]</Description>
+		<Description lang="ja">[PC-9801 DOS/Human68k]</Description>
+	</DiskType>
+	<DiskType name="2HD-77-9-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>77</TracksPerSide>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>HU68K-9SC2</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+	</DiskType>
+	<DiskType name="2HD-80-9-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<SectorSize>1024</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>HU68K-2HDE</Type>
+			<Type>HU68K-9SC2</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+	</DiskType>
+	<DiskType name="2HD-80-18-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type p="major">MSDOS-2HD</Type>
+			<Type>AROS-O-PC-2HD</Type>
+			<Type>AROS-F-PC-2HD</Type>
+			<Type>CPM86-2HD-AT</Type>
+			<Type>CPM86-1HD-AT</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+		<Description>[PC-AT DOS]</Description>
+		<Description lang="ja">[PC-AT DOS]</Description>
+	</DiskType>
+	<DiskType name="2HD-80-18-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<NumberingSector>track</NumberingSector>
+		<DiskBasicTypes>
+			<Type>FLEX-2HD-18X2</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+		<Description>[FLEX]</Description>
+	</DiskType>
+	<DiskType name="2DD-80-22-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>22</SectorsPerTrack>
+		<SectorSize>512</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>AMIGA-O-2HD</Type>
+			<Type>AMIGA-F-2HD</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+		<Description>[Amiga]</Description>
+	</DiskType>
+	<DiskType name="2HD-80-36-1">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>36</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-2HD-36</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+	</DiskType>
+	<DiskType name="2HD-80-36-1-FL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>80</TracksPerSide>
+		<SectorsPerTrack>36</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<NumberingSector>track</NumberingSector>
+		<DiskBasicTypes>
+			<Type>FLEX-2HD-36</Type>
+		</DiskBasicTypes>
+		<DensityName>2HD</DensityName>
+		<DensityName lang="ja">2HD</DensityName>
+		<Description>[FLEX]</Description>
+	</DiskType>
+	<DiskType name="HDD-OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<TracksPerSide>255</TracksPerSide>
+		<SectorsPerTrack>64</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>OS9-HDD</Type>
+		</DiskBasicTypes>
+		<DensityName>HDD</DensityName>
+		<Description>[OS-9]</Description>
+	</DiskType>
+	<DiskType name="HDD-FL">
+		<SidesPerDisk>1</SidesPerDisk>
+		<TracksPerSide>255</TracksPerSide>
+		<SectorsPerTrack>255</SectorsPerTrack>
+		<SectorSize>256</SectorSize>
+		<Density>0x20</Density>
+		<Interleave>1</Interleave>
+		<DiskBasicTypes>
+			<Type>FLEX-HDD</Type>
+		</DiskBasicTypes>
+		<DensityName>HDD</DensityName>
+		<Description>[FLEX]</Description>
+	</DiskType>
+</DiskTypes>

@@ -1,14 +1,4 @@
-﻿;〈注意〉
-; テープはサポートしません。
-; #PRCNT（1F7AH）はサポートしません。
-
-; ; DOSモジュール内部エントリ
-; ERROR	EQU	286CH
-
-;	バッチ処理バッファ
-; BATBF	EQU	2D00H	;バッチ･ファイル用リード･バッファ（2D00H～2DFFH）
-; BPRBF	EQU	204BH	;バッチ変数バッファ（204BH～20FEH）
-
+﻿
 
 ;
 ; CRTC ports
@@ -195,8 +185,8 @@ fcb_buffer:	DS	32	;S-OSのFCBバッファ（[_IBFAD]でポイント）
 
 ;	通常（42バイト）
 total_number_of_character_display:	DS	2	;画面の表示文字数
-cursor_offset_last_top_of_line:	DS	2	;最終行先頭のカーソル･オフセット
-vram_address_of_top:	DS	2	;テキストVRAM先頭アドレス（未使用の場合あり）
+cursor_offset_last_top_of_line:		DS	2	;最終行先頭のカーソル･オフセット
+vram_address_of_top:				DS	2	;テキストVRAM先頭アドレス（未使用の場合あり）
 vram_address_of_top_of_last_line:	DS	2	;最終行先頭のテキストVRAMアドレス（未使用の場合あり）
 locate_of_cursor_overlap_character:	DS	1	;カーソルと重なった位置の文字の保存（未使用の場合あり）
 screen_width:	DS	1	;＝00Hで40桁、＝FFHで80桁 -> M23では80桁固定なので、常にscreen_width=FFHとなる。
@@ -205,17 +195,17 @@ CSRNXI:	DS	1	;256－桁数 '[CSRNX]の初期値 -> M23では桁数80固定なの
 CSRNYI:	DS	1	;256－行数 '[CSRNY]の初期値-> M23では行数25固定なので、CSRNYI=CSRNYとなる。
 CSRNX:	DS	1	;x座標-[_WIDTH] _WIDTHは80
 CSRNY:	DS	1	;y座標-[_MXLIN] _MXLINは25
-display_cursor_XY_not_use:	DS	2	;カーソル座標（使用しません）
+display_cursor_XY_not_use:		DS	2	;カーソル座標（使用しません）
 number_of_character_after_CR:	DS	1	;改行してからの文字数（未使用）
 insert_mode_flag:	DS	1	;＝00Hで通常、＝FFHでインサート･モード
 foreground_color:	DS	1	;前景色
 background_color:	DS	1	;背景色
-BDR_color:	DS	1	;周辺色
-attribute_data:	DS	1	;画面のアトリビュートRAMへ書き込むデータ
-real_time_key:	DS	1	;リアル･タイム･キー（未使用の場合あり）
-GRAFLG:	DS	1	;＝FFHでグラフィック表示（未使用の場合あり）
+BDR_color:			DS	1	;周辺色
+attribute_data:		DS	1	;画面のアトリビュートRAMへ書き込むデータ
+real_time_key:		DS	1	;リアル･タイム･キー（未使用の場合あり）
+GRAFLG:				DS	1	;＝FFHでグラフィック表示（未使用の場合あり）
 
-vram_size:	DS	2	;VRAMのサイズ÷100H
+vram_size:			DS	2	;VRAMのサイズ÷100H
 
 
 
@@ -272,16 +262,16 @@ COLD:
 	CALL	clear_key_buffer ; インデックスポインタを0にしているだけ。
 
 ;	ディスクのパラメータの初期化
-	; LD	HL,000EH ; 
-	; LD	(_FATPS),HL
-	; LD	HL,0010H ; ディレクトリ情報が記録されているトラック番号
-	; LD	(_DIRPS),HL
-	; LD	HL,2E00H
-	; LD	(_FATBF),HL
-	; LD	HL,2F00H ; ディスクI／Oバッファ
-	; LD	(_DTBUF),HL
-	; LD	A,80 ; 最大トラック数
-	; LD	(_MXTRK),A
+	LD	HL,000EH ;  15セクタ
+	LD	(_FATPS),HL
+	LD	HL,0010H ; ディレクトリ情報が記録されているトラック番号
+	LD	(_DIRPS),HL
+	LD	HL,2E00H
+	LD	(_FATBF),HL
+	LD	HL,2F00H ; ディスクI／Oバッファ
+	LD	(_DTBUF),HL
+	LD	A,80 ; 最大トラック数
+	LD	(_MXTRK),A
 
 ;	ディスクI／O初期化
 	; CALL	SOSSI
@@ -296,7 +286,7 @@ COLD:
 	CALL print_string_from_next_call_address
 	DB	'MAIN 3000H-',00H
 	LD	HL,(_MEMAX) ; _MEMAX = 仕様メモリの上限
-	DEC	HL ; －1して、最後の使用可能アドレスにする
+	DEC	HL ; -1して、最後の使用可能アドレスにする
 	CALL print_hex_4_digit
 	CALL print_string_from_next_call_address
 	DB	'H',0DH,00H
@@ -3980,13 +3970,23 @@ DRDSB:
 
 	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
 	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定 セクタ番号は1以上の数
-;
+
+	; HLに読み込み先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書いて下さい。
+	; dma_read_out_address_H に転送先アドレスの上位バイトが格納されていると仮定します。
+	; Hレジスタの値を、 dma_read_out_address_H にセットします。
+	PUSH AF
+	LD A, H
+	LD (dma_read_out_address_H),A
+	LD A, L
+	LD (dma_read_out_address_L),A
+	POP AF
+
 READ_FIRST_LOOP:
 	CALL GO_DMA_AND_READ0 ; DMA転送と読み込みを開始します
 	INC C ; 次のセクタ番号へ
-	LD A,(dma_dist_address) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
+	LD A,(dma_read_out_address_H) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
 	INC A ; 256 byte incriment
-	LD (dma_dist_address),A
+	LD (dma_read_out_address_H),A
 	DJNZ READ_FIRST_LOOP
 
 	; エラーハンドリングは後で書く
@@ -4021,9 +4021,18 @@ do_write_disk:
 	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
 	CALL	get_track_number_and_sector_number_from_record_number	;レコード番号より、トラック番号とセクタ番号を得ます
 	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
-
+	PUSH AF ; レコード数を退避
+	PUSH BC
+	PUSH DE
+	PUSH HL
+	CALL	RESTORE	;ディスク･ドライブをリストアします
+	POP	HL
+	POP	DE
+	POP	BC
+	POP	AF ; レコード数を復帰
 
 	PUSH AF ; レコード数をスタックに入れる
+	PUSH DE ; Eレジスタに入っているセクタ番号を退避する
 	LD A, D 	;目的のシリンダ(トラック)番号をAレジスタにセット
 	LD E, A 	;Eレジスタに目的のシリンダ(トラック)番号をセット
 	CALL SEEK	;目的のシリンダ(トラック)へシークします
@@ -4037,13 +4046,24 @@ do_write_disk:
 	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
 	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定
 ;
+
+	; HLに読み込み先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書いて下さい。
+	; dma_write_in_address_H に転送先アドレスの上位バイトが格納されていると仮定します。
+	; Hレジスタの値を、 dma_write_in_address_H にセットします。
+	PUSH AF
+	LD A, H
+	LD (dma_write_in_address_H),A
+	LD A, L
+	LD (dma_write_in_address_L),A
+	POP AF
+
 WRITE_FIRST_LOOP:
 	CALL GO_DMA_AND_WRITE0 ; DMA転送と読み込みを開始します
 	INC C ; 次のセクタ番号へ
 	; HLに転送先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書くこと。
-	LD A,(_DTBUF.@H) ; memory address of DMA transfer address
+	LD A,(dma_write_in_address_H) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
 	INC A ; 256 byte incriment
-	LD (_DTBUF.@H),A
+	LD (dma_write_in_address_H),A
 	DJNZ WRITE_FIRST_LOOP
 
 	; エラーハンドリングは後で書く
@@ -4083,7 +4103,7 @@ RLLOP:
 	AND	0FH
 	INC	A
 	LD	E,A	;E←セクタ番号
-	EX	AF,AF'	;AF
+	EX	AF,AF'	; AF'
 	RET
 
 
@@ -4348,16 +4368,16 @@ DMA_COMMANDS:
 	DB 0BBH,01H,0BFH
 	DB 6DH
 	DB 0C3H,0FFH,00H,2CH,010H,8DH
-	DB BUFFER.@L; DMAで読み込む先のバッファのアドレスL
-dma_dist_address:	DB BUFFER.@H ; DMAで読み込む先のバッファのアドレスH。これが256byte毎にインクリメントされる。
+dma_read_out_address_L:	DB BUFFER.@L; DMAで読み込む先のバッファのアドレスL
+dma_read_out_address_H:	DB BUFFER.@H ; DMAで読み込む先のバッファのアドレスH。これが256byte毎にインクリメントされる。
 	DB 8AH
 	DB 0CFH,87H
 DMA_WRITE_COMMANDS:
 	DB 16H,0C3H,0C3H,0C3H,0C3H,0C3H,0C3H
 	DB 83H ; STOP DMA
 	DB 79H ; B->A
-	DB BUFFER.@L
-	DB BUFFER.@H  ; this address is buffer address !!!
+dma_write_in_address_L:	DB BUFFER.@L
+dma_write_in_address_H:	DB BUFFER.@H  ; this address is buffer address !!!
 	DB 00H,0FFH ; 256yte transfer
 	DB 14H,28H,8DH
 	DB 0C3H,00H ; FDC data register
@@ -5207,6 +5227,7 @@ CMDSB2:
 
 ;モニタ Jコマンド処理
 JUMP:
+	INC DE
 	CALL	skip_space_characters	;文字列の空白を読み飛ばします
 	CALL	convert_4_digit_data_to_hex_binary_ascii_code
 	LD	A,13	;Syntax Error
@@ -6362,7 +6383,7 @@ FATRED:
 	PUSH	DE
 	PUSH	HL
 	LD	DE,(_FATPS) ; FATの読み込み先レコード(トラック)番号
-	LD	HL,(_FATBF) ; FATのバッファの先頭アドレス
+	LD	HL,(_FATBF) ; FATのバッファの先頭アドレス 2E00H
 	LD	A,1 ; 読み込むレコード数
 	; HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
 	PUSH AF

@@ -1,0 +1,2539 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DiskBasics version="4.0">
+<DiskBasicFormats version="1.0">
+	<DiskBasicFormat type="0" name="L3-1S">
+		<GroupFinalCode>0xc0</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<Endian>big</Endian>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\":</InvalidCharSet>
+		</FileNameCharacters>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<BasicAscii name="TXT" />
+			<DataAscii name="DAT" />
+			<DataRandom name="RND" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="1" name="L3S1-2D">
+		<GroupFinalCode>0xc1</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<FillCodeOnFormat>0x40</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<Endian>big</Endian>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\":()</InvalidCharSet>
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<BasicAscii name="TXT" />
+			<DataAscii name="DAT" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="2" name="FM">
+		<GroupFinalCode>0xc0</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<Endian>big</Endian>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\":()</InvalidCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<BasicAscii name="TXT" />
+			<DataAscii name="DAT" />
+			<DataRandom name="RND" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="3" name="MSDOS">
+		<HasVolumeName>true</HasVolumeName>
+		<GroupFinalCode>0xfff</GroupFinalCode>
+		<GroupSystemCode>0xfff</GroupSystemCode>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet> \"\\/:*?|</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</FileNameCharacters>
+		<VolumeNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:*?|</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</VolumeNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<VolumeNameMaxLength>11</VolumeNameMaxLength>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="4" name="MSX">
+		<GroupFinalCode>0xfff</GroupFinalCode>
+		<GroupSystemCode>0xfff</GroupSystemCode>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet> \"\\/:;*?+,=[]</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="5" name="N88">
+		<GroupFinalCode>0xc1</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<FillCodeOnDir>0xff</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>:</InvalidCharSet>
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<BasicAscii name="TXT" />
+			<BasicAscii name="DAT" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="6" name="X1HU">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<GroupFinalCode>0x80</GroupFinalCode>
+		<GroupSystemCode>0xff</GroupSystemCode>
+		<GroupUnusedCode>0x00</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<FillCodeOnDir>0xff</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:;</InvalidCharSet>
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<Ascii name="TXT" />
+			<Ascii name="ASC" />
+			<Ascii name="BAT" />
+			<Ascii name="ASM" />
+			<Random name="RND" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="7" name="MZ">
+		<DirTerminateCode>0x0d</DirTerminateCode>
+		<DirSpaceCode>0x0d</DirSpaceCode>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<FillCodeOnFormat>0x40</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="8" name="FLEX">
+		<HasVolumeName>true</HasVolumeName>
+		<HasVolumeNumber>true</HasVolumeNumber>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<DirTerminateCode>0</DirTerminateCode>
+		<DirSpaceCode>0</DirSpaceCode>
+		<DirStartPositionOnSector>16</DirStartPositionOnSector>
+		<FillCodeOnFormat>0x40</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xff</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<ValidFirstCodeRange first="0x41" last="0x5a" />
+			<ValidFirstCodeRange first="0x61" last="0x7a" />
+			<ValidCharSet>-_.</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<VolumeNameCharacters>
+			<ValidCodeRange first="0x20" last="0x7e" />
+		</VolumeNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<VolumeNameMaxLength>8</VolumeNameMaxLength>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="9" name="OS9">
+		<HasVolumeName>true</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<DirTerminateCode>0</DirTerminateCode>
+		<DirSpaceCode>0</DirSpaceCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<ValidFirstCharSet>.</ValidFirstCharSet>
+			<ValidFirstCodeRange first="0x41" last="0x5a" />
+			<ValidFirstCodeRange first="0x61" last="0x7a" />
+			<ValidCharSet>._</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+		</FileNameCharacters>
+		<VolumeNameCharacters>
+			<ValidCodeRange first="0x20" last="0x7e" />
+		</VolumeNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<RequireFileName>true</RequireFileName>
+		<VolumeNameMaxLength>32</VolumeNameMaxLength>
+		<AttributesByExtension>
+			<Binary name="BIN" />
+			<Binary name="CMD" />
+			<Binary name="COM" />
+			<Binary name="EXE" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="10" name="CPM">
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnDir>0xe5</FillCodeOnDir>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<ValidCharSet>!@#$%()-+/.</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<AttributesByExtension>
+			<Binary name="CMD" />
+			<Binary name="COM" />
+			<Binary name="EXE" />
+			<Binary name="SYS" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="11" name="PA">
+		<GroupFinalCode>0xc1</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<FillCodeOnDir>0xff</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>:</InvalidCharSet>
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<BasicAscii name="TXT" />
+			<BasicAscii name="DAT" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="12" name="SMC">
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnDir>0xe5</FillCodeOnDir>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<ValidCharSet>!@#$%()-+/.</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<AttributesByExtension>
+			<Binary name="CMD" />
+			<Binary name="COM" />
+			<Binary name="EXE" />
+			<Binary name="SYS" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="13" name="FP">
+		<GroupFinalCode>0xc1</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:;</InvalidCharSet>
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<BasicAscii name="TXT" />
+			<DataAscii name="DAT" />
+			<DataRandom name="RND" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="14" name="HU68K">
+		<HasVolumeName>true</HasVolumeName>
+		<GroupFinalCode>0xfff</GroupFinalCode>
+		<GroupSystemCode>0xfff</GroupSystemCode>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet> \"\\/:*?|</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</FileNameCharacters>
+		<VolumeNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:*?|</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</VolumeNameCharacters>
+		<RequireFileName>true</RequireFileName>
+		<VolumeNameMaxLength>18</VolumeNameMaxLength>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="15" name="APPLEDOS">
+		<HasVolumeNumber>true</HasVolumeNumber>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0xff</DeleteCodeOnDir>
+		<DirStartPositionOnSector>11</DirStartPositionOnSector>
+		<FileNameCharacters>
+			<ValidCharSet> !@#$%()-+/._</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<TextTerminateCode>0x00</TextTerminateCode>
+		<AttributesByExtension>
+			<BasicBinary   name="BAS" />
+			<BasicInteger  name="INT" />
+			<MachineBinary name="BIN" />
+			<DataAscii     name="TXT" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="16" name="PRODOS">
+		<HasVolumeName>true</HasVolumeName>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DirTerminateCode>0</DirTerminateCode>
+		<DirSpaceCode>0</DirSpaceCode>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<DirStartPositionOnGroup>4</DirStartPositionOnGroup>
+		<FileNameCharacters>
+			<ValidCharSet> !@#$%()-+._</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<RequireVolumeName>true</RequireVolumeName>
+		<VolumeNameMaxLength>15</VolumeNameMaxLength>
+		<TextTerminateCode>0x00</TextTerminateCode>
+		<AttributesByExtension>
+			<BasicBinary   name="BAS" />
+			<MachineBinary name="BIN" />
+			<DataAscii     name="TXT" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="20" name="C1541">
+		<HasVolumeName>true</HasVolumeName>
+		<HasVolumeNumber>true</HasVolumeNumber>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<DirTerminateCode>0xa0</DirTerminateCode>
+		<DirSpaceCode>0xa0</DirSpaceCode>
+		<DirTrimmingCode>0xa0</DirTrimmingCode>
+		<SectorSkewForSave type="int">10</SectorSkewForSave>
+		<FileNameCharacters>
+			<ValidCharSet> !@#$%()-+/._</ValidCharSet>
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x61" last="0x7a" />
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<ToUpperFileNameAfterRenamed>true</ToUpperFileNameAfterRenamed>
+		<RequireFileName>true</RequireFileName>
+		<TextTerminateCode>0x00</TextTerminateCode>
+		<AttributesByExtension>
+			<BasicBinary   name="BAS" />
+			<MachineBinary name="BIN" />
+			<DataAscii     name="TXT" />
+			<DataRandom    name="RND" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="21" name="AMIGA">
+		<HasVolumeName>true</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<DirTerminateCode>0x00</DirTerminateCode>
+		<DirSpaceCode>0x00</DirSpaceCode>
+		<DirTrimmingCode>0x00</DirTrimmingCode>
+		<FileNameCharacters>
+			<ValidCodeRange first="0x20" last="0x2e" />
+			<ValidCodeRange first="0x30" last="0x39" />
+			<ValidCodeRange first="0x3b" last="0x40" />
+			<ValidCodeRange first="0x41" last="0x5a" />
+			<ValidCodeRange first="0x5b" last="0x5f" />
+			<ValidCodeRange first="0x60" last="0x7a" />
+			<ValidCodeRange first="0x7b" last="0x7d" />
+			<ValidCodeRange first="0xa1" last="0xff" encoding="1" />
+		</FileNameCharacters>
+		<FileNameCompareCase>insensitive</FileNameCompareCase>
+		<RequireFileName>true</RequireFileName>
+		<TextTerminateCode>0x00</TextTerminateCode>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="31" name="LOSA">
+		<HasVolumeName>false</HasVolumeName>
+		<GroupFinalCode>0xfff</GroupFinalCode>
+		<GroupSystemCode>0xfff</GroupSystemCode>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet> \"\\/:*?|</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</FileNameCharacters>
+		<RequireFileName>true</RequireFileName>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="32" name="CDOS2">
+		<HasVolumeName>false</HasVolumeName>
+		<GroupFinalCode>0xfff</GroupFinalCode>
+		<GroupSystemCode>0xfff</GroupSystemCode>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xe5</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet> \"\\/:*?|</InvalidCharSet>
+			<InvalidCode>0x3c</InvalidCode>
+			<InvalidCode>0x3e</InvalidCode>
+		</FileNameCharacters>
+		<RequireFileName>true</RequireFileName>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="51" name="DOS80">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<GroupFinalCode>0xf1</GroupFinalCode>
+		<GroupSystemCode>0xfe</GroupSystemCode>
+		<GroupUnusedCode>0xff</GroupUnusedCode>
+		<DirTerminateCode>0x00</DirTerminateCode>
+		<DirSpaceCode>0x00</DirSpaceCode>
+		<DirTrimmingCode>0x20</DirTrimmingCode>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:;</InvalidCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="52" name="FROST">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<GroupFinalCode>0xfdfd</GroupFinalCode>
+		<GroupSystemCode>0xfefe</GroupSystemCode>
+		<GroupUnusedCode>0xffff</GroupUnusedCode>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<FillCodeOnDir>0xff</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:;</InvalidCharSet>
+			<DuplicateCharSet>.</DuplicateCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<DataAscii name="DAT" value="0x02" /><!-- RGB -->
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="53" name="MAGICAL">
+		<HasVolumeName>true</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<DirTerminateCode>0</DirTerminateCode>
+		<DirSpaceCode>0</DirSpaceCode>
+		<DirStartPositionOnRoot>0x90</DirStartPositionOnRoot>
+		<DirStartPosition>0x90</DirStartPosition>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<FillCodeOnDir>0xff</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\,*?/:</InvalidCharSet>
+		</FileNameCharacters>
+		<VolumeNameMaxLength>80</VolumeNameMaxLength>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="54" name="SDOS">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<FillCodeOnFAT>0xff</FillCodeOnFAT>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:;</InvalidCharSet>
+		</FileNameCharacters>
+		<AttributesByExtension>
+			<BasicBinary name="BAS" />
+			<MachineBinary name="BIN" />
+			<MachineBinary name="OBJ" />
+			<DataBinary name="DAT" />
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="55" name="MDOS">
+		<HasVolumeName>false</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<DirTerminateCode>0</DirTerminateCode>
+		<GroupFinalCode>0xffff</GroupFinalCode>
+		<GroupSystemCode>0xeeee</GroupSystemCode>
+		<GroupUnusedCode>0x0000</GroupUnusedCode>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\,*?/:</InvalidCharSet>
+		</FileNameCharacters>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="61" name="XDOS">
+		<HasVolumeName>true</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<GroupUnusedCode>0x00</GroupUnusedCode>
+		<DirStartPositionOnRoot>128</DirStartPositionOnRoot>
+		<DirStartPosition>128</DirStartPosition>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<FillCodeOnDir>0xff</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<TextTerminateCode>0x00</TextTerminateCode>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>!\"/:,?</InvalidCharSet>
+		</FileNameCharacters>
+		<RequireFileName>true</RequireFileName>
+		<VolumeNameMaxLength>80</VolumeNameMaxLength>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="71" name="TFDOS">
+		<HasVolumeNumber>true</HasVolumeNumber>
+		<GroupFinalCode>0xff</GroupFinalCode>
+		<GroupSystemCode>0xff</GroupSystemCode>
+		<GroupUnusedCode>0x00</GroupUnusedCode>
+		<DirTerminateCode>0x0d</DirTerminateCode>
+		<DirSpaceCode>0x20</DirSpaceCode>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:*?</InvalidCharSet>
+		</FileNameCharacters>
+		<ToUpperFileNameBeforeDialog>true</ToUpperFileNameBeforeDialog>
+		<AttributesByExtension>
+			<DataBinary name="BIN" value="0x01" mask="0xff" /><!-- OBJ -->
+			<DataAscii name="TXT" value="0x02" mask="0xff" /><!-- TEX -->
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="72" name="CDOS">
+		<HasVolumeNumber>true</HasVolumeNumber>
+		<HasVolumeName>true</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<DirTerminateCode>0x0d</DirTerminateCode>
+		<DirSpaceCode>0x0d</DirSpaceCode>
+		<FillCodeOnFormat>0x40</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<SpecialAttributes>
+			<Ascii name="PAS" value="0x0a" mask="0xff">
+				<Description>for q-PASCAL</Description>
+				<Description lang="ja">q-PASCAL用</Description>
+			</Ascii>
+			<System name="SYS" value="0x84" mask="0xff">
+			</System>
+		</SpecialAttributes>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:*?</InvalidCharSet>
+		</FileNameCharacters>
+		<VolumeNameMaxLength>27</VolumeNameMaxLength>
+		<AttributesByExtension>
+			<DataBinary name="BIN" value="0x01" mask="0xff" /><!-- OBJ -->
+			<DataAscii name="TXT" value="0x02" mask="0xff" /><!-- TEX -->
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="73" name="MZFDOS">
+		<HasVolumeNumber>true</HasVolumeNumber>
+		<HasVolumeName>true</HasVolumeName>
+		<GroupUnusedCode>0x000</GroupUnusedCode>
+		<DirTerminateCode>0x0d</DirTerminateCode>
+		<DirSpaceCode>0x0d</DirSpaceCode>
+		<FillCodeOnFormat>0</FillCodeOnFormat>
+		<FillCodeOnFAT>0</FillCodeOnFAT>
+		<DeleteCodeOnDir>0xfe</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\".\\/:*?</InvalidCharSet>
+		</FileNameCharacters>
+		<VolumeNameMaxLength>17</VolumeNameMaxLength>
+		<AttributesByExtension>
+			<DataBinary name="BIN" value="0x01" mask="0xff" /><!-- OBJ -->
+			<DataAscii name="TXT" value="0x04" mask="0xff" /><!-- ASC -->
+			<System name="CMD" value="0x0a" mask="0xff" /><!-- SYS -->
+		</AttributesByExtension>
+	</DiskBasicFormat>
+	<DiskBasicFormat type="91" name="FALCOM">
+		<HasVolumeName>false</HasVolumeName>
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<DirTerminateCode>0</DirTerminateCode>
+		<GroupFinalCode>0xffff</GroupFinalCode>
+		<GroupSystemCode>0xeeee</GroupSystemCode>
+		<GroupUnusedCode>0x0000</GroupUnusedCode>
+		<FillCodeOnFormat>0x00</FillCodeOnFormat>
+		<FillCodeOnFAT>0x00</FillCodeOnFAT>
+		<FillCodeOnDir>0x00</FillCodeOnDir>
+		<DeleteCodeOnDir>0x00</DeleteCodeOnDir>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\,*?/:</InvalidCharSet>
+		</FileNameCharacters>
+	</DiskBasicFormat>
+</DiskBasicFormats>
+
+<DiskBasicCategories version="1.0">
+	<DiskBasicCategory name="L3S1">
+		<Description>HITACHI LEVEL-3/S1 DISK BASIC</Description>
+		<Description lang="ja">日立 LEVEL-3/S1 DISK BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="FM">
+		<Description>FUJITSU F-BASIC</Description>
+		<Description lang="ja">富士通 F-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MSX">
+		<Description>MSX DISK BASIC / MSX-DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="N88">
+		<Description>NEC N88-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="N66">
+		<Description>NEC N66-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="X1HU">
+		<Description>SHARP X1 Hu-BASIC</Description>
+		<Description lang="ja">シャープ X1 Hu-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="HU68K">
+		<Description>SHARP X68000 Human68k</Description>
+		<Description lang="ja">シャープ X68000 Human68k</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MZHU">
+		<Description>SHARP MZ Hu-BASIC</Description>
+		<Description lang="ja">シャープ MZ Hu-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MZ">
+		<Description>SHARP MZ DISK BASIC</Description>
+		<Description lang="ja">シャープ MZ DISK BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MZFDOS">
+		<Description>SHARP MZ Floppy DOS</Description>
+		<Description lang="ja">シャープ MZ Floppy DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="PA">
+		<Description>TOSHIBA PASOPIA T-BASIC</Description>
+		<Description lang="ja">東芝 パソピア T-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="SMC">
+		<Description>SONY SMC-777 Sony Filer</Description>
+		<Description lang="ja">ソニー SMC-777 Sony Filer</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="FP">
+		<Description>CASIO FP-1100 C82-BASIC</Description>
+		<Description lang="ja">カシオ FP-1100 C82-BASIC</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="FLEX">
+		<Description>FLEX</Description>
+		<Description lang="ja">FLEX</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="OS9">
+		<Description>OS-9</Description>
+		<Description lang="ja">OS-9</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="CPM">
+		<Description>CP/M</Description>
+		<Description lang="ja">CP/M</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MSDOS">
+		<Description>MS-DOS</Description>
+		<Description lang="ja">MS-DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="CDOS">
+		<Description>Carry Lab. C-DOS</Description>
+		<Description lang="ja">キャリーラボ C-DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="CDOS2">
+		<Description>Carry Lab. CDOS II</Description>
+		<Description lang="ja">キャリーラボ CDOS II</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="TFDOS">
+		<Description>TF-DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="XDOS">
+		<Description>X-DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MAGICAL">
+		<Description>Magical DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="FROST">
+		<Description>Frost-DOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="MDOS">
+		<Description>MDOS</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="APPLEDOS">
+		<Description>Apple DOS 3.3</Description>
+		<Description lang="ja">アップル DOS 3.3</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="PRODOS">
+		<Description>Apple ProDOS 8 / 16</Description>
+		<Description lang="ja">アップル ProDOS 8 / 16</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="C1541">
+		<Description>Commodore 1541 DOS (for C64)</Description>
+		<Description lang="ja">コモドール 1541 DOS (C64用)</Description>
+	</DiskBasicCategory>
+	<DiskBasicCategory name="AMIGA">
+		<Description>Commodore Amiga DOS</Description>
+		<Description lang="ja">コモドール Amiga DOS / AROS</Description>
+	</DiskBasicCategory>
+</DiskBasicCategories>
+
+<DiskBasicTypes version="1.0">
+	<DiskBasicType name="L3-1S" type="0" category="L3S1">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>20</ManagedTrackNumber>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>1</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>5</FATStartPosition>
+		<FATEndGroup>155</FATEndGroup>
+		<DirStartSector>7</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>L3 DISK BASIC (3inch/5inch 1S)</Description>
+		<Description lang="ja">L3 DISK BASIC (3インチ/5インチ1S)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="L3S1-2D" type="1" category="L3S1">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>20</ManagedTrackNumber>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>1</FATStartPosition>
+		<FATEndGroup>151</FATEndGroup>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>23</DirEndSector>
+		<Description>L3/S1 DISK BASIC (5inch 2D)</Description>
+		<Description lang="ja">L3/S1 DISK BASIC (5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="L3S1-2HD" type="1" category="L3S1">
+		<SectorsPerGroup>26</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<TracksPerSide>75</TracksPerSide>
+		<ManagedTrackNumber>37</ManagedTrackNumber>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>1</FATStartPosition>
+		<FATEndGroup>145</FATEndGroup>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>23</DirEndSector>
+		<Description>L3/S1 DISK BASIC (8inch 2D/5inch 2HD)</Description>
+		<Description lang="ja">L3/S1 DISK BASIC (8インチ2D/5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FM-2D" type="2" category="FM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>1</FATStartSector>
+		<FATEndSector>1</FATEndSector>
+		<FATStartPosition>5</FATStartPosition>
+		<FATEndGroup>151</FATEndGroup>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<IDSectorPosition type="int">2</IDSectorPosition>
+		<IDString type="string">S  </IDString>
+		<Description>F-BASIC (3.5inch/5inch 2D)</Description>
+		<Description lang="ja">F-BASIC (3.5インチ/5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FM-2DD" type="2" category="FM">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>1</FATStartSector>
+		<FATEndSector>1</FATEndSector>
+		<FATStartPosition>5</FATStartPosition>
+		<FATEndGroup>155</FATEndGroup>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<IDSectorPosition type="int">2</IDSectorPosition>
+		<IDString type="string">E  </IDString>
+		<Description>F-BASIC (3.5inch 2DD)</Description>
+		<Description lang="ja">F-BASIC (3.5インチ2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FM-2HD" type="2" category="FM">
+		<SectorsPerGroup>26</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATSideNumber>1</FATSideNumber>
+		<FATStartSector>1</FATStartSector>
+		<FATEndSector>1</FATEndSector>
+		<FATStartPosition>5</FATStartPosition>
+		<FATEndGroup>151</FATEndGroup>
+		<DirStartSector>30</DirStartSector>
+		<DirEndSector>52</DirEndSector>
+		<IDSectorPosition type="int">27</IDSectorPosition>
+		<IDString type="string">S  </IDString>
+		<Description>F-BASIC (8inch 2D/5インチ 2HD)</Description>
+		<Description lang="ja">F-BASIC (8インチ2D/5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CDOS2-2D" type="32" category="CDOS2">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xfd</MediaID>
+		<SubDirGroupSize>0</SubDirGroupSize>
+		<IgnoreParameter type="bool">true</IgnoreParameter>
+		<IPLCompareString type="string">CDOS II</IPLCompareString>
+		<JumpBoot type="string">\xc9</JumpBoot>
+		<OEMName type="string">CDOS II</OEMName>
+		<Description>CDOS II (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="LOSA-2D" type="31" category="LOSA">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xfd</MediaID>
+		<ValidNumberOfFATs>1</ValidNumberOfFATs>
+		<SubDirGroupSize>0</SubDirGroupSize>
+		<IgnoreParameter type="bool">true</IgnoreParameter>
+		<IPLCompareString type="string">LOVERS</IPLCompareString>
+		<JumpBoot type="string">\xeb\xfe\x90</JumpBoot>
+		<OEMName type="string">LOVERS</OEMName>
+		<Description>L-os Angeles (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSDOS-2D" type="3" category="MSDOS">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xfd</MediaID>
+		<JumpBoot type="string">\xeb\x3c\x90</JumpBoot>
+		<OEMName type="string">FAT12</OEMName>
+		<Description>MS-DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSDOS-2DD" type="3" category="MSDOS">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>3</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xf9</MediaID>
+		<JumpBoot type="string">\xeb\x3c\x90</JumpBoot>
+		<OEMName type="string">FAT12</OEMName>
+		<Description>MS-DOS (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSD98-2HD" type="3" category="MSDOS">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>192</DirEntryCount>
+		<MediaID>0xfe</MediaID>
+		<JumpBoot type="string">\xeb\x3c\x90</JumpBoot>
+		<OEMName type="string">FAT12</OEMName>
+		<Description>MS-DOS for PC-9801 (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSDOS-2HD" type="3" category="MSDOS">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>9</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>224</DirEntryCount>
+		<MediaID>0xf0</MediaID>
+		<JumpBoot type="string">\xeb\x3c\x90</JumpBoot>
+		<OEMName type="string">FAT12</OEMName>
+		<Description>MS-DOS for PC-AT (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSX-1DD8" type="4" category="MSX">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>1</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xfa</MediaID>
+		<JumpBoot type="string">\xeb\xfe\x90</JumpBoot>
+		<OEMName type="string">MSX</OEMName>
+		<Description>MSX DISK BASIC (1DD, 8sectors)</Description>
+		<Description lang="ja">MSX DISK BASIC (1DD, 8セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSX-2DD8" type="4" category="MSX">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xfb</MediaID>
+		<JumpBoot type="string">\xeb\xfe\x90</JumpBoot>
+		<OEMName type="string">MSX</OEMName>
+		<Description>MSX DISK BASIC (2DD, 8sectors)</Description>
+		<Description lang="ja">MSX DISK BASIC (2DD, 8セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSX-1DD9" type="4" category="MSX">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xf8</MediaID>
+		<JumpBoot type="string">\xeb\xfe\x90</JumpBoot>
+		<OEMName type="string">MSX</OEMName>
+		<Description>MSX DISK BASIC (1DD, 9sectors)</Description>
+		<Description lang="ja">MSX DISK BASIC (1DD, 9セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MSX-2DD9" type="4" category="MSX">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<SectorsPerFAT>3</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>112</DirEntryCount>
+		<MediaID>0xf9</MediaID>
+		<JumpBoot type="string">\xeb\xfe\x90</JumpBoot>
+		<OEMName type="string">MSX</OEMName>
+		<Description>MSX DISK BASIC (2DD, 9sectors)</Description>
+		<Description lang="ja">MSX DISK BASIC (2DD, 9セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="N88-1D" type="5" category="N88">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>18</ManagedTrackNumber>
+		<NumberOfFATs>3</NumberOfFATs>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>14</FATStartSector>
+		<FATEndSector>14</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>69</FATEndGroup>
+		<ReservedGroups>
+			<Group>36</Group>
+			<Group>37</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>12</DirEndSector>
+		<Description>N88 BASIC (5inch 1D)</Description>
+		<Description lang="ja">N88 BASIC (5インチ1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="N88-2D" type="5" category="N88">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>18</ManagedTrackNumber>
+		<NumberOfFATs>3</NumberOfFATs>
+		<FATSideNumber>1</FATSideNumber>
+		<FATStartSector>14</FATStartSector>
+		<FATEndSector>14</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>159</FATEndGroup>
+		<ReservedGroups>
+			<Group>74</Group>
+			<Group>75</Group>
+		</ReservedGroups>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>28</DirEndSector>
+		<Description>N88 BASIC (5inch 2D)</Description>
+		<Description lang="ja">N88 BASIC (5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="N88-2HD" type="5" category="N88">
+		<SectorsPerGroup>26</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>35</ManagedTrackNumber>
+		<NumberOfFATs>3</NumberOfFATs>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>24</FATStartSector>
+		<FATEndSector>24</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>153</FATEndGroup>
+		<ReservedGroups>
+			<Group>0</Group>
+			<Group>1</Group>
+			<Group>70</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>22</DirEndSector>
+		<FillCodeOnFormat>0x40</FillCodeOnFormat>
+		<Description>N88 BASIC (8inch 2D/5inch 2HD)</Description>
+		<Description lang="ja">N88 BASIC (8インチ2D/5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="N66-1D" type="5" category="N66">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>18</ManagedTrackNumber>
+		<NumberOfFATs>3</NumberOfFATs>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>14</FATStartSector>
+		<FATEndSector>14</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>69</FATEndGroup>
+		<ReservedGroups>
+			<Group>36</Group>
+			<Group>37</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>12</DirEndSector>
+		<Description>N66 BASIC (3.5inch 1D)</Description>
+		<Description lang="ja">N66 BASIC (3.5インチ1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="N66-1DD" type="5" category="N66">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>37</ManagedTrackNumber>
+		<NumberOfFATs>3</NumberOfFATs>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>14</FATStartSector>
+		<FATEndSector>14</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>159</FATEndGroup>
+		<ReservedGroups>
+			<Group>74</Group>
+			<Group>75</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>12</DirEndSector>
+		<Description>N66 BASIC (3.5inch 1DD)</Description>
+		<Description lang="ja">N66 BASIC (3.5インチ1DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-1D" type="6" category="X1HU">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>39</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<DefaultAsciiType type="int">2</DefaultAsciiType><!-- S-OS SWORD -->
+		<Description>S-OS SWORD (1D)</Description>
+		<Description lang="ja">S-OS SWORD (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-2D" type="6" category="X1HU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>79</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>X1 Hu-BASIC (3inch/5inch 2D)</Description>
+		<Description lang="ja">X1 Hu-BASIC (3インチ/5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-2D-S" type="6" category="X1HU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>79</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<DefaultAsciiType type="int">2</DefaultAsciiType><!-- S-OS SWORD -->
+		<Description>S-OS SWORD (3inch/5inch 2D)</Description>
+		<Description lang="ja">S-OS SWORD (3インチ/5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-1DD" type="6" category="X1HU">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>16</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>79</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<DefaultAsciiType type="int">2</DefaultAsciiType><!-- S-OS SWORD -->
+		<Description>S-OS SWORD (1DD)</Description>
+		<Description lang="ja">S-OS SWORD (1DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-2DD" type="6" category="X1HU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>16</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>287</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>X1 Hu-BASIC (5inch 2DD)</Description>
+		<Description lang="ja">X1 Hu-BASIC (5インチ2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-2HD" type="6" category="X1HU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>29</FATStartSector>
+		<FATEndSector>30</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>377</FATEndGroup>
+		<DirStartSector>33</DirStartSector>
+		<DirEndSector>48</DirEndSector>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>X1 Hu-BASIC (8inch 2D/5inch 2HD)</Description>
+		<Description lang="ja">X1 Hu-BASIC (8インチ2D/5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="X1HU-2HD-2D" type="6" category="X1HU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>377</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<DefaultAsciiType type="int">2</DefaultAsciiType><!-- S-OS SWORD -->
+		<Description>S-OS SWORD (5inch 2HD)</Description>
+		<Description lang="ja">S-OS SWORD (5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZHU-2D" type="6" category="MZHU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<!-- FATEndGroup>79</FATEndGroup -->
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<DirStartPositionOnRoot>32</DirStartPositionOnRoot>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<IPLString type="string">\x01</IPLString>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>MZ Hu-BASIC (5inch 2D)</Description>
+		<Description lang="ja">MZ Hu-BASIC (5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZHU-2DD" type="6" category="MZHU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>16</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>287</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<DirStartPositionOnRoot>32</DirStartPositionOnRoot>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<IPLString type="string">\x04</IPLString>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>MZ Hu-BASIC (2DD)</Description>
+		<Description lang="ja">MZ Hu-BASIC (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZHU-2HD" type="6" category="MZHU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>29</FATStartSector>
+		<FATEndSector>30</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>377</FATEndGroup>
+		<DirStartSector>33</DirStartSector>
+		<DirEndSector>48</DirEndSector>
+		<DirStartPositionOnRoot>32</DirStartPositionOnRoot>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<IPLString type="string">\x01</IPLString>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>MZ Hu-BASIC (8inch 2D/5inch 2HD)</Description>
+		<Description lang="ja">MZ Hu-BASIC (8インチ2D/5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZHU-2D-INV" type="6" category="MZHU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<!-- FATEndGroup>79</FATEndGroup -->
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<DirStartPositionOnRoot>32</DirStartPositionOnRoot>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x01</IPLString>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>MZ Hu-BASIC (Data Inverted)(5inch 2D)</Description>
+		<Description lang="ja">MZ Hu-BASIC (データ反転)(5インチ2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZHU-2DD-INV" type="6" category="MZHU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>16</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>287</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<DirStartPositionOnRoot>32</DirStartPositionOnRoot>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x04</IPLString>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>MZ Hu-BASIC (Data Inverted) (2DD)</Description>
+		<Description lang="ja">MZ Hu-BASIC (データ反転)(2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZHU-2HD-INV" type="6" category="MZHU">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>29</FATStartSector>
+		<FATEndSector>30</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>377</FATEndGroup>
+		<DirStartSector>33</DirStartSector>
+		<DirEndSector>48</DirEndSector>
+		<DirStartPositionOnRoot>32</DirStartPositionOnRoot>
+		<FillCodeOnFormat>0xe5</FillCodeOnFormat>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x01</IPLString>
+		<DefaultAsciiType type="int">0</DefaultAsciiType><!-- Hu-BASIC -->
+		<Description>MZ Hu-BASIC (Data Inverted) (8inch 2D/5inch 2HD)</Description>
+		<Description lang="ja">MZ Hu-BASIC (データ反転)(8インチ2D/5インチ2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZ-2D" type="7" category="MZ">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>16</FATStartSector>
+		<FATEndSector>16</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>24</DirEndSector>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x01</IPLString>
+		<VolumeString type="string">\x01</VolumeString>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/</InvalidCharSet>
+		</FileNameCharacters>
+		<SpecialAttributes>
+			<Volume name="VOL" value="0x54" mask="0xff">
+				<Description>for TAKE-DOS</Description>
+				<Description lang="ja">TAKE-DOS用</Description>
+			</Volume>
+			<MachineBinary name="ASM" value="0x70" mask="0xff">
+				<Description>for EDAS Assembler</Description>
+				<Description lang="ja">EDASアセンブラ用</Description>
+			</MachineBinary>
+		</SpecialAttributes>
+		<SubDirGroupSize>0</SubDirGroupSize>
+		<Description>MZ DISK BASIC (2D)</Description>
+		<Description lang="ja">MZ DISK BASIC (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZ-2DD" type="7" category="MZ">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>16</FATStartSector>
+		<FATEndSector>16</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>24</DirEndSector>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x04</IPLString>
+		<VolumeString type="string"></VolumeString>
+		<FileNameCharacters>
+			<InvalidCodeRange first="0x00" last="0x1f" />
+			<InvalidCode>0x7f</InvalidCode>
+			<InvalidCharSet>\"\\/:*?</InvalidCharSet>
+		</FileNameCharacters>
+		<SubDirGroupSize>4</SubDirGroupSize>
+		<Description>MZ BASIC M25/S25 (2DD)</Description>
+		<Description lang="ja">MZ BASIC M25/S25 (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-1D-S1" type="8" category="FLEX">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>FLEX for MB-S1 (1D, 16sectors)</Description>
+		<Description lang="ja">FLEX for MB-S1 (1D, 16セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-1D-10" type="8" category="FLEX">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>10</DirEndSector>
+		<Description>FLEX (1D, 10sectors)</Description>
+		<Description lang="ja">FLEX (1D, 10セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-1D-18" type="8" category="FLEX">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>18</DirEndSector>
+		<Description>FLEX (1D, 18sectors)</Description>
+		<Description lang="ja">FLEX (1D, 18セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2D" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>FLEX (2D, 16sectors)</Description>
+		<Description lang="ja">FLEX (2D, 16セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2D-10" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>10</DirEndSector>
+		<Description>FLEX (2D, 10sectors)</Description>
+		<Description lang="ja">FLEX (2D, 10セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2D-18" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>18</DirEndSector>
+		<Description>FLEX (2D, 18sectors)</Description>
+		<Description lang="ja">FLEX (2D, 18セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2DD-18" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>18</DirEndSector>
+		<Description>FLEX (2DD, 18sectors)</Description>
+		<Description lang="ja">FLEX (2DD, 18セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2HD" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>26</DirEndSector>
+		<Description>FLEX (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2HD-18X2" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>36</DirEndSector>
+		<GroupsPerSector>2</GroupsPerSector>
+		<Description>FLEX (2HD, 18sectors x2)</Description>
+		<Description lang="ja">FLEX (2HD, 18セクタ x2)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-2HD-36" type="8" category="FLEX">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>36</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>36</DirEndSector>
+		<Description>FLEX (2HD, 36sectors)</Description>
+		<Description lang="ja">FLEX (2HD, 36セクタ)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FLEX-HDD" type="8" category="FLEX">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>255</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>5</DirStartSector>
+		<DirEndSector>26</DirEndSector>
+		<Description>FLEX (HDD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-1D" type="9" category="OS9">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>OS-9 (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-1D-18" type="9" category="OS9">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>NitrOS-9 (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2D" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>OS-9 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2D-18" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>NitrOS-9 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2DD" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>OS-9 (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2DD-16" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>NitrOS-9 (2DD, 16sectors)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2DD-18" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>NitrOS-9 (2DD, 18sectors)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2HD" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>OS-9 (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-2HD-36" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>36</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>OS-9 (2HD, 36sectors)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="OS9-HDD" type="9" category="OS9">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>64</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>11</DirEndSector>
+		<SubDirGroupSize>8</SubDirGroupSize>
+		<Description>OS-9 (HDD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMAP-1D-4" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>3</ManagedTrackNumber>
+		<DirStartSector>0</DirStartSector>
+		<DirEndSector>7</DirEndSector>
+		<SectorSkewMap>
+			<Value>0</Value>
+			<Value>6</Value>
+			<Value>12</Value>
+			<Value>3</Value>
+			<Value>9</Value>
+			<Value>15</Value>
+			<Value>14</Value>
+			<Value>5</Value>
+			<Value>11</Value>
+			<Value>2</Value>
+			<Value>8</Value>
+			<Value>7</Value>
+			<Value>13</Value>
+			<Value>4</Value>
+			<Value>10</Value>
+			<Value>1</Value>
+		</SectorSkewMap>
+		<Description>CP/M for Apple II (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-1D-512-2" type="10" category="CPM">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (1D, 2groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-2D-512-2" type="10" category="CPM">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (2D, 2groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-1D-512-4" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (1D, 4groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-2D-512-4" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (2D, 4groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM68-2D-512-2" type="10" category="CPM">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>3</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>8</DirEndSector>
+		<Description>CP/M 68K (2D, 2groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM68-2D-512-4" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>3</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>8</DirEndSector>
+		<Description>CP/M 68K (2D, 4groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM88-2D" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M for PC-8801 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMX1-2D" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>8</DirEndSector>
+		<Description>CP/M for X1 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMMZ-2D" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>8</DirEndSector>
+		<DataInverted>true</DataInverted>
+		<Description>CP/M for MZ (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-1DD-8-512-4" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (1DD, 4groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-2DD-8-512-4" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (2DD, 4groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-1DD-8-512-8" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (1DD, 8groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-2DD-8-512-8" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>8</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>4</DirEndSector>
+		<Description>CP/M-86 (2DD, 8groups)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="PCPM-1DD-9-512" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<GroupWidth>2</GroupWidth>
+		<Description>Personal CP/M (1DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="PCPM-2DD-9-512" type="10" category="CPM">
+		<SectorsPerGroup>4</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<GroupWidth>2</GroupWidth>
+		<Description>Personal CP/M (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMMZ-2DD" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<GroupWidth>2</GroupWidth>
+		<Description>Personal CP/M for MZ-2500 (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM-1HS" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M (1HS)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM-1HS-6" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<SectorSkew>6</SectorSkew>
+		<Description>CP/M (1HS, sector skew 6)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM-2HS" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M (2HS)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM-2HS-6" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<SectorSkew>6</SectorSkew>
+		<Description>CP/M (2HS, sector skew 6)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM88-2HD" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M for PC-8801 (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM68-2HD" type="10" category="CPM">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>50</DirEndSector>
+		<Description>CP/M 68K (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM98-2HD" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<GroupWidth>2</GroupWidth>
+		<Description>CP/M for PC-9801 (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMS1-2HD" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>27</DirStartSector>
+		<DirEndSector>50</DirEndSector>
+		<GroupWidth>2</GroupWidth>
+		<Description>CP/M for S1 (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMFM-2HD" type="10" category="CPM">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M-86 for FM (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPMSORD-2HD" type="10" category="CPM">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>26</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<FillCodeOnFormat>0x40</FillCodeOnFormat>
+		<IdentString type="string">\x40\x40\x40\x40\x40\x40\x40\x40</IdentString>
+		<Description>CP/M for SORD (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-1HD-AT" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M-86 for PC-AT (1HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CPM86-2HD-AT" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>CP/M-86 for PC-AT (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="PA-2D" type="11" category="PA">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>18</ManagedTrackNumber>
+		<NumberOfFATs>3</NumberOfFATs>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>14</FATStartSector>
+		<FATEndSector>14</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>139</FATEndGroup>
+		<ReservedGroups>
+			<Group>0</Group>
+			<Group>1</Group>
+			<Group>2</Group>
+			<Group>3</Group>
+			<Group>72</Group>
+			<Group>74</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>12</DirEndSector>
+		<Description>T-BASIC (2D)</Description>
+		<Description lang="ja">T-BASIC (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="SMC-1DD" type="12" category="SMC">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<SectorSkew>3</SectorSkew>
+		<Description>Sony Filer for SMC-777 (1DD)</Description>
+	</DiskBasicType>
+
+	<DiskBasicType name="SORD-1DD-2" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<SectorSkew>2</SectorSkew>
+		<Description>SORD M23 for CP/M (1DD)-2</Description>
+	</DiskBasicType>
+
+
+	<DiskBasicType name="SORD-1DD-1" type="10" category="CPM">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>2</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<SectorSkew>1</SectorSkew>
+		<Description>SORD M23 for CP/M (1DD)-1</Description>
+	</DiskBasicType>
+
+
+<DiskBasicType name="SORD-1DD-3" type="6" category="SOS">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>79</FATEndGroup>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<FillCodeOnFormat>0xff</FillCodeOnFormat>
+		<DefaultAsciiType type="int">2</DefaultAsciiType><!-- S-OS SWORD -->
+		<Description>S-OS SWORD (1DD)</Description>
+		<Description lang="ja">S-OS SWORD (1DD)</Description>
+	</DiskBasicType>
+
+
+
+
+	<DiskBasicType name="FP-2D" type="13" category="FP">
+		<SectorsPerGroup>8</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>1</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATSideNumber>0</FATSideNumber>
+		<FATStartSector>1</FATStartSector>
+		<FATEndSector>1</FATEndSector>
+		<FATStartPosition>1</FATStartPosition>
+		<FATEndGroup>159</FATEndGroup>
+		<ReservedGroups>
+			<Group first="0" last="7" />
+		</ReservedGroups>
+		<DirStartSector>2</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<Description>C82-BASIC (2D)</Description>
+		<Description lang="ja">C82-BASIC (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="HU68K-2HD" type="14" category="HU68K">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<ValidNumberOfFATs>1</ValidNumberOfFATs>
+		<SectorsPerFAT>2</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>192</DirEntryCount>
+		<MediaID>0xfe</MediaID>
+		<IPLCompareString type="string">X68IPL</IPLCompareString>
+		<JumpBoot type="string">\x60\x3c\x90</JumpBoot>
+		<OEMName type="string">X68IPL30</OEMName>
+		<Description>Human68k (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="HU68K-2HDE" type="14" category="HU68K">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>2</NumberOfFATs>
+		<ValidNumberOfFATs>1</ValidNumberOfFATs>
+		<SectorsPerFAT>3</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>192</DirEntryCount>
+		<MediaID>0xf8</MediaID>
+		<IPLCompareString type="string">2HDE</IPLCompareString>
+		<JumpBoot type="string">\x60\x202</JumpBoot>
+		<OEMName type="string">HDE v1.1</OEMName>
+		<IgnoreParameter type="bool">true</IgnoreParameter>
+		<Description>2HDE v1.1</Description>
+	</DiskBasicType>
+	<DiskBasicType name="HU68K-9SC2" type="14" category="HU68K">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>1</ReservedSectors>
+		<NumberOfFATs>1</NumberOfFATs>
+		<ValidNumberOfFATs>1</ValidNumberOfFATs>
+		<SectorsPerFAT>3</SectorsPerFAT>
+		<FATStartPosition>0</FATStartPosition>
+		<DirEntryCount>192</DirEntryCount>
+		<MediaID>0xfb</MediaID>
+		<IPLCompareString type="string">9SCFMT</IPLCompareString>
+		<JumpBoot type="string">\x60\x1e9</JumpBoot>
+		<OEMName type="string">SCFMT IPL v1.02</OEMName>
+		<IgnoreParameter type="bool">true</IgnoreParameter>
+		<Description>9SCFMT v1.02</Description>
+	</DiskBasicType>
+	<DiskBasicType name="APDOS-1D-13" type="15" category="APPLEDOS">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>13</SectorsPerTrack>
+		<ManagedTrackNumber>17</ManagedTrackNumber>
+		<DirStartSector>12</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<Description>Apple DOS 3.x (1D, 13sectors)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="APDOS-1D" type="15" category="APPLEDOS">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>17</ManagedTrackNumber>
+		<DirStartSector>15</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<Description>Apple DOS 3.3 (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="PRODOS-1D" type="16" category="PRODOS">
+		<SectorsPerGroup>2</SectorsPerGroup>
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<DirStartSector>4</DirStartSector>
+		<DirEndSector>10</DirEndSector>
+		<SectorSkewMap>
+			<Value>0</Value>
+			<Value>14</Value>
+			<Value>13</Value>
+			<Value>12</Value>
+			<Value>11</Value>
+			<Value>10</Value>
+			<Value>9</Value>
+			<Value>8</Value>
+			<Value>7</Value>
+			<Value>6</Value>
+			<Value>5</Value>
+			<Value>4</Value>
+			<Value>3</Value>
+			<Value>2</Value>
+			<Value>1</Value>
+			<Value>15</Value>
+		</SectorSkewMap>
+		<Description>Apple ProDOS 8 (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="PRODOS-2DD" type="16" category="PRODOS">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack start="0" tracks="16">12</SectorsPerTrack>
+		<SectorsPerTrack start="16" tracks="16">11</SectorsPerTrack>
+		<SectorsPerTrack start="32" tracks="16">10</SectorsPerTrack>
+		<SectorsPerTrack start="48" tracks="16">9</SectorsPerTrack>
+		<SectorsPerTrack start="64" tracks="16">8</SectorsPerTrack>
+		<DirStartSector>2</DirStartSector>
+		<DirEndSector>5</DirEndSector>
+		<Description>Apple ProDOS 16 (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="C1541-1D" type="20" category="C1541">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack start="1" tracks="17">21</SectorsPerTrack>
+		<SectorsPerTrack start="18" tracks="7">19</SectorsPerTrack>
+		<SectorsPerTrack start="25" tracks="6">18</SectorsPerTrack>
+		<SectorsPerTrack start="31" tracks="5">17</SectorsPerTrack>
+		<ManagedTrackNumber>18</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<Description>Commodore 1541 DOS (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="AMIGA-O-2DD" type="21" category="AMIGA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>11</SectorsPerTrack>
+		<FATEndGroup>1759</FATEndGroup>
+		<ManagedTrackNumber>40</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<Description>Commodore Amiga DOS (OFS)(2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="AMIGA-F-2DD" type="21" category="AMIGA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>11</SectorsPerTrack>
+		<FATEndGroup>1759</FATEndGroup>
+		<ManagedTrackNumber>40</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<FastFileSystem type="bool">true</FastFileSystem>
+		<Description>Commodore Amiga DOS (FFS)(2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="AMIGA-O-2HD" type="21" category="AMIGA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>22</SectorsPerTrack>
+		<FATEndGroup>3519</FATEndGroup>
+		<ManagedTrackNumber>40</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<Description>Commodore Amiga DOS (OFS)(2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="AMIGA-F-2HD" type="21" category="AMIGA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>22</SectorsPerTrack>
+		<FATEndGroup>3519</FATEndGroup>
+		<ManagedTrackNumber>40</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<FastFileSystem type="bool">true</FastFileSystem>
+		<Description>Commodore Amiga DOS (FFS)(2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="AROS-O-PC-2HD" type="21" category="AMIGA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<FATEndGroup>2879</FATEndGroup>
+		<ManagedTrackNumber>40</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<Description>AROS for PC (OFS)(2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="AROS-F-PC-2HD" type="21" category="AMIGA">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>18</SectorsPerTrack>
+		<FATEndGroup>2879</FATEndGroup>
+		<ManagedTrackNumber>40</ManagedTrackNumber>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>1</DirEndSector>
+		<FastFileSystem type="bool">true</FastFileSystem>
+		<Description>AROS for PC (FFS)(2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="DOS80-1D" type="51" category="DOS80">
+		<SidesPerDisk>1</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>17</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>5</FATStartSector>
+		<FATEndSector>6</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>159</FATEndGroup>
+		<ReservedGroups>
+			<Group>68</Group>
+			<Group>69</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>2</DirEndSector>
+		<DefaultStartAddress type="int">0x8d20</DefaultStartAddress>
+		<DefaultExecuteAddress type="int">0x3df4</DefaultExecuteAddress>
+		<Description>PC-8001 DOS (1D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="DOS80-2D" type="51" category="DOS80">
+		<SidesPerDisk>1</SidesPerDisk>
+		<CanMountEachSides>true</CanMountEachSides>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>17</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>5</FATStartSector>
+		<FATEndSector>6</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<FATEndGroup>159</FATEndGroup>
+		<ReservedGroups>
+			<Group>68</Group>
+			<Group>69</Group>
+		</ReservedGroups>
+		<DirStartSector>1</DirStartSector>
+		<DirEndSector>2</DirEndSector>
+		<DefaultStartAddress type="int">0x8d20</DefaultStartAddress>
+		<DefaultExecuteAddress type="int">0x3df4</DefaultExecuteAddress>
+		<Description>PC-8001 DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FROST-2D" type="52" category="FROST">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>6</SectorsPerTrack>
+		<ManagedTrackNumber>18</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>12</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<ReservedGroups>
+			<Group first="0x0" last="0xa" />
+			<Group first="0x197" last="0x1a1" />
+		</ReservedGroups>
+		<DirStartSector>16</DirStartSector>
+		<DirEndSector>21</DirEndSector>
+		<Description>Frost-DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MAGICAL-2D" type="53" category="MAGICAL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>11</FATStartSector>
+		<FATEndSector>11</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>12</DirStartSector>
+		<DirEndSector>20</DirEndSector>
+		<SubDirGroupSize>9</SubDirGroupSize>
+		<Description>Magical DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MAGICAL-2DD" type="53" category="MAGICAL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>11</FATStartSector>
+		<FATEndSector>11</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>12</DirStartSector>
+		<DirEndSector>20</DirEndSector>
+		<SubDirGroupSize>9</SubDirGroupSize>
+		<Description>Magical DOS (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MAGICAL-2HD" type="53" category="MAGICAL">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>17</FATStartSector>
+		<FATEndSector>17</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>18</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<SubDirGroupSize>9</SubDirGroupSize>
+		<Description>Magical DOS (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="SDOS10-2D" type="54" category="SDOS">
+		<FormatSubType>0</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>16</ReservedSectors>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DirStartPositionOnRoot>0x5f</DirStartPositionOnRoot>
+		<DefaultStartAddress type="int">0x85c4</DefaultStartAddress>
+		<DefaultExecuteAddress type="int">0</DefaultExecuteAddress>
+		<IPLCompareString type="string">S-DOS Ver 1.0</IPLCompareString>
+		<Description>S-DOS Ver.1.0 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="SDOS11-2D" type="54" category="SDOS">
+		<FormatSubType>0</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>32</ReservedSectors>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DirStartPositionOnRoot>0x5f</DirStartPositionOnRoot>
+		<DefaultStartAddress type="int">0x8021</DefaultStartAddress>
+		<DefaultExecuteAddress type="int">0</DefaultExecuteAddress>
+		<IPLCompareString type="string">S-DOS Ver 1.1</IPLCompareString>
+		<Description>S-DOS Ver.1.1 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="SDOS11P-2D" type="54" category="SDOS">
+		<FormatSubType>0</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>32</ReservedSectors>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DirStartPositionOnRoot>0x5f</DirStartPositionOnRoot>
+		<DefaultStartAddress type="int">0x8021</DefaultStartAddress>
+		<DefaultExecuteAddress type="int">0</DefaultExecuteAddress>
+		<IPLCompareString type="string">\xfe\xc5(\x08\xf3\x3e\x04\xd31\xc3</IPLCompareString>
+		<Description>S-DOS Ver.1.1(patched) (2D)</Description>
+		<Description lang="ja">S-DOS Ver.1.1(パッチ済) (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="SN88DOS-2D" type="54" category="SDOS">
+		<FormatSubType>1</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<ReservedSectors>32</ReservedSectors>
+		<DirStartSector>2</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DirStartPositionOnRoot>0x1f</DirStartPositionOnRoot>
+		<DefaultStartAddress type="int">1</DefaultStartAddress>
+		<DefaultExecuteAddress type="int">0</DefaultExecuteAddress>
+		<IPLCompareString type="string">Sn88-DOS Ver</IPLCompareString>
+		<Description>Sn88-DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MDOS-2D" type="55" category="MDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>7</FATStartSector>
+		<FATEndSector>7</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>6</DirStartSector>
+		<DirEndSector>6</DirEndSector>
+		<Description>MDOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="XDOS-2D" type="61" category="XDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>11</FATStartSector>
+		<FATEndSector>11</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>12</DirStartSector>
+		<DirEndSector>20</DirEndSector>
+		<SubDirGroupSize>9</SubDirGroupSize>
+		<Description>X-DOS X1 (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="XDOS-2DD" type="61" category="XDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>10</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>11</FATStartSector>
+		<FATEndSector>11</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>12</DirStartSector>
+		<DirEndSector>20</DirEndSector>
+		<SubDirGroupSize>9</SubDirGroupSize>
+		<Description>X-DOS X1 (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="XDOS-2HD" type="61" category="XDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<NumberOfFATs>1</NumberOfFATs>
+		<FATStartSector>17</FATStartSector>
+		<FATEndSector>17</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>18</DirStartSector>
+		<DirEndSector>32</DirEndSector>
+		<SubDirGroupSize>15</SubDirGroupSize>
+		<Description>X-DOS X1 (2HD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="TFDOS-2D" type="71" category="TFDOS">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<ReservedGroups>
+			<Group>0</Group>
+		</ReservedGroups>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DataInverted>false</DataInverted>
+		<SideReversed>false</SideReversed>
+		<IDString type="string">\x01TF-DOS </IDString>
+		<VolumeString type="string">TF-DOS</VolumeString>
+		<Description>TF-DOS (2D)</Description>
+		<Description lang="ja">TF-DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="TFDOS-2D-INV" type="71" category="TFDOS">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<ReservedGroups>
+			<Group>0</Group>
+		</ReservedGroups>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IDString type="string">\x01TF-DOS </IDString>
+		<VolumeString type="string">TF-DOS</VolumeString>
+		<Description>TF-DOS (Data Inverted)(2D)</Description>
+		<Description lang="ja">TF-DOS (データ反転)(2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="TFDOS-2DD" type="71" category="TFDOS">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<ReservedGroups>
+			<Group>0</Group>
+		</ReservedGroups>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DataInverted>false</DataInverted>
+		<SideReversed>false</SideReversed>
+		<IDString type="string">\x01TF-DOS </IDString>
+		<VolumeString type="string">TF-DOS</VolumeString>
+		<Description>TF-DOS (2DD)</Description>
+		<Description lang="ja">TF-DOS (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="TFDOS-2DD-INV" type="71" category="TFDOS">
+		<SectorsPerGroup>16</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<ReservedGroups>
+			<Group>0</Group>
+		</ReservedGroups>
+		<DirStartSector>3</DirStartSector>
+		<DirEndSector>16</DirEndSector>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IDString type="string">\x01TF-DOS </IDString>
+		<VolumeString type="string">TF-DOS</VolumeString>
+		<Description>TF-DOS (Data Inverted)(2DD)</Description>
+		<Description lang="ja">TF-DOS (データ反転)(2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CDOS-2D" type="72" category="CDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>24</DirEndSector>
+		<Description>C-DOS (2D)</Description>
+		<Description lang="ja">C-DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CDOS-2D-FM" type="72" category="CDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>24</DirEndSector>
+		<IDString type="string">FM</IDString>
+		<Endian>big</Endian>
+		<Description>C-DOS for FM (2D)</Description>
+		<Description lang="ja">C-DOS for FM (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="CDOS-2D-INV" type="72" category="CDOS">
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>2</FATStartSector>
+		<FATEndSector>2</FATEndSector>
+		<FATStartPosition>0</FATStartPosition>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>24</DirEndSector>
+		<FillCodeOnFormat>0xbf</FillCodeOnFormat>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x01</IPLString>
+		<Description>C-DOS for MZ (2D)</Description>
+		<Description lang="ja">C-DOS for MZ (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="MZFD-2D" type="73" category="MZFDOS">
+		<SectorsPerGroup>1</SectorsPerGroup>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>16</SectorsPerTrack>
+		<TracksPerSide>35</TracksPerSide>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<FATStartSector>15</FATStartSector>
+		<FATEndSector>15</FATEndSector>
+		<FATStartPosition>0x35</FATStartPosition>
+		<DirStartSector>17</DirStartSector>
+		<DirEndSector>48</DirEndSector>
+		<DataInverted>true</DataInverted>
+		<SideReversed>true</SideReversed>
+		<IPLString type="string">\x01</IPLString>
+		<Description>MZ Floppy DOS (2D)</Description>
+		<Description lang="ja">MZ Floppy DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FALCOM-2D" type="91" category="FALCOM">
+		<FormatSubType>0</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>6</DirStartSector>
+		<DirEndSector>7</DirEndSector>
+		<Description>Falcom DOS (2D)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FALCOM-2DD" type="91" category="FALCOM">
+		<FormatSubType>1</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>6</DirStartSector>
+		<DirEndSector>7</DirEndSector>
+		<Description>Falcom DOS (2DD)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FALCOM-2DD-M" type="91" category="FALCOM">
+		<FormatSubType>1</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>9</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>2</DirStartSector>
+		<DirEndSector>7</DirEndSector>
+		<Description>Falcom DOS (2DD for MSX)</Description>
+	</DiskBasicType>
+	<DiskBasicType name="FALCOM-2HD" type="91" category="FALCOM">
+		<FormatSubType>1</FormatSubType>
+		<SidesPerDisk>2</SidesPerDisk>
+		<SectorsPerTrack>5</SectorsPerTrack>
+		<ManagedTrackNumber>0</ManagedTrackNumber>
+		<DirStartSector>6</DirStartSector>
+		<DirEndSector>7</DirEndSector>
+		<Description>Falcom DOS (2HD)</Description>
+	</DiskBasicType>
+</DiskBasicTypes>
+</DiskBasics>
