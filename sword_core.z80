@@ -262,11 +262,11 @@ COLD:
 	CALL	clear_key_buffer ; インデックスポインタを0にしているだけ。
 
 ;	ディスクのパラメータの初期化
-	LD	HL,000EH ;  15セクタ
+	LD	HL,000EH ;  FATは第0トラック、第15セクタにある。HuBASIC準拠。
 	LD	(_FATPS),HL
 	LD	HL,0010H ; ディレクトリ情報が記録されているトラック番号
 	LD	(_DIRPS),HL
-	LD	HL,2E00H
+	LD	HL,2E00H ; FAT読み込みバッファ
 	LD	(_FATBF),HL
 	LD	HL,2F00H ; ディスクI／Oバッファ
 	LD	(_DTBUF),HL
@@ -657,23 +657,35 @@ HEXERR:	LD	A,14	;Bad Data
 ; DEレジスタの示すアドレスから2バイトの内容を、2桁の16進数で表現するアスキーコードとしてバイナリに変換し、
 ;HLに格納する。エラーがあればキャリフラグがセットされる。
 ;入力	[DE～]←16進文字2桁
-;出力	Acc←データ
+;出力	HL←データ
 ;	DEはカウント･アップ（エラーを発生した時点でカウント･アップは停止）
 ;	CY＝1ならエラー
 ;破壊	AF，DE
 ;注：小文字に対応。
 
 convert_2_digit_data_to_hex_binary_ascii_code:
+
 	LD	A,(DE) ; 16進1桁目取得
 	CALL	convert_data_to_hex_binary_ascii_code ; 1桁目変換
 	JR	C,HEXERR ; エラーならリターン
+	SLL A    ; Aレジスタを左にシフト
+			 ; b7→CY, 0→b0
+	SLL	A ; 4倍
+	SLL	A ; 8倍
+	SLL	A ; 16倍
+	AND 0F0H ; 上位4ビットを残す
+
+	LD	L,A ; Lに格納
+
 	INC	DE ; DEカウントアップ
-	LD	H,A ; Hに格納
 	LD	A,(DE) ; 16進2桁目取得
 	CALL	convert_data_to_hex_binary_ascii_code ; 2桁目変換
 	JR	C,HEXERR ; エラーならリターン
-	INC	DE ; DEカウントアップ
+	; Aに格納した一桁の数値をLに加算するコードを書いて下さい。
+	ADD	A,L ; Lに加算
 	LD	L,A ; Lに格納
+	INC	DE ; DEカウントアップ
+	
 	RET
 
 
@@ -693,7 +705,6 @@ convert_4_digit_data_to_hex_binary_ascii_code:
 	LD	H,L ; HLの上位に格納
 	CALL convert_2_digit_data_to_hex_binary_ascii_code ; 次の2桁を変換
 	JR	C,HEXERR ; エラーならリターン
-	LD	L,A ; HLの下位に格納
 	RET
 
 
