@@ -1425,9 +1425,9 @@ check_break_key:
 	JR	Z,BRKRET
 	OR	0FFH	;ZF←0，CY←0
 BRKRET:
-	POP	BC
-	POP	DE
-	POP	HL
+	; POP	BC
+	; POP	DE
+	; POP	HL
 	RET
 
 
@@ -1452,8 +1452,8 @@ PAUSE:
 	LD	(PAUREB),DE	;インライン･パラ
 	CALL	check_break_key
 	JR	Z,PAUBRK
-	CALL	GETKY
-	CP	' '
+	CALL	GETKY ;リアルタイムキー。何も押されていない時は、Aレジスタに0をセットして、リターンする。
+	CP	' ' ;スペースか？
 	JR	NZ,PAUESC
 
 PAULP:
