@@ -3444,14 +3444,14 @@ CRT_INIT:
 	LD B,050H
 	LD DE,0FFFFH
 	LD A,20H ; 20Hはアスキーコードでスペース
-.CLEAR_LOOP
+CLEAR_LOOP:
 ; CLEAR_ALL_LINE:
 	OUT (0D2H),A ; D2Hポートになにか書くと次の命令は別のページ(この場合はVRAMのページ)に行う。
 	LD (HL),A ; F000H～FFFFHまで20Hで埋めている。アトリビュートに20H書いても問題ないみたい。
 	INC HL
 	SBC HL,DE
 	; JR NZ,CLEAR_ALL_LINE
-	JR NZ,.CLEAR_LOOP
+	JR NZ,CLEAR_LOOP
 
 	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
 	LD (CURSOR_LOCATE),DE

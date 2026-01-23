@@ -10,9 +10,13 @@ SECTOR_SIZE = 256
 SECTORS_PER_TRACK = 16
 TRACK_SIZE = SECTOR_SIZE * SECTORS_PER_TRACK
 
-# SOS.SYSの配置グループ
-SOS_SYS_GROUPS = [0x2, 0x3, 0x4, 0x5, 0x6, 0x7]  # 6グループ = 48セクタ = 12288バイト
-MAX_SOS_SYS_SIZE = len(SOS_SYS_GROUPS) * 8 * SECTOR_SIZE  # 12288バイト
+# SOS.SYSの格納位置は、第2トラック第1セクタから、第4トラック第16セクタに収まるサイズであるべき。
+# SOS.SYSのサイズは、引数で与えられたファイルのサイズに依存
+SOS_SYS_Track_Start = 2
+SOS_SYS_Track_End = 4
+SOS_SYS_Sector_Start = 1
+
+MAX_SOS_SYS_SIZE = (SOS_SYS_Track_End - SOS_SYS_Track_Start + 1) * SECTORS_PER_TRACK * SECTOR_SIZE  # 
 
 # d88ヘッダーサイズ
 D88_HEADER_SIZE = 0x2B0  # 688バイト
@@ -137,21 +141,9 @@ class D88Image:
         print(f"D88イメージ保存: {filename}")
 
 
-def group_to_track_sector(group_num):
-    """グループ番号からトラック・セクタ番号を計算"""
-    relative_sectors = group_num * 8
-    track = 2 + (relative_sectors // SECTORS_PER_TRACK)
-    sector = (relative_sectors % SECTORS_PER_TRACK) + 1
-    return track, sector
+# SOS.SYSの配置は、第2トラック、第1セクタから、第4トラック第16セクタに固定されている
 
 
-def group_to_raw_offset(group_num):
-    """グループ番号からrawイメージ内のオフセットを計算"""
-    relative_sectors = group_num * 8
-    track = 2 + (relative_sectors // SECTORS_PER_TRACK)
-    sector = (relative_sectors % SECTORS_PER_TRACK) + 1
-    offset = track * TRACK_SIZE + (sector - 1) * SECTOR_SIZE
-    return offset
 
 
 def main():
@@ -198,21 +190,11 @@ def main():
     
     # SOS.SYSを置き換え
     print("\nSOS.SYSを置き換え中...")
-    for i, group in enumerate(SOS_SYS_GROUPS):
-        offset = group_to_raw_offset(group)
-        track, sector = group_to_track_sector(group)
-        group_size = 8 * SECTOR_SIZE  # 2048バイト
-        
-        # 書き込むデータを抽出
-        start_pos = i * group_size
-        end_pos = start_pos + group_size
-        data = new_sossys[start_pos:end_pos]
-        
-        # rawイメージに書き込む
-        raw_image[offset:offset + len(data)] = data
-        
-        print(f"  グループ{group:02X}h: トラック{track}, セクタ{sector}-{sector+7} "
-              f"(オフセット0x{offset:05X}) に {len(data)} バイト書き込み")
+    # groupは使わずSOS.SYSを第2トラック第1セクタから書き込む
+    sossys_pos = (SOS_SYS_Track_Start * TRACK_SIZE) + ((SOS_SYS_Sector_Start - 1) * SECTOR_SIZE)
+    raw_image[sossys_pos:sossys_pos + len(new_sossys)] = new_sossys
+
+
     
     # d88イメージを更新
     print("\nd88イメージを更新中...")
