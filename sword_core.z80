@@ -3523,9 +3523,9 @@ CURSOR_BOUNDARY_END:
 	INC DE ; カーソル位置を1つ進める
 DO_CR_LF_BS_RETURN: ; CR,LF,BSの処理で戻ってくる
 	CALL DO_SCROLL ; 1行スクロール処理
-	LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新。
+	; LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新。 <-  バグだった。これをコメントアウトしないとスクロールが正しく動作しない。
 	CALL PRINT_CURSOR ; カーソル表示
-	CALL CALC_CURSOR_XY ; カーソルのX,Y座標計算
+	; CALL CALC_CURSOR_XY ; カーソルのX,Y座標計算
 PUTCHAR_RET:
 	POP DE
 	POP AF
@@ -3667,21 +3667,21 @@ CR_NEW_SCAN_0:
 ;	TOP_VIEWがCR_NOW_CURSOR_LOCATEよりも小さいとき
 ;
 CONTINUE_CR:
-	LD HL,(TOP_VIEW)
-	LD DE,(CR_NOW_CURSOR_LOCATE)
-	LD BC,WIDTH_SCREEN ; 50H(80d) 
-	LD (CR_BASE_ADDRESS),HL
+	LD HL,(TOP_VIEW) ; 左上端アドレスをロード
+	LD DE,(CR_NOW_CURSOR_LOCATE) ; CRコードが入った時のカーソル位置
+	LD BC,WIDTH_SCREEN ; 50H(80d) = 画面の桁数(80d)
+	LD (CR_BASE_ADDRESS),HL ; 初期値は左上端アドレス
 CR_SCAN_1:
 	LD HL,(CR_BASE_ADDRESS)
-	LD (CR_BASE_ADDRESS_PRE),HL
+	LD (CR_BASE_ADDRESS_PRE),HL ; 
 	ADD HL,BC ; 50H(80d)づつ足していく
 	LD (CR_BASE_ADDRESS),HL
 	SBC HL,DE	; HLが現在のカーソル位置を超えるかチェック
 	JP M,CR_SCAN_1 ; 超えていなければループ
 	JP Z,CR_SCAN_1 ; 完全に一致したときも1回ループを回す。
 	LD HL,(CR_BASE_ADDRESS_PRE) ; HLが現在のカーソル位置を超えたので、1つ前の値に戻す
-	LD (CR_BASE_ADDRESS),HL
-	LD DE,(CR_BASE_ADDRESS)
+	LD (CR_BASE_ADDRESS),HL ; CR後のカーソル位置をセット
+	LD DE,(CR_BASE_ADDRESS) ; CR後のカーソル位置をDEにセット
 CR_END:
 	POP BC
 	POP HL
@@ -3784,8 +3784,8 @@ DO_SCROLL:
 	LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新
 	LD HL,(TOP_VIEW) ; 左上端アドレス
 	LD DE,7D0H ; 全画面文字数
-	ADD HL,DE ; TOP_VIEW + 7D0H ; 
-	JR C,SCROLL_POINT_BEYOND_FFFF ; 境界値をまたいでいる、オーバーフローしたらジャンプ
+	ADD HL,DE ; TOP_VIEW + 7D0H ; TOP_VIEWは更新される。
+	JR C,SCROLL_POINT_BEYOND_FFFF ; 境界値をまたいでいる、オーバーフローしたらジャンプ。
 	JR SCROLL_POINT ; スクロールすべきカーソル位置の更新へ
 SCROLL_POINT_BEYOND_FFFF:
 	LD HL,(TOP_VIEW)
