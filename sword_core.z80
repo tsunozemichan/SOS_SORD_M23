@@ -637,7 +637,7 @@ data_is_alphabetic:
 ; 小文字に対応。
 ; 汎用ルーチンconvert_lower_case_to_upper_case（AF破壊）を呼び出します。
 convert_data_to_hex_binary_ascii_code:
-	CALL	convert_lower_case_to_upper_case
+	; CALL	convert_lower_case_to_upper_case
 	SUB	'0' 		; '0'のコードを引く
 	JR	C,HEXERR 	; '0'未満はエラー
 	CP	10 			; 10未満か？
@@ -864,7 +864,7 @@ LPTOF:
 GETKY:
 	PUSH DE
 	PUSH IX
-	CALL KEY_SCAN_WRAPPER
+	CALL KEY_ONECE_SCAN
 	POP IX
 	POP DE
 	RET
@@ -876,15 +876,27 @@ GETKY:
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+KEY_ONECE_SCAN:
+	PUSH HL
+	PUSH BC
+	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
+	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
+	CALL KEY_SCAN ; キースキャンを一回だけ実行する。
+	POP BC
+	POP HL
+	RET
+
+
+
 KEY_SCAN_WRAPPER:
 	PUSH HL
 	PUSH BC
 KEY_SCAN_WRAPPER_LOOP:
-	LD HL,PORT_INDEX
-	LD BC,0FDFH
-	CALL KEY_SCAN
-	AND A
-	JR Z,KEY_SCAN_WRAPPER_LOOP
+	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
+	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
+	CALL KEY_SCAN ; キースキャンを実行する。
+	AND A ; 0でないか、つまり、空の値でないかチェック。
+	JR Z,KEY_SCAN_WRAPPER_LOOP ; 空でない場合、つまり、何かが押されているならジャンプ
 	POP BC
 	POP HL
 	RET
@@ -1544,9 +1556,10 @@ GETL_LOOP:
 	POP	DE
 	POP	HL
 	POP	AF
-	; CRコードか？
-	CP	CR
+	CP	CR ; キャリッジ･リターンか？
 	JR	Z,GETL_END ; CRコードならエンドコード00Hを入れて終了
+	CP BS ; バックスペースか？
+	JR	Z,GETL_BS ; バックスペース処理へ
 	INC	DE
 	JR	GETL_LOOP
 GETL_END:
@@ -1556,6 +1569,13 @@ GETL_END:
 	POP	DE
 	RET
 
+GETL_BS:
+	; バッファの先頭なら何もしない。
+	LD	A,(DE)
+	OR	A
+	JR	Z,GETL_LOOP
+	DEC	DE ; バッファ･ポインタを1つ戻す
+	JR	GETL_LOOP
 ;===============================
 ;ファイル操作（ファイル名処理）
 ;===============================
@@ -2849,6 +2869,7 @@ MON:
 	LD	(monitor_size_of_user_area),HL	;ユーザー･エリアのサイズ
 
 ;	コマンド待ちループ
+	CALL carriage_return_and_line_feed ;CRLF
 monitor_command_waiting_loop:
 	LD	SP,0100H	;オリジナル･モニタのスタック･トップ
 	LD	A,'*'
@@ -2882,6 +2903,7 @@ MON2:
 
 ;オリジナル･モニタを終えます
 terminate_monitor:
+	CALL carriage_return_and_line_feed ;CRLF
 	XOR	A	;CY←0（Acc←0）
 	LD	SP,(monitor_reserve_stack_pointer)
 	RET
@@ -4633,7 +4655,7 @@ sos_monitor_command_routine:
 ;モニタ Sxコマンド処理
 CMDSB1:
 	LD	A,(DE)
-	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
+	; CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	INC	DE
 	CP	'T'
 	JP	Z,MSET	;モニタ STコマンド処理
@@ -4644,12 +4666,12 @@ CMDSB1:
 ;モニタ Dxコマンド処理
 CMDSB2:
 	LD	A,(DE)
-	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
+	; CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	INC	DE
 	CP	'V'
 	JP	Z,DEVST	;モニタ DVコマンド処理
 	DEC	DE
-	JP	MDIR	;モニタ Dコマンド処理
+	JP	MDIR	;モニタ Dコマンド処理 ディレクトリ表示
 
 
 ;モニタ Jコマンド処理
@@ -4749,7 +4771,8 @@ LOAD:
 	JR	C,SNERR	;ロード･アドレスが不正
 	LD	(LDWORK),HL	;←ロード･アドレス
 
-LOAD1:	CALL	_ROPEN
+LOAD1:
+	CALL	ROPEN ;ディスクではファイルの存在のチェック。
 	RET	C	;エラー
 	CALL	NZ,SKPRT	;テープのスキップしているファイル名を表示します
 	JR	NZ,LOAD1
@@ -4956,9 +4979,9 @@ WOPEN3:
 ROPEN:
 	CALL	CLOSE	;[_OPNFG]←0
 	LD	A,(_DSK)
-	CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
-	RET	C	;エラー
-	JP	Z,_TROPN	;テープのリード･オープン
+	; CALL	check_device_name	;デバイス名が正しいか（A～L，S，T，Q）かチェックします
+	; RET	C	;エラー
+	; JP	Z,_TROPN	;テープのリード･オープン
 
 ;	テープ以外
 	CALL	check_FD_device_name	;デバイス名がFDかチェックします
@@ -5219,7 +5242,7 @@ DIR:
 	LD	A,'$'
 	CALL	PRINT
 	CALL	FRECLU	;空きクラスタ数を得ます
-	CALL	_print_hex_2_digit
+	CALL	print_hex_2_digit
 	LD	DE,cluster_free_message	;「 Clusters Free」
 	CALL	print_string_until_00H_from_DE_register
 	LD	B,16
@@ -5943,15 +5966,17 @@ ERAFA2:	LD	A,7	;Bad Allocation Table
 FCBSCH:
 	PUSH	BC
 	LD	C,16
-	LD	DE,(_DIRPS)
+	LD	DE,(_DIRPS) ;ディレクトリの先頭レコード番号
 
-FCBSC1:	LD	HL,(_DTBUF)
-	LD	A,1
+FCBSC1:
+	LD	HL,(_DTBUF) ;1F64H '2F00H～2FFFH ディスクリード用バッファ(256Byte)の先頭アドレス。デフォルトは2F00h。
+	LD	A,1 ; 1レコード読む
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
 	JR	C,FCBSC6	;エラー
 	LD	B,8
 
-FCBSC2:	LD	A,(HL)
+FCBSC2:
+	LD	A,(HL)
 	CP	0FFH
 	JR	Z,FCBSC4
 	OR	A
@@ -5990,8 +6015,8 @@ FRESCH:
 	LD	DE,(_DIRPS)
 
 FRESC1:
-	LD	HL,(_DTBUF)
-	LD	A,1
+	LD	HL,(_DTBUF); _DTBUF=1F64H '2F00H～2FFFH ディスクリード用バッファ(256Byte)の先頭アドレス。デフォルトは2F00h。
+	LD	A,1 
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
 	JR	C,FRESC3
 	LD	B,8
