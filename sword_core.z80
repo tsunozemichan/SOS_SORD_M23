@@ -4483,6 +4483,7 @@ _DSK:	DB	'A'	;1F5DH アクセスしようとするデバイス名
 _FATPS:	DW	000EH	;1F5EH FATのあるレコード番号。デフォルトは000Eh (トラック0セクタ15)。
 _DIRPS:	DW	0010H	;1F60H ディレクトリの始まるレコード番号。デフォルトは0010h(1Dではトラック1セクタ1)。
 _FATBF:	DW	2E00H	;1F62H '2E00H～2EFFH FATリード用バッファ(256Byte)の先頭アドレス。デフォルトは2E00h。
+; _DTBUF:	DW	2F00H	;1F64H '2F00H～2FFFH ディスクリード用バッファ(256Byte)の先頭アドレス。デフォルトは2F00h。
 _DTBUF:	DW	2F00H	;1F64H '2F00H～2FFFH ディスクリード用バッファ(256Byte)の先頭アドレス。デフォルトは2F00h。
 _MXTRK:	DB	80	;1F66H 80トラック
 _DIRNO:	DS	1	;1F67H _FCBで使用するワーク。何番目のファイルか。
@@ -5457,6 +5458,15 @@ sequential_sector_read_disk:
 	SUB	'A' ; ユニット番号計算
 	LD	(disk_unit_number),A	;ディスクのユニット番号（0～）
 	EX	AF,AF' ; AF'
+	PUSH AF
+	PUSH HL
+	; HLのHを、dma_read_out_address_Hにセットして、Lを、dma_read_out_address_Lにセット
+	LD	A,H
+	LD	(dma_read_out_address_H),A
+	LD	A,L
+	LD	(dma_read_out_address_L),A
+	POP HL
+	POP AF
 	CALL	read_disk	;ディスク読み込み
 	RET
 
@@ -6071,17 +6081,17 @@ FRESC4:	XOR	A
 
 ;	compare_file_nameの一部
 FCMPW2:
-	LD	A,(DE)
+	LD	A,(DE);DE←比較するFCBの先頭アドレス+1
 	CP	C	;CP ' '
 	RET	Z
 FCMPW1:
-	LD	A,(DE)
+	LD	A,(DE) ;DE←比較するFCBの先頭アドレス+1
 	CP	'?'	;ワイルド･カード
 	RET	Z
-	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
+	; CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	LD	C,A
-	LD	A,(HL)
-	CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
+	LD	A,(HL);HL←比較されるFCBの先頭アドレス+1
+	; CALL	convert_lower_case_to_upper_case	;小文字→大文字変換
 	CP	C	;ZF＝1なら一致
 	RET
 
@@ -6100,9 +6110,9 @@ PFNAM:
 	PUSH	BC
 	PUSH	DE
 	PUSH	HL
-	LD	DE,(_IBFAD)
+	LD	DE,(_IBFAD);1F74H ファイルのインフォメーションブロックの先頭アドレス。同時にファイル属性のアドレスでもある。
 	LD	BC,0020H
-	LDIR
+	LDIR ;DEにファイル情報をコピーします
 	CALL	ATRPRT	;属性情報を表示します
 	LD	A,(_DSK)
 	CALL	PRINT
@@ -6279,17 +6289,19 @@ compare_file_name:
 	PUSH	BC
 	PUSH	DE
 	PUSH	HL
-	LD	B,13
+	LD	B,13 ;拡張子なしのファイル名部分（8＋3＝11バイト）＋区切り文字2バイト
 
-FCPWL1:	INC	DE
-	INC	HL
+FCPWL1:
+	INC	DE ;DE←比較するFCBの先頭アドレス+1
+	INC	HL ;HL←比較されるFCBの先頭アドレス+1
 	CALL	FCMPW1
 	JR	NZ,FCMPWE
 	DJNZ	FCPWL1
 
 	LD	B,3
 
-FCPWL2:	INC	DE
+FCPWL2:
+	INC	DE
 	INC	HL
 	LD	C,' '
 	CALL	FCMPW2
