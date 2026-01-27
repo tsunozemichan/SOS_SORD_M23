@@ -521,7 +521,8 @@ mprint_loop:
 	CALL PRINT ; 文字を表示
 	INC	DE	; アドレスを一つ進める
 	JR	mprint_loop
-mprint_terminate:	
+mprint_terminate:
+	INC DE ; 終了コードの次のアドレスへ
 	POP	BC
 	POP	HL
 	POP	AF
@@ -1739,7 +1740,9 @@ FNAME:
 ;	ファイル名の転送
 	CALL	CLRWFG
 	LD	B,13	;プライマリ名
-FNML11:	CALL	GTFLTR
+	INC DE; コマンド名を1文字読み飛ばす。
+FNML11:
+	CALL	GTFLTR
 	LD	(HL),A
 	INC	HL
 	DJNZ	FNML11
@@ -1840,7 +1843,8 @@ GTFLTR:
 
 ;	通常終了
 	INC	DE	;DEのカウント･アップ
-	JP	convert_lower_case_to_upper_case
+	; JP	convert_lower_case_to_upper_case
+	RET
 
 ;	「*」を発見しました
 GFLAST:	LD	A,0FFH
@@ -4761,7 +4765,7 @@ SNERR:
 ;モニタ Lコマンド処理
 LOAD:
 	LD	A,1
-	CALL	_FILE
+	CALL	FILE
 	LD	A,(DE)
 	OR	A
 	LD	(LDWORK+2),A	;ロード･アドレス存在フラグ
@@ -4784,11 +4788,11 @@ LOAD1:
 	CALL	carriage_return_if_not_at_head_of_line
 
 ;	ロード･アドレスの設定
-	LD	A,(LDWORK+2)
-	OR	A
+	LD	A,(LDWORK+2) ; ロードアドレスフラグをセット
+	OR	A ; ロードアドレスフラグ=0ならロードアドレス無効
 	JR	Z,LOAD3
 	LD	HL,(LDWORK)
-	LD	(_DTADR),HL
+	LD	(_DTADR),HL ; 1F70H ファイルの先頭アドレスが格納される。
 
 ;	ロードします
 LOAD3:	JP	_RDD
@@ -6289,7 +6293,7 @@ compare_file_name:
 	PUSH	BC
 	PUSH	DE
 	PUSH	HL
-	LD	B,13 ;拡張子なしのファイル名部分（8＋3＝11バイト）＋区切り文字2バイト
+	LD	B,13 ;拡張子なしのファイル名部分（8＋3＝11バイト）＋区切り文字2バイト。0Dh。
 
 FCPWL1:
 	INC	DE ;DE←比較するFCBの先頭アドレス+1
