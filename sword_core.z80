@@ -4795,7 +4795,7 @@ LOAD1:
 	LD	(_DTADR),HL ; 1F70H ファイルの先頭アドレスが格納される。
 
 ;	ロードします
-LOAD3:	JP	_RDD
+LOAD3:	JP	RDD
 
 LDWORK:	DS	2	;ロード･アドレス
 	DS	1	;ロード･アドレス･フラグ（＝0でロード･アドレスが無効）
@@ -5629,17 +5629,18 @@ SDVSW:
 ;破壊	AF，HL，DE，BC，AF'
 DLOAD:
 	LD	HL,(_IBFAD)
-	LD	BC,30
+	LD	BC,30 ; FCBのオフセット
 	ADD	HL,BC
 	LD	A,(HL)	;Acc←ファイルの開始クラスタ
 	LD	(NXCLST),A	;アクセスするクラスタの一時保存場所
-	LD	BC,(_SIZE)
-	LD	HL,(_DTADR)
+	LD	BC,(_SIZE);1F72H ファイルサイズ。
+	LD	HL,(_DTADR);1F70H ファイルの先頭アドレス。
 
 ;	ロード･ループ
-DLOAD1:	PUSH	HL
+DLOAD1:
+	PUSH	HL
 	LD	A,(NXCLST)	;アクセスするクラスタの一時保存場所
-	LD	HL,(_FATBF)
+	LD	HL,(_FATBF);1F62H '2E00H～2EFFH FATリード用バッファ(256Byte)の先頭アドレス。デフォルトは2E00h。
 	LD	E,A
 	LD	D,0	;DE←アクセスするクラスタ番号
 	ADD	HL,DE	;HL←FATバッファのアクセスするクラスタの位置
@@ -5672,12 +5673,14 @@ DLOAD1:	PUSH	HL
 	JR	NC,DLOAD1
 
 ;	エラー
-DLOAD2:	LD	A,7	;Bad Allocation Table
+DLOAD2:
+	LD	A,7	;Bad Allocation Table
 	SCF
 	RET
 
 ;	最後のクラスタ
-DLOAD3:	SUB	7FH	;Acc←読み込みセクタ数
+DLOAD3:
+	SUB	7FH	;Acc←読み込みセクタ数
 	CP	16+1
 	JR	NC,DLOAD2	;FATが不正
 	DEC	A	;Acc←読み込みセクタ数－1（0～15）
@@ -5709,7 +5712,8 @@ DLOAD4:	PUSH	DE
 	LD	HL,(_DTBUF)
 	LD	A,1
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
-DLOAD5:	POP	DE	;DE←最後に読み込むメモリのアドレス
+DLOAD5:
+	POP	DE	;DE←最後に読み込むメモリのアドレス
 	RET	C
 
 ;	[_DTBUF]～から最後のセクタの内容を正しいメモリに転送します
