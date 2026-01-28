@@ -4780,7 +4780,7 @@ LOAD1:
 	CALL	ROPEN ;ディスクではファイルの存在のチェック。
 	RET	C	;エラー
 	CALL	NZ,SKPRT	;テープのスキップしているファイル名を表示します
-	JR	NZ,LOAD1
+	JR	NZ, LOAD1
 
 	CALL	print_string_from_next_call_address
 	DB	'Loading ',00H
@@ -5066,7 +5066,7 @@ RDD:
 	LD	(RETPOI),A	;以前正しいFCBがロードされたかのフラグ
 	LD	A,(_OPNFG)
 	OR	A
-	JR	NZ,RDD1
+	JR	NZ, RDD1
 	SCF
 	LD	A,12	;File not Open
 	RET		;オープンされてなかった
@@ -5242,7 +5242,7 @@ DIR:
 	RET	C	;エラー（テープ，ディスク以外）
 
 ;	ディスク
-	CALL	FATRED	; FATを読みます
+	CALL	FATRED	; FATを読みます FATBFに読み込みます
 	RET	C	;エラー
 	LD	A,'$'
 	CALL	PRINT
@@ -5253,7 +5253,7 @@ DIR:
 	LD	B,16
 	LD	DE,(_DIRPS)
 
-DIRL:	LD	HL,(_DTBUF)
+DIRL:	LD	HL,(_DTBUF) ; ディスクリードバッファ
 	LD	A,1
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
 	RET	C	;エラー
@@ -5275,21 +5275,24 @@ DIRPRT:
 	PUSH	DE
 	LD	B,8
 
-DIRPL:	LD	A,(HL)
+DIRPL:
+	LD	A,(HL)
 	OR	A	;＝00Hで未使用
 	JR	Z,DIRN
 	CP	0FFH	;＝FFHで未使用領域
 	JR	Z,DIRPE
-	CALL	PFNAM	;ファイル情報を表示します
+	CALL	print_file_information ;ファイル情報を表示します
 	CALL	carriage_return_and_line_feed
 	CALL	PAUSE
 	DW	DIRPE
-DIRN:	LD	DE,20H
+DIRN:
+	LD	DE,20H
 	ADD	HL,DE
 	DJNZ	DIRPL
 
 	DB	3EH
-DIRPE:	XOR	A
+DIRPE:
+	XOR	A
 	POP	DE
 	POP	BC
 	OR	A
@@ -5631,7 +5634,7 @@ DLOAD:
 	LD	HL,(_IBFAD)
 	LD	BC,30 ; FCBのオフセット
 	ADD	HL,BC
-	LD	A,(HL)	;Acc←ファイルの開始クラスタ
+	LD	A,(HL)	;Acc←ファイルの開始トラック番号
 	LD	(NXCLST),A	;アクセスするクラスタの一時保存場所
 	LD	BC,(_SIZE);1F72H ファイルサイズ。
 	LD	HL,(_DTADR);1F70H ファイルの先頭アドレス。
@@ -5641,11 +5644,11 @@ DLOAD1:
 	PUSH	HL
 	LD	A,(NXCLST)	;アクセスするクラスタの一時保存場所
 	LD	HL,(_FATBF);1F62H '2E00H～2EFFH FATリード用バッファ(256Byte)の先頭アドレス。デフォルトは2E00h。
-	LD	E,A
-	LD	D,0	;DE←アクセスするクラスタ番号
-	ADD	HL,DE	;HL←FATバッファのアクセスするクラスタの位置
-	LD	A,(HL)	;次のクラスタへのチェイン情報
-	LD	(NXCLST),A	;アクセスするクラスタの一時保存場所
+	LD	E,A ; ファイルの開始トラック番号
+	LD	D,0	;DE←アクセスするトラック番号
+	ADD	HL,DE	;HL←FATバッファのアクセスするクラスタ(トラック番号)の位置
+	LD	A,(HL)	;次のクラスタへのチェイン情報　次のクラスタ(トラック番号)がどこか書いてある。
+	LD	(NXCLST),A	;次にアクセスするクラスタ(トラック番号)の一時保存場所
 	EX	DE,HL
 	ADD	HL,HL
 	ADD	HL,HL
@@ -6114,30 +6117,31 @@ HLBUF:	DS	2	;参照FCBのアドレスの一時保存場所
 ;入力	Acc←属性、HL←ファイル情報の先頭アドレス
 ;出力	なし
 ;破壊	AF
-PFNAM:
+print_file_information:
 	PUSH	BC
 	PUSH	DE
 	PUSH	HL
-	LD	DE,(_IBFAD);1F74H ファイルのインフォメーションブロックの先頭アドレス。同時にファイル属性のアドレスでもある。
+	LD	DE,(_IBFAD);1F74H ファイルのインフォメーションブロックの先頭アドレス。
+					;同時にファイル属性のアドレスでもある。
 	LD	BC,0020H
 	LDIR ;DEにファイル情報をコピーします
-	CALL	ATRPRT	;属性情報を表示します
+	CALL	print_file_attribute ;属性情報を表示します。BINやBASなど
 	LD	A,(_DSK)
 	CALL	PRINT
 	LD	A,':'
 	CALL	PRINT
 	CALL	print_file_name
 ADRPRT:
-	CALL	_PARSC	;機種依存のカセットのアドレス情報を、S-OSのワークに転送します
-	LD	BC,(_SIZE)
-	LD	HL,(_DTADR)
-	LD	DE,(_EXADR)
-	CALL	PHEX	;インナー･コール
+	CALL	_PARSC	;Fileのアドレス情報を、S-OSのワークに転送します
+	LD	BC,(_SIZE) ;1F72H ファイルサイズ。
+	LD	HL,(_DTADR) ;1F70H ファイルの先頭アドレス。
+	LD	DE,(_EXADR) ;1F76H ファイルの実行アドレス。
+	CALL	PHEX	;まず、ファイルの先頭アドレスを表示します
 	ADD	HL,BC
 	DEC	HL
-	CALL	PHEX	;インナー･コール
+	CALL	PHEX	;次に、ファイルサイズを表示します
 	EX	DE,HL
-	CALL	PHEX	;インナー･コール
+	CALL	PHEX	;次に、実行アドレスを表示します
 	POP	HL
 	POP	DE
 	POP	BC
@@ -6153,7 +6157,7 @@ PHEX:	LD	A,':'
 ;入力	Acc←属性
 ;出力	なし
 ;破壊	AF，HL，DE
-ATRPRT:
+print_file_attribute:
 	PUSH	AF
 	LD	DE,ATRMES
 	BIT	7,A
@@ -6414,7 +6418,7 @@ DS 2
 ;入力	Acc←ファイル属性、HL←ファイル情報の先頭アドレス
 ;出力	なし
 ;破壊	AF
-_PFNAM:	JP	PFNAM
+_PFNAM:	JP	print_file_information
 
 
 ;%DVCHK（2915H）
@@ -6463,14 +6467,14 @@ _DFDV:	DB	'A'
 ;出力	なし
 ;破壊	全レジスタ保存
 _PARSC:
-	; PUSH	HL
-	; LD	HL,(fcb_buffer+18)
-	; LD	(_SIZE),HL
-	; LD	HL,(fcb_buffer+20)
-	; LD	(_DTADR),HL
-	; LD	HL,(fcb_buffer+22)
-	; LD	(_EXADR),HL
-	; POP	HL
+	PUSH	HL
+	LD	HL,(fcb_buffer+18)
+	LD	(_SIZE),HL
+	LD	HL,(fcb_buffer+20)
+	LD	(_DTADR),HL
+	LD	HL,(fcb_buffer+22)
+	LD	(_EXADR),HL
+	POP	HL
 	RET
 
 
