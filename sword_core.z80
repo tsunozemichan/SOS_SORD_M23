@@ -5642,7 +5642,7 @@ SDVSW:
 ; 例えば、ディレクトリトラックのデフォルトである、トラック1セクタ1のダンプが以下のようであったとする。
 ; +000: 01 4c 20 20 20 20 20 20 20 20 20 20 20 20 4f 42
 ; +010: 4a 20 00 1e 00 30 00 30 26 13 21 21 22 00 05 00
-; 先頭の1バイトは属性を示しており、次の11バイトはファイル名を示している。この場合、"L          OBJ"というファイル名である。
+; 先頭の1バイトは属性を示しており、次の16バイトはファイル名を示している。この場合、"L          OBJ"というファイル名である。
 ; その次の1バイトはパスワード(パスワードなしは20H)、その次の2バイトはファイルのサイズ、その次の2バイトは読み出しアドレス、
 ; その次の2バイトは実行開始アドレス、次の6バイトは日付、最後の2バイトが開始クラスタである。
 ; 開始クラスタの2バイトは、上記の例では、「05 00」となっていて、これは、ファイル「L.OBJ」が第5トラックのセクタ1から始まっていることを示している。
@@ -5652,99 +5652,12 @@ SDVSW:
 ; 読み出し手順は、1.FATを読む、2.FCBを読む、これで読み出すべくトラックとセクタが判明する。
 ; 3.この情報を用いて、目標トラックと目標セクタをセットして、ディスクをリードすればよい。
 
-DLOAD_M23:
-	LD	HL,(_IBFAD)
-	LD	BC,30 ; FCBのオフセット
-	ADD	HL,BC
-	LD	A,(HL)	;Acc←ファイルの開始トラック番号 例:L.OBJなら、トラック5。
-	LD	(NXCLST),A	;アクセスするクラスタの一時保存場所
-	LD	BC,(_SIZE);1F72H ファイルサイズ。
-	LD	HL,(_DTADR);1F70H ファイルの先頭アドレス。
-;	ロード･ループ
-DLOAD_M23_LOOP:
-	PUSH	HL
-	LD	A,(NXCLST)	;アクセスするクラスタの一時保存場所
-	LD	HL,(_FATBF);1F62H '2E00H～2EFFH FATリード用バッファ(256Byte)の先頭アドレス。デフォルトは2E00h。
-	LD	E,A ; ファイルの開始トラック番号。例:L.OBJなら、トラック5。
-	LD	D,0	;DE←アクセスするトラック番号
-	ADD	HL,DE	;HL←FATバッファのアクセスするクラスタ(トラック番号)の位置。_FATBF＋トラック番号には、次のトラック番号、または終了トラックならセクタ数のマジックワードが書かれている。
-	LD	A,(HL)	;次のクラスタ(トラック番号)へのチェイン情報 次に読むべきクラスタ(トラック番号)が何番なのか書いてある。あるいは、ファイルの終末トラックの場合は、マジックワードで読み込むべきセクタ数が書かれている。
-	LD	(NXCLST),A	;次にアクセスするクラスタ(トラック番号)の一時保存場所
-
 ; ファイルの終末部分のFATには、最上位ビットが1になっている。つまり常に80H以上の値が入っている。下位4ビットに読み込むべきセクタ数-1が書かれている。
 ; 例えば、FATのある値が「8e」なら、該当のトラック番号を14+1=15セクタ読めばよいということになる。
 ; 書くべきコードは、まず、(HL)のHにおける最上位ビットが1であるか否かを判定する。Hの最上位ビットが0の場合、DEの値が最初に読むべきトラック番号であることがわかり、
 ; かつ、読むべきセクタは全セクタ、SORD M23では16セクタであることがわかる。この情報があれば、あとは、ファイルの先頭アドレス_DTADRzをセットして、16セクタ分読み込めばよい。
 ; (HL)のHにおける最上位ビットが1の場合、読み込み対象となっているファイルは終端に達していることがわかる。(HL)の下位バイトLが読み込むべきセクタ数nを指しているので、
 ; 1~nセクタまでを読めばよい。 
-
-	CP	80H
-	JR	NC,DLOAD3	;最後のクラスタ
-	LD	A,16	;4Kバイト読み込みます
-	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
-	RET	C	;エラー
-	LD	DE,1000H
-	ADD	HL,DE	;メモリのカウント･アップ
-	PUSH	HL
-	LD	L,C
-	LD	H,B
-	OR	A
-	SBC	HL,DE
-	LD	C,L
-	LD	B,H	;サイズのカウント･ダウン
-	POP	HL	;HL←次のメモリ
-	JR	NC,DLOAD1
-
-;	エラー
-DLOAD2:
-	LD	A,7	;Bad Allocation Table
-	SCF
-	RET
-
-;	最後のクラスタ
-DLOAD3:
-	SUB	7FH	;Acc←読み込みセクタ数
-	CP	16+1
-	JR	NC,DLOAD2	;FATが不正
-	DEC	A	;Acc←読み込みセクタ数－1（0～15）
-	DEC	BC	;B←読み込む最後のセクタ－1（0～15）
-	CP	B
-	JR	NZ,DLOAD2	;FATが不正
-	LD	B,0
-	INC	BC	;BC←最後のセクタのバイト数
-	OR	A
-	JR	Z,DLOAD4	;最後のクラスタは、セクタを1つだけ使用
-
-;	最後のセクタ以外を読み込みます
-	PUSH	AF
-	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
-	JR	C,DLOAD5
-	POP	AF	;Acc←読み込みセクタ数－1（0～15）
-
-DLOAD4:	PUSH	DE
-	LD	E,0
-	LD	D,A	;DE←次に読み込むアドレスの変移
-	ADD	HL,DE	;メモリのカウント･アップ
-	EX	(SP),HL	;HL←最後のクラスタの先頭レコード番号，スタック←最後に読み込むメモリのアドレス
-	LD	E,A
-	LD	D,0	;DE←次に読み込むレコードの変移
-	ADD	HL,DE
-
-;	最後のセクタ以外を読み込みます
-	EX	DE,HL	;DE←最後に読み込むレコード番号
-	LD	HL,(_DTBUF)
-	LD	A,1
-	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
-DLOAD5:
-	POP	DE	;DE←最後に読み込むメモリのアドレス
-	RET	C
-
-;	[_DTBUF]～から最後のセクタの内容を正しいメモリに転送します
-	LDIR
-	XOR	A	;Acc←0
-	RET
-
-
 
 DLOAD:
 	LD	HL,(_IBFAD)
@@ -5765,7 +5678,7 @@ DLOAD1:
 	ADD	HL,DE	;HL←FATバッファのアクセスするクラスタ(トラック番号)の位置
 	LD	A,(HL)	;次のクラスタへのチェイン情報 次のクラスタ(トラック番号)がどこか書いてある。
 	LD	(NXCLST),A	;次にアクセスするクラスタ(トラック番号)の一時保存場所
-	EX	DE,HL
+	EX	DE,HL ; トラック番号から、レコード番号へ変換
 	ADD	HL,HL
 	ADD	HL,HL
 	ADD	HL,HL
@@ -5779,45 +5692,46 @@ DLOAD1:
 	LD	A,16	;4Kバイト読み込みます
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
 	RET	C	;エラー
-	LD	DE,1000H
-	ADD	HL,DE	;メモリのカウント･アップ
+	LD	DE,1000H ;1000Hバイト = 4kバイト
+	ADD	HL,DE	;ディスクから読み込んだデータを書き込むアドレスを4kバイト分カウント･アップする。
 	PUSH	HL
 	LD	L,C
 	LD	H,B
 	OR	A
 	SBC	HL,DE
 	LD	C,L
-	LD	B,H	;サイズのカウント･ダウン
+	LD	B,H	;4kバイト読んだので、その分読み込むべきサイズを引き算しておく。FATがあるのでこの処理はいらないのでは？
 	POP	HL	;HL←次のメモリ
 	JR	NC,DLOAD1
 
 ;	エラー
 DLOAD2:
-	LD	A,7	;Bad Allocation Table
+	LD	A,7	;Bad Allocation Tableのエラー･コード
 	SCF
 	RET
 
-;	最後のクラスタ
+;	最後のクラスタ。ファイルの終端になり、余ったセクタを読み込む処理
 DLOAD3:
 	SUB	7FH	;Acc←読み込みセクタ数
 	CP	16+1
-	JR	NC,DLOAD2	;FATが不正
+	JR	NC, DLOAD2	;FATが不正
 	DEC	A	;Acc←読み込みセクタ数－1（0～15）
 	DEC	BC	;B←読み込む最後のセクタ－1（0～15）
 	CP	B
-	JR	NZ,DLOAD2	;FATが不正
+	JR	NZ, DLOAD2	;FATが不正
 	LD	B,0
 	INC	BC	;BC←最後のセクタのバイト数
 	OR	A
-	JR	Z,DLOAD4	;最後のクラスタは、セクタを1つだけ使用
+	JR	Z, DLOAD4	;最後のクラスタは、セクタを1つだけ使用
 
 ;	最後のセクタ以外を読み込みます
 	PUSH	AF
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
-	JR	C,DLOAD5
+	JR	C, DLOAD5
 	POP	AF	;Acc←読み込みセクタ数－1（0～15）
 
-DLOAD4:	PUSH	DE
+DLOAD4:
+	PUSH	DE
 	LD	E,0
 	LD	D,A	;DE←次に読み込むアドレスの変移
 	ADD	HL,DE	;メモリのカウント･アップ
