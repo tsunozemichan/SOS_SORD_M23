@@ -42,6 +42,17 @@ BEL EQU 07H ; Bell
 NP  EQU 0CH ; Formfeed (also: New page NP)
 ESC EQU 1BH ; Escape
 
+
+
+; CTC Timer Initialization for S-OS
+; Ch0を10ms周期のタイマーとして設定（IM2割り込み）
+
+CTC_CH0     EQU 0FCh        ; CTC Ch0ポート
+VEC_BASE    EQU 00h         ; CTCベクタベース
+IM2_TABLE   EQU 0FF00h      ; IM2割り込みベクタテーブル
+CTC_VEC_CH0 EQU 00h         ; Ch0のベクタオフセット
+
+
 ;〈SLANGについて〉
 ; SLANGは、特殊ワークのサイズによっては動作しません。
 ;SLANGの3014H～3015H番地の内容が、
@@ -253,6 +264,7 @@ COLD:
 	LD	SP,(_STKAD)
 	DI
 	; IM	2
+	CALL CTC_INIT			;CTCの初期化
 	CALL CRT_INIT			;CRTCの初期化
 	CALL FDC_INIT			;FDCの初期化
 	EI
@@ -288,21 +300,6 @@ COLD:
 	LD	DE,title_message
 	CALL 	print_string_until_00H_from_DE_register
 
-;	メモリの情報を表示
-	CALL print_string_from_next_call_address
-	DB	'MAIN 3000H-',00H
-	LD	HL,(_MEMAX) ; _MEMAX = 仕様メモリの上限
-	DEC	HL ; -1して、最後の使用可能アドレスにする
-	CALL print_hex_4_digit
-	CALL print_string_from_next_call_address
-	DB	'H',0DH,00H
-	CALL print_string_from_next_call_address
-	DB	'WORK 0000H-',00H
-	LD	HL,(_WKSIZ)
-	DEC	HL
-	CALL print_hex_4_digit
-	CALL print_string_from_next_call_address
-	DB	'H',0DH,00H
 
 ;	文字列入力バッファの80バイトをクリア
 	LD	HL,(_KBFAD)
@@ -761,6 +758,7 @@ LOC:
 ; CYをクリアします。
 
 SCRN:
+	DI
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
@@ -768,12 +766,13 @@ SCRN:
 	LD	C,L ; X座標をCにロード
 	CALL GET_VRAM_ADDRESS_FROM_X_Y ; XY座標からVRAMアドレスをHLにロード
 ; VRAMにアクセスして、カーソル位置DEにある通常文字のアスキーコードを得る。
-	OUT (0D2H),A ; access to RAM page 1
+	OUT (VRAM_BANK_PORT),A ; access to RAM page 1
 	LD A,(HL) ; get character
 	POP	BC
 	POP	DE
 	POP	HL
 	OR	A	;CY←0
+	EI
 	RET
 
 
@@ -876,14 +875,34 @@ GETKY:
 KEY_ONECE_SCAN:
 	PUSH HL
 	PUSH BC
-	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
-	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
-	CALL KEY_SCAN ; キースキャンを一回だけ実行する。
+	LD B,1H
+	CALL KEY_SCAN_REPEAT
 	POP BC
 	POP HL
 	RET
 
 
+;----------------------------------------------------------
+    ; B = 繰り返し回数 (1-255) をセットしてから呼ぶ
+    ;
+    ; 例: LD B, 10
+    ;       CALL KEY_SCAN_REPEAT
+    ;
+    ; 設計のポイント:
+    ;   元コードの PUSH BC / POP BC が外側の DJNZ カウンタ (B) を
+    ;   KEY_SCAN 内部の DJNZ から守る二重の役割を担っている。
+    ;   追加の PUSH / POP は不要。
+    ;----------------------------------------------------------
+KEY_SCAN_REPEAT:
+    PUSH HL
+    PUSH BC                 ; B (残り回数) をスタックに退避
+    LD   HL, PORT_INDEX
+    LD   BC, 0FDFH          ; B=0Fh (内側スキャン回数), C=DFh (ポート番号)
+    CALL KEY_SCAN
+    POP  BC                 ; B (残り回数) を復元
+    POP  HL
+    DJNZ KEY_SCAN_REPEAT    ; B-- して 0 でなければ継続
+    RET
 
 KEY_SCAN_WRAPPER:
 	PUSH HL
@@ -3371,7 +3390,7 @@ CRT_INIT:
 	LD A,20H ; 20Hはアスキーコードでスペース
 CLEAR_LOOP:
 ; CLEAR_ALL_LINE:
-	OUT (0D2H),A ; D2Hポートになにか書くと次の命令は別のページ(この場合はVRAMのページ)に行う。
+	OUT (VRAM_BANK_PORT),A ; D2Hポートになにか書くと次の命令は別のページ(この場合はVRAMのページ)に行う。
 	LD (HL),A ; F000H～FFFFHまで20Hで埋めている。アトリビュートに20H書いても問題ないみたい。
 	INC HL
 	SBC HL,DE
@@ -3632,6 +3651,7 @@ GXYVA_DONE:
 ;     F800H + 22H - 2 = F820H ✓  (期待値: (2000+80) mod 2048 = 32 → F820H)
 ;==============================================================
 SCROLL_UP:
+	DI
     PUSH AF
     PUSH BC
     PUSH DE
@@ -3710,7 +3730,6 @@ SU_UPDATE_TLA:
     OUT (CRTC_ADDRESS_PORT), A
     LD  A, H
     OUT (CRTC_VALUE_PORT), A
-
     LD  A, CRTC_R13_START_L
     OUT (CRTC_ADDRESS_PORT), A
     LD  A, L
@@ -3720,6 +3739,7 @@ SU_UPDATE_TLA:
     POP DE
     POP BC
     POP AF
+	EI
     RET
 
 
@@ -3747,12 +3767,14 @@ WRITE_CHAR_AT_X_Y:
     ; 書き込む文字コードを PUSH AF でスタックに退避する。
     ; CALL 後に POP AF で復元してから VRAM へ書き込む。
     ;----------------------------------------------------------
+	DI
     PUSH AF                         ; 文字コード (A) を退避
     CALL GET_VRAM_ADDRESS_FROM_X_Y  ; HL = VRAM アドレス  (A, DE 破壊)
     POP  AF                         ; A = 文字コード を復元
 
     OUT  (VRAM_BANK_PORT), A        ; 次の命令 (LD(HL),A) を VRAM ページへ
     LD   (HL), A                    ; VRAM に文字を書き込む
+	EI
     RET
 
 
@@ -3841,7 +3863,7 @@ CO_LF:
 CO_CR:
     LD  A, (CURSOR_Y)
     CP  24                      ; 最下行 (Y=24)?
-    JR  Z, CO_SCROLL            ; Yes → スクロール (Y は 24 のまま)
+    JP  Z, CO_SCROLL            ; Yes → スクロール (Y は 24 のまま)
     INC A
     LD  (CURSOR_Y), A
 	; S-OSのCRはCR+LFの動作なので、CRのときはLFの処理も行う
@@ -3957,6 +3979,7 @@ CO_FF:
     LD  HL, VRAM_TXT_TOP
     LD  (CURRENT_TOP_LEFT_ADDRESS), HL
 
+	DI
     ; [2] HD46505 R12/R13 を F800H に戻す (絶対アドレス)
     LD  A, CRTC_R12_START_H
     OUT (CRTC_ADDRESS_PORT), A
@@ -3966,6 +3989,7 @@ CO_FF:
     OUT (CRTC_ADDRESS_PORT), A
     XOR A                       ; F800H 下位 = 00H
     OUT (CRTC_VALUE_PORT), A
+	EI
 
     ; [3] VRAM テキスト領域を全消去 (F800H-FFFFH = 2048 バイト)
     ;     2000 バイトではなく 2048 バイトを消去する。
@@ -3975,6 +3999,7 @@ CO_FF:
     ; LD  BC, VRAM_SIZE           ; BC = 0800H (2048 バイト)
     LD  BC, 0800H           ; BC = 0800H (2048 バイト)
 CO_FF_CLEAR:
+	DI
     LD  A, 20H
     OUT (VRAM_BANK_PORT), A     ; 次の命令を VRAM ページへ
     LD  (HL), A
@@ -3988,6 +4013,7 @@ CO_FF_CLEAR:
     XOR A
     LD  (CURSOR_X), A
     LD  (CURSOR_Y), A
+	EI
     JR  CO_CURSOR_UPDATE
 
 
@@ -4036,6 +4062,7 @@ PRINT_CURSOR:
 	PUSH DE
 	PUSH HL
 	LD HL,(CURRENT_CURSOR_LOCATE) ; 現在のカーソル位置をHLにロード
+	DI
 	LD A,0EH ; R14 (cursor H)
 	OUT (CRTC_ADDRESS_PORT),A
 	LD A,H
@@ -4044,6 +4071,7 @@ PRINT_CURSOR:
 	OUT (CRTC_ADDRESS_PORT),A
 	LD A,L
 	OUT (CRTC_VALUE_PORT),A ; カーソルの下位アドレス設定
+	EI
 	POP HL
 	POP DE
 	POP AF
@@ -4092,540 +4120,83 @@ CURRENT_CURSOR_LOCATE:
 
 
 
-	ORG	2B00H
-
-;===============
-;エントリ
-;===============
-
-
-; DREAD:	JP	read_disk	;ディスク読み込み
-DWRITE:	JP	write_disk	;ディスク書き込み
-disk_unit_number:	DS	1	;0～
-
-
-;===============
-;サブルーチン
-;===============
-
-
-;DREAD本体
-;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
-;	[disk_unit_number]参照
-;出力	CY＝0（Acc←0）なら成功、
-;	CY＝1（Acc←エラー･コード）なら失敗
-;破壊	AF，AF'
-read_disk:
-	PUSH	BC
-	PUSH	DE
-	PUSH	HL
-	CALL	DRDSB	;ディスクから読み込みます
-	POP	HL
-	POP	DE
-	POP	BC
-	RET
-
-
-;ディスクから読み込みます
-;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
-;	[disk_unit_number]参照
-;出力	CY＝0（Acc←0）なら成功、
-;	CY＝1（Acc←エラー･コード）なら失敗
-;破壊	AF，HL，DE，BC，AF'
-DRDSB:
-	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
-	;レコード番号より、トラック番号とセクタ番号を得ます。例えば、レコード番号50Hは第5トラックのセクタ1になる。
-	;D←トラック番号、E←セクタ番号、Acc'←レコード数
-	CALL	get_track_number_and_sector_number_from_record_number
-	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
-	PUSH AF ; レコード数を退避
-	PUSH BC
-	PUSH DE
-	PUSH HL
-	CALL	RESTORE	;ディスク･ドライブをリストアします
-	POP	HL
-	POP	DE
-	POP	BC
-	POP	AF ; レコード数を復帰
-
-	PUSH AF ; レコード数をスタックに入れる
-	PUSH DE ; Eレジスタに入っているセクタ番号を退避する
-	LD A, D 	;目的のシリンダ(トラック)番号をAレジスタにセット
-	LD E, A 	;Eレジスタに目的のシリンダ(トラック)番号をセット
-	CALL SEEK	;目的のシリンダ(トラック)へシークします
-
-	; LD	A,5	;リトライ･カウンタ
-	; DMA Bank Select
-	XOR A ; A=0
-	OUT (DMA_BANK_SEL), A
-	POP DE ; 読み込み開始セクタを復帰
-	POP AF ; レコード数をAレジスタに取り出す
-
-	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
-	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定 セクタ番号は1以上の数
-
-	; HLに読み込み先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書いて下さい。
-	; dma_read_out_address_H に転送先アドレスの上位バイトが格納されていると仮定します。
-	; Hレジスタの値を、 dma_read_out_address_H にセットします。
-	PUSH AF
-	LD A, H
-	LD (dma_read_out_address_H),A
-	LD A, L
-	LD (dma_read_out_address_L),A
-	POP AF
-
-READ_FIRST_LOOP:
-	CALL GO_DMA_AND_READ0 ; DMA転送と読み込みを開始します
-	INC C ; 次のセクタ番号へ
-	LD A,(dma_read_out_address_H) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
-	INC A ; 256 byte incriment
-	LD (dma_read_out_address_H),A
-	DJNZ READ_FIRST_LOOP
-
-	; エラーハンドリングは後で書く
-	; ノー･エラー
-
-	RET
-
-;DWRITE本体
-;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
-;	[disk_unit_number]参照
-;出力	CY＝0（Acc←0）なら成功、
-;	CY＝1（Acc←エラー･コード）なら失敗
-;破壊	AF，AF'
-write_disk:
-	PUSH	BC
-	PUSH	DE
-	PUSH	HL
-	CALL	do_write_disk	;ディスクへ書き込みます
-	POP	HL
-	POP	DE
-	POP	BC
-	RET
-
-
-;ディスクへ書き込みます
-;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
-;	[disk_unit_number]参照
-;出力	CY＝0（Acc←0）なら成功、
-;	CY＝1（Acc←エラー･コード）なら失敗
-;破壊	AF，HL，DE，BC，AF'
-do_write_disk:
-	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
-	CALL	get_track_number_and_sector_number_from_record_number	;レコード番号より、トラック番号とセクタ番号を得ます
-	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
-	PUSH AF ; レコード数を退避
-	PUSH BC
-	PUSH DE
-	PUSH HL
-	CALL	RESTORE	;ディスク･ドライブをリストアします
-	POP	HL
-	POP	DE
-	POP	BC
-	POP	AF ; レコード数を復帰
-
-	PUSH AF ; レコード数をスタックに入れる
-	PUSH DE ; Eレジスタに入っているセクタ番号を退避する
-	LD A, D 	;目的のシリンダ(トラック)番号をAレジスタにセット
-	LD E, A 	;Eレジスタに目的のシリンダ(トラック)番号をセット
-	CALL SEEK	;目的のシリンダ(トラック)へシークします
-
-	; LD	A,5	;リトライ･カウンタ
-	; DMA Bank Select
-	XOR A ; A=0
-	OUT (DMA_BANK_SEL), A
-	POP AF ; レコード数をAレジスタに取り出す
-
-	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
-	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定
-;
-
-	; HLに読み込み先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書いて下さい。
-	; dma_write_in_address_H に転送先アドレスの上位バイトが格納されていると仮定します。
-	; Hレジスタの値を、 dma_write_in_address_H にセットします。
-	PUSH AF
-	LD A, H
-	LD (dma_write_in_address_H),A
-	LD A, L
-	LD (dma_write_in_address_L),A
-	POP AF
-
-WRITE_FIRST_LOOP:
-	CALL GO_DMA_AND_WRITE0 ; DMA転送と読み込みを開始します
-	INC C ; 次のセクタ番号へ
-	; HLに転送先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書くこと。
-	LD A,(dma_write_in_address_H) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
-	INC A ; 256 byte incriment
-	LD (dma_write_in_address_H),A
-	DJNZ WRITE_FIRST_LOOP
-
-	; エラーハンドリングは後で書く
-	; ノー･エラー
-	RET
-
-;レコード番号より、トラック番号とセクタ番号を得ます
-;入力	DE←レコード番号、Acc←レコード数
-;	[disk_unit_number]参照
-;出力	D←トラック番号、E←セクタ番号、Acc'←レコード数
-;破壊	AF，DE，AF'
-
-get_track_number_and_sector_number_from_record_number:
-	PUSH HL
-	LD	L,A		;L←レコード数
-	EX	AF,AF'	;AF'
-	LD	H,4 	;H A'←04H
-	LD	A,0FFH	;H A'←04FFH
-	DEC	L		;L←レコード数－1
-	SUB	L		;H A'←04FFH－（レコード数－1）
-	LD	L,A		;HL←0500H－レコード数
-	OR	A
-	SBC	HL,DE	;（0500H－レコード数）－レコード番号
-	POP	HL
-	JP	C,bad_sector_error
-	LD	A,E 	; E←レコード番号下位バイト
-RLLOP:
-	RLCA  ; A←A×2
-	RL	D ; D←D×2
-	RLCA  ; A←A×2
-	RL	D ; D←D×2
-	RLCA  ; A←A×2
-	RL	D ; D←D×2
-	RLCA  ; A←A×2
-	RL	D ;D←トラック番号
-	LD	A,E ; A←レコード番号下位バイト
-	AND	0FH ; A←レコード番号下位バイトの下位4ビット
-	INC	A   ; A←セクタ番号
-	LD	E,A	;E←セクタ番号
-	EX	AF,AF' ; AF'
-	RET
-
-
-;ディスクをアクセス可能にします
-;入力	D←トラック番号
-;出力	D←シリンダ番号、[disk_unit_number b4]←サイド、B←0FH
-;破壊	AF，BC
-get_ready_to_access_disk:
-	; 未実装。必要性？
-	RET
-
-
-;目的のシリンダへシークします（V1，20ms） '0msに改
-;入力	D←シリンダ番号、B←0FH
-;出力	なし
-;破壊	AF，C
-; notSEEK:
-; 	LD	C,0FBH	;BC←0FFBH 'データ･レジスタ
-; 	OUT	(C),D	;FDCデータ･レジスタ←シリンダ番号
-; 	PUSH HL
-; 	CALL get_cylinder_buffer_address	;シリンダ･バッファのアドレスを得ます
-; 	LD	A,(HL)
-; 	LD	C,0F9H	;BC←0FF9H 'トラック･レジスタ
-; 	OUT	(C),A	;FDCシリンダ･レジスタ←現在シリンダ番号
-; 	LD	(HL),D	;シリンダ･バッファの更新
-; 	POP	HL
-; 	LD	C,0F8H	;BC←0FF8H
-; ;	LD	A,00011110B	;シーク（V1，20ms）
-; 	LD	A,00011100B	;シーク（V1， 0ms）
-; 	OUT	(C),A
-
-
-;FDCレディ待ち
-;出力	なし
-;破壊	AF，BC
-wait_for_FDC_ready:
-	RET
-
-
-;FDCをチェックします
-;出力	B←0FH
-;破壊	AF，BC
-; とりあえず、必ず正常とする
-check_FDC:
-	RET		;FDCが正常動作
-
-
-
-;8μs単位で待ちます
-;入力	Acc←カウンタ
-;出力	32×Acc＋10ts待ちます
-;破壊	AF
-wait_8usec:
-;	1ループ32ts
-	DEC	A	; 4ts
-	LD	HL,(1234H)	;16ts
-	JR	NZ,wait_8usec	;12ts
-	RET		;10ts
-
-
-;シリンダ･バッファのアドレスを得ます
-;入力	[disk_unit_number b3～b0]←ユニット番号（0～3）
-;出力	HL←対応するシリンダ･バッファのアドレス
-;破壊	AF，HL
-get_cylinder_buffer_address:
-	LD	HL,DSKTRK	;シリンダ･バッファ
-	PUSH	DE
-	LD	A,(disk_unit_number)
-	AND	00001111B ; ユニット番号抽出
-	LD	E,A
-	LD	D,0
-	ADD	HL,DE
-	POP	DE
-	RET
-
-
-;FDCにセクタ番号をセットして、FDCコマンドを実行します
-;入力	E←セクタ番号、Acc←FDCコマンド、B←0FH
-;出力	C←F8H
-;破壊	AF，C
-set_sector_number_and_execute_FDC_coomand:
-	; レジスタEのセクタ番号をレジスタCにコピー。
-	PUSH DE
-	PUSH BC
-	LD C,E
-	LD A,C
-	OUT (FDC_SECTOR_REG),A
-;	31μs（124ts）待ちます
-	LD	A,7	;7ts
-J3:	DEC	A	;---ts
-	JR	NZ,J3	;107ts
-	POP BC
-	POP DE
-	RET		;10ts
-
-
-;モータをオフします。SORD M23ではオフにする必要はないので何もしない。
-;出力	CY＝0
-fdd_motor_off:
-	EI
-	OR	A
-	RET
-
-
-;リストアして、目的のシリンダへシークします
-;出力	D←シリンダ番号、B←0FH
-;破壊	BC
-restore_and_seek:
-	PUSH	AF
-	PUSH	HL
-	PUSH	DE
-	CALL get_cylinder_buffer_address	;シリンダ･バッファのアドレスを得ます
-	CALL RESTORE	;リストアします
-	LD A, D
-	LD E, A
-	CALL SEEK	;目的のシリンダへシークします
-	POP	DE
-	POP	HL
-	POP	AF
-	RET
-
-
-;セクタ番号のカウント･アップ
-;入力	E←セクタ番号、D←シリンダ番号、B←0FH
-;出力	CY＝1ならシリンダの更新が必要
-;破壊	AF，DE，C
-count_up_sector:
-	INC	E
-	LD	A,16
-	CP	E
-	RET	NC	;セクタ番号2～16
-
-;	トラックのカウント･アップ
-	LD	E,1
-	PUSH	HL
-	LD	HL,disk_unit_number
-	LD	A,(HL)
-	XOR	00010000B
-	LD	(HL),A
-	AND	00010000B
-	JR	NZ,BFIOST	;サイド0へ
-	INC	D	;シリンダ番号のカウント･アップ
-	SCF
-BFIOST:
-	LD	C,0FCH	;BC←0FFCH
-	LD	A,(HL)
-	OUT	(C),A	;サイドの更新
-	POP	HL
-	RET
-
-
-
-
-;
-; FDC COMMAND OUT subroutine
-;
-FDCOUT:
-	OUT (FDC_COMMAND_REG),A
-	LD A,30H
-WLOOP: DEC A
-	JR NZ,WLOOP
-LOOP2:
-	IN A,(FDC_STATUS_REG)
-	BIT 0H,A ; BUSY IS CLEAR?
-	JR NZ,LOOP2
-	RET
-;
-; RESTORE subroutine
-;
-RESTORE:
-RESTORE_LOOP:
-	LD A,0BH ; restore command. 15ms, Head load, Verify OFF
-	CALL FDCOUT
-	BIT 7,A ; Not Ready?
-	JR NZ,RESTORE_LOOP
-	AND 98H
-	JR NZ,RESTORE
-	RET
-;
-; SEEK subroutine
-; E is Track No.
-;
-SEEK:
-	LD A,E ; E is Track No.
-	OUT (FDC_DATA_REG),A
-	LD A,1BH  ; seek command. 15ms, Head Load, Verify OFF
-	CALL FDCOUT
-	AND 98H
-	JR NZ,SEEK ; retry
-	RET
-;
-; DMA setting & Go
-; HL is Address of DMA Command chain
-;		but top value is No of DMA Command chain
-DMA_ON:
-	PUSH HL
-	PUSH BC
-	LD B,(HL)
-	INC HL
-	LD C,DMA_ADDRESS
-	OTIR
-	POP BC
-	POP HL
-	RET
-;
-; DMA setting & FDD read FOR SIDE 0
-; C is Sector No.
-;
-GO_DMA_AND_READ0:
-	LD A,C
-	OUT (FDC_SECTOR_REG),A
-READ0_RETRY:
-	LD HL,DMA_COMMANDS
-	CALL DMA_ON
-	LD A,80H ; READ DATA COMMAND for Side 0
-DO_FDC0:
-	CALL FDCOUT
-
-	PUSH AF
-	LD A,83H ; DMA STOP
-	OUT (DMA_ADDRESS),A
-	POP AF
-
-	AND 03CH
-	JR Z, READ0_SUCCESS
-	JR READ0_RETRY
-READ0_SUCCESS:
-	RET
-;
-; DMA setting & FDD write FOR SIDE 0
-; C is Sector No.
-;
-GO_DMA_AND_WRITE0:
-	LD A,C
-	OUT (FDC_SECTOR_REG),A
-	LD HL,DMA_WRITE_COMMANDS
-	CALL DMA_ON
-	LD A,0A0H ; WRITE DATA COMMAND for Side 0
-DO_FDC_WR0:
-	CALL FDCOUT
-	AND 0FCH
-	RET
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; FDC 初期化ルーチン
-;
-FDC_INIT:
-	LD A,51H
-	LD (FDC_CONTROL_REG),A
-	RET
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; DMA COMMAND CHAIN
-;
-
-DMA_COMMANDS:
-	DB 15H,0C3H,0C3H,0C3H,0C3H,0C3H,0C3H
-	DB 0BBH,01H,0BFH
-	DB 6DH
-	DB 0C3H,0FFH,00H,2CH,010H,8DH
-dma_read_out_address_L:	DB BUFFER.@L; DMAで読み込む先のバッファのアドレスL
-dma_read_out_address_H:	DB BUFFER.@H ; DMAで読み込む先のバッファのアドレスH。これが256byte毎にインクリメントされる。
-	DB 8AH
-	DB 0CFH,87H
-DMA_WRITE_COMMANDS:
-	DB 16H,0C3H,0C3H,0C3H,0C3H,0C3H,0C3H
-	DB 83H ; STOP DMA
-	DB 79H ; B->A
-dma_write_in_address_L:	DB BUFFER.@L
-dma_write_in_address_H:	DB BUFFER.@H  ; this address is buffer address !!!
-	DB 00H,0FFH ; 256yte transfer
-	DB 14H,28H,8DH
-	DB 0C3H,00H ; FDC data register
-	DB 8AH
-	DB 0CFH,05H
-	DB 0CFH,87H
-
-;=======================
-;エラー･ジャンプ
-;=======================
-
-
-bad_sector_error:	LD	A,5	;Bad Record
-	DB	01H	;「LD BC,」
-device_offline_error:	LD	A,2	;Device Offline
-	DB	01H	;「LD BC,」
-write_protect_error:	LD	A,4	;Write Protected
-	DB	01H	;「LD BC,」
-device_io_error:	LD	A,1	;Device I/O Error
-	CALL	fdd_motor_off	;モータをオフします
-	LD	SP,(SPBUFF)	;リターン･スタック･ポインタ
-	SCF
-	RET
-
-
-;===============
-;内部ワーク
-;===============
-
-
-DSERJP:	DS	2	;未使用
-SPBUFF:	DS	2	;リターン･スタック･ポインタ
-DSKTRK:	DS	4	;各ユニットのシリンダ･バッファ
-
-
-
-;=======
-;フラグ
-;=======
-
-
-COMF:	DS	1	;＝1で、RAMディスクへメモリ3000H～4BFFHの待避が行われた
-BDEV:	DS	1	;バッチ･ファイルのあるデバイス
-BTRK:	DS	1	;バッチ･ファイルの現在クラスタ番号
-BREC:	DS	2	;バッチ･ファイルの現在レコード番号
-BCNT:	DS	1	;バッチ･ファイルの現在クラスタの残りレコード数＋1
-; BTPNT:	DW	BATBF	;下位はバッチ･ファイルのバッファの前回のリード位置
-BTPNT2:	DS	2	;バッチ変数の現在アドレス
-BATFLG:	DS	1	;＝FFH（0以外）でバッチ･ファイル実行中
-PARAF:	DS	1	;＝1（0以外）でバッチ変数アクセス中
-;AUTNAM:	DB	'A:AUTOEXEC.BAT'	;自動実行ファイル名
-;	DS	4
-AUTNAM:	DB	'AUTOEXEC.BAT',00H	;自動実行ファイル名（カレント･ドライブより）
-	DS	5
-
+;==============================================================
+; CTC初期化ルーチン
+;==============================================================
+CTC_INIT:
+        DI                  ; 割り込み禁止
+
+        ; Iレジスタ設定（IM2テーブルの上位バイト）
+        LD   A, 0FFh
+        LD   I, A
+
+        ; IM2モード設定
+        IM   2
+
+        ; 割り込みベクタテーブル初期化
+        ; 0xFF00からの256バイト（128エントリ）をダミーISRで埋める
+        LD   HL, IM2_TABLE
+        LD   DE, DUMMY_ISR
+        LD   B, 128         ; 128エントリ（256バイト）
+INIT_LOOP:
+        LD   (HL), E        ; 下位バイト
+        INC  HL
+        LD   (HL), D        ; 上位バイト
+        INC  HL
+        DJNZ INIT_LOOP
+
+        ; Ch0用ISRアドレスを設定（明示的に0xFF00に書き込む）
+        LD   HL, IM2_TABLE  ; HL = 0xFF00
+        LD   DE, CTC_CH0_ISR
+        LD   (HL), E        ; 下位バイトを0xFF00に
+        INC  HL
+        LD   (HL), D        ; 上位バイトを0xFF01に
+
+        ; CTCベクタベース設定
+        LD   A, VEC_BASE
+        OUT  (CTC_CH0), A
+
+        ; Ch0制御ワード設定
+        LD   A, 0B5h
+        OUT  (CTC_CH0), A
+
+        ; タイムコンスタント設定（156 = 約10ms）
+        LD   A, 156
+        OUT  (CTC_CH0), A
+
+        EI                  ; 割り込み許可
+        RET
+
+;==============================================================
+; ダミーISR（何もしないでリターン）
+;==============================================================
+DUMMY_ISR:
+        EI
+        RETI
+
+;==============================================================
+; CTC Ch0割り込みサービスルーチン
+;==============================================================
+SOFT_TICKS: DB  0       ; ソフトウェアカウンタ (0-4)
+
+CTC_CH0_ISR:
+        PUSH AF
+
+        LD   A, (SOFT_TICKS)
+        INC  A
+        CP   2                  ; 2 回 = 2 × 9.984ms = 19.968ms ≈ 20ms
+        JR   C, ISR_END         ; まだ 2 未満 → スキップ
+
+        XOR  A                  ; カウンタリセット
+        LD   (SOFT_TICKS), A
+
+        ; ここに 50ms 周期の処理を書く
+
+ISR_END:
+        LD   (SOFT_TICKS), A    ; 更新値（またはリセット値）を保存
+        POP  AF
+        EI
+        RETI
 
 ;=======================
 ;S-OSワーク･エリア
@@ -4737,14 +4308,16 @@ GTPRC:			JP	get_logical_column	;2039H
 LINCH:			JP	LINCH0	;203CH
 ;NEXT	203FH
 
+
+
 ;	204BH～20FEHはバッチ変数バッファ
 
-	ORG	20FFH
+	; ORG	20FFH
 
 ;
 ; DOSモジュールの始まり
 ;
-	ORG	2100H
+	; ORG	2100H
 
 ;〈セーブ動作〉
 ;　「_FILE」「_WOPEN」「_WRD」の順で呼び出します。
@@ -6503,30 +6076,6 @@ FCMPWE:	POP	HL
 	POP	BC
 	RET
 
-
-	ORG	2A00H
-MESTBL:
-	DW	ER1,ER2,ER3,ER4,ER5,ER6,ER7,ER8
-	DW	ER9,ER10,ER11,ER12,ER13,ER14
-
-ER1:	DB	'Device I/O Error',0DH
-ER2:	DB	'Device Offline',0DH
-ER3:	DB	'Bad File Descripter',0DH
-ER4:	DB	'Write Protected',0DH
-ER5:	DB	'Bad Record',0DH
-ER6:	DB	'Bad File Mode',0DH
-ER7:	DB	'Bad Allocation Table',0DH
-ER8:	DB	'File not Found',0DH
-ER9:	DB	'Device Full',0DH
-ER10:	DB	'File Already Exists',0DH
-ER11:	DB	'Reserved Feature',0DH
-ER12:	DB	'File not Open',0DH
-ER13:	DB	'Syntax '
-ER15:	DB	'Error ',0DH
-ER14:	DB	'Bad Data',0DH
-OK:	DB	'Complete !',0DH
-
-
 ;=======================================
 ;内部ワーク＆内部ジャンプ･テーブル
 ;=======================================
@@ -6677,6 +6226,563 @@ _PARCS:
 ;フィジカル･ディスクI／Oエントリ
 ;=======================================
 ;注：本体は、サイズが大きいため、メイン部後ろ移転しました。
+
+
+	ORG	2A00H
+MESTBL:
+	DW	ER1,ER2,ER3,ER4,ER5,ER6,ER7,ER8
+	DW	ER9,ER10,ER11,ER12,ER13,ER14
+
+ER1:	DB	'Device I/O Error',0DH
+ER2:	DB	'Device Offline',0DH
+ER3:	DB	'Bad File Descripter',0DH
+ER4:	DB	'Write Protected',0DH
+ER5:	DB	'Bad Record',0DH
+ER6:	DB	'Bad File Mode',0DH
+ER7:	DB	'Bad Allocation Table',0DH
+ER8:	DB	'File not Found',0DH
+ER9:	DB	'Device Full',0DH
+ER10:	DB	'File Already Exists',0DH
+ER11:	DB	'Reserved Feature',0DH
+ER12:	DB	'File not Open',0DH
+ER13:	DB	'Syntax '
+ER15:	DB	'Error ',0DH
+ER14:	DB	'Bad Data',0DH
+OK:	DB	'Complete !',0DH
+
+
+	ORG	2B00H
+
+;===============
+;エントリ
+;===============
+
+
+; DREAD:	JP	read_disk	;ディスク読み込み
+DWRITE:	JP	write_disk	;ディスク書き込み
+disk_unit_number:	DS	1	;0～
+
+
+;===============
+;サブルーチン
+;===============
+
+
+;DREAD本体
+;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
+read_disk:
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	CALL	DRDSB	;ディスクから読み込みます
+	POP	HL
+	POP	DE
+	POP	BC
+	RET
+
+
+;ディスクから読み込みます
+;入力	HL←読み込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，HL，DE，BC，AF'
+DRDSB:
+	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
+	;レコード番号より、トラック番号とセクタ番号を得ます。例えば、レコード番号50Hは第5トラックのセクタ1になる。
+	;D←トラック番号、E←セクタ番号、Acc'←レコード数
+	CALL	get_track_number_and_sector_number_from_record_number
+	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
+	PUSH AF ; レコード数を退避
+	PUSH BC
+	PUSH DE
+	PUSH HL
+	CALL	RESTORE	;ディスク･ドライブをリストアします
+	POP	HL
+	POP	DE
+	POP	BC
+	POP	AF ; レコード数を復帰
+
+	PUSH AF ; レコード数をスタックに入れる
+	PUSH DE ; Eレジスタに入っているセクタ番号を退避する
+	LD A, D 	;目的のシリンダ(トラック)番号をAレジスタにセット
+	LD E, A 	;Eレジスタに目的のシリンダ(トラック)番号をセット
+	CALL SEEK	;目的のシリンダ(トラック)へシークします
+
+	; LD	A,5	;リトライ･カウンタ
+	; DMA Bank Select
+	XOR A ; A=0
+	OUT (DMA_BANK_SEL), A
+	POP DE ; 読み込み開始セクタを復帰
+	POP AF ; レコード数をAレジスタに取り出す
+
+	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
+	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定 セクタ番号は1以上の数
+
+	; HLに読み込み先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書いて下さい。
+	; dma_read_out_address_H に転送先アドレスの上位バイトが格納されていると仮定します。
+	; Hレジスタの値を、 dma_read_out_address_H にセットします。
+	PUSH AF
+	LD A, H
+	LD (dma_read_out_address_H),A
+	LD A, L
+	LD (dma_read_out_address_L),A
+	POP AF
+
+READ_FIRST_LOOP:
+	CALL GO_DMA_AND_READ0 ; DMA転送と読み込みを開始します
+	INC C ; 次のセクタ番号へ
+	LD A,(dma_read_out_address_H) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
+	INC A ; 256 byte incriment
+	LD (dma_read_out_address_H),A
+	DJNZ READ_FIRST_LOOP
+
+	; エラーハンドリングは後で書く
+	; ノー･エラー
+
+	RET
+
+;DWRITE本体
+;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，AF'
+write_disk:
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	CALL	do_write_disk	;ディスクへ書き込みます
+	POP	HL
+	POP	DE
+	POP	BC
+	RET
+
+
+;ディスクへ書き込みます
+;入力	HL←書き込みアドレス、DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	CY＝0（Acc←0）なら成功、
+;	CY＝1（Acc←エラー･コード）なら失敗
+;破壊	AF，HL，DE，BC，AF'
+do_write_disk:
+	LD	(SPBUFF),SP	;リターン･スタック･ポインタ
+	CALL	get_track_number_and_sector_number_from_record_number	;レコード番号より、トラック番号とセクタ番号を得ます
+	CALL	get_ready_to_access_disk	;ディスクをアクセス可能にします
+	PUSH AF ; レコード数を退避
+	PUSH BC
+	PUSH DE
+	PUSH HL
+	CALL	RESTORE	;ディスク･ドライブをリストアします
+	POP	HL
+	POP	DE
+	POP	BC
+	POP	AF ; レコード数を復帰
+
+	PUSH AF ; レコード数をスタックに入れる
+	PUSH DE ; Eレジスタに入っているセクタ番号を退避する
+	LD A, D 	;目的のシリンダ(トラック)番号をAレジスタにセット
+	LD E, A 	;Eレジスタに目的のシリンダ(トラック)番号をセット
+	CALL SEEK	;目的のシリンダ(トラック)へシークします
+
+	; LD	A,5	;リトライ･カウンタ
+	; DMA Bank Select
+	XOR A ; A=0
+	OUT (DMA_BANK_SEL), A
+	POP AF ; レコード数をAレジスタに取り出す
+
+	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
+	LD C,E ; 読込を開始するセクタ番号をCレジスタに設定
+;
+
+	; HLに読み込み先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書いて下さい。
+	; dma_write_in_address_H に転送先アドレスの上位バイトが格納されていると仮定します。
+	; Hレジスタの値を、 dma_write_in_address_H にセットします。
+	PUSH AF
+	LD A, H
+	LD (dma_write_in_address_H),A
+	LD A, L
+	LD (dma_write_in_address_L),A
+	POP AF
+
+WRITE_FIRST_LOOP:
+	CALL GO_DMA_AND_WRITE0 ; DMA転送と読み込みを開始します
+	INC C ; 次のセクタ番号へ
+	; HLに転送先アドレスが格納されているので、DMAコマンドチェーンにそれを反映させるコードを書くこと。
+	LD A,(dma_write_in_address_H) ; DMAコマンドチェーンの中の転送アドレスが書かれているアドレスを指定する。
+	INC A ; 256 byte incriment
+	LD (dma_write_in_address_H),A
+	DJNZ WRITE_FIRST_LOOP
+
+	; エラーハンドリングは後で書く
+	; ノー･エラー
+	RET
+
+;レコード番号より、トラック番号とセクタ番号を得ます
+;入力	DE←レコード番号、Acc←レコード数
+;	[disk_unit_number]参照
+;出力	D←トラック番号、E←セクタ番号、Acc'←レコード数
+;破壊	AF，DE，AF'
+
+get_track_number_and_sector_number_from_record_number:
+	PUSH HL
+	LD	L,A		;L←レコード数
+	EX	AF,AF'	;AF'
+	LD	H,4 	;H A'←04H
+	LD	A,0FFH	;H A'←04FFH
+	DEC	L		;L←レコード数－1
+	SUB	L		;H A'←04FFH－（レコード数－1）
+	LD	L,A		;HL←0500H－レコード数
+	OR	A
+	SBC	HL,DE	;（0500H－レコード数）－レコード番号
+	POP	HL
+	JP	C,bad_sector_error
+	LD	A,E 	; E←レコード番号下位バイト
+RLLOP:
+	RLCA  ; A←A×2
+	RL	D ; D←D×2
+	RLCA  ; A←A×2
+	RL	D ; D←D×2
+	RLCA  ; A←A×2
+	RL	D ; D←D×2
+	RLCA  ; A←A×2
+	RL	D ;D←トラック番号
+	LD	A,E ; A←レコード番号下位バイト
+	AND	0FH ; A←レコード番号下位バイトの下位4ビット
+	INC	A   ; A←セクタ番号
+	LD	E,A	;E←セクタ番号
+	EX	AF,AF' ; AF'
+	RET
+
+
+;ディスクをアクセス可能にします
+;入力	D←トラック番号
+;出力	D←シリンダ番号、[disk_unit_number b4]←サイド、B←0FH
+;破壊	AF，BC
+get_ready_to_access_disk:
+	; 未実装。必要性？
+	RET
+
+
+;目的のシリンダへシークします（V1，20ms） '0msに改
+;入力	D←シリンダ番号、B←0FH
+;出力	なし
+;破壊	AF，C
+; notSEEK:
+; 	LD	C,0FBH	;BC←0FFBH 'データ･レジスタ
+; 	OUT	(C),D	;FDCデータ･レジスタ←シリンダ番号
+; 	PUSH HL
+; 	CALL get_cylinder_buffer_address	;シリンダ･バッファのアドレスを得ます
+; 	LD	A,(HL)
+; 	LD	C,0F9H	;BC←0FF9H 'トラック･レジスタ
+; 	OUT	(C),A	;FDCシリンダ･レジスタ←現在シリンダ番号
+; 	LD	(HL),D	;シリンダ･バッファの更新
+; 	POP	HL
+; 	LD	C,0F8H	;BC←0FF8H
+; ;	LD	A,00011110B	;シーク（V1，20ms）
+; 	LD	A,00011100B	;シーク（V1， 0ms）
+; 	OUT	(C),A
+
+
+;FDCレディ待ち
+;出力	なし
+;破壊	AF，BC
+wait_for_FDC_ready:
+	RET
+
+
+;FDCをチェックします
+;出力	B←0FH
+;破壊	AF，BC
+; とりあえず、必ず正常とする
+check_FDC:
+	RET		;FDCが正常動作
+
+
+
+;8μs単位で待ちます
+;入力	Acc←カウンタ
+;出力	32×Acc＋10ts待ちます
+;破壊	AF
+wait_8usec:
+;	1ループ32ts
+	DEC	A	; 4ts
+	LD	HL,(1234H)	;16ts
+	JR	NZ,wait_8usec	;12ts
+	RET		;10ts
+
+
+;シリンダ･バッファのアドレスを得ます
+;入力	[disk_unit_number b3～b0]←ユニット番号（0～3）
+;出力	HL←対応するシリンダ･バッファのアドレス
+;破壊	AF，HL
+get_cylinder_buffer_address:
+	LD	HL,DSKTRK	;シリンダ･バッファ
+	PUSH	DE
+	LD	A,(disk_unit_number)
+	AND	00001111B ; ユニット番号抽出
+	LD	E,A
+	LD	D,0
+	ADD	HL,DE
+	POP	DE
+	RET
+
+
+;FDCにセクタ番号をセットして、FDCコマンドを実行します
+;入力	E←セクタ番号、Acc←FDCコマンド、B←0FH
+;出力	C←F8H
+;破壊	AF，C
+set_sector_number_and_execute_FDC_coomand:
+	; レジスタEのセクタ番号をレジスタCにコピー。
+	PUSH DE
+	PUSH BC
+	LD C,E
+	LD A,C
+	OUT (FDC_SECTOR_REG),A
+;	31μs（124ts）待ちます
+	LD	A,7	;7ts
+J3:	DEC	A	;---ts
+	JR	NZ,J3	;107ts
+	POP BC
+	POP DE
+	RET		;10ts
+
+
+;モータをオフします。SORD M23ではオフにする必要はないので何もしない。
+;出力	CY＝0
+fdd_motor_off:
+	EI
+	OR	A
+	RET
+
+
+;リストアして、目的のシリンダへシークします
+;出力	D←シリンダ番号、B←0FH
+;破壊	BC
+restore_and_seek:
+	PUSH	AF
+	PUSH	HL
+	PUSH	DE
+	CALL get_cylinder_buffer_address	;シリンダ･バッファのアドレスを得ます
+	CALL RESTORE	;リストアします
+	LD A, D
+	LD E, A
+	CALL SEEK	;目的のシリンダへシークします
+	POP	DE
+	POP	HL
+	POP	AF
+	RET
+
+
+;セクタ番号のカウント･アップ
+;入力	E←セクタ番号、D←シリンダ番号、B←0FH
+;出力	CY＝1ならシリンダの更新が必要
+;破壊	AF，DE，C
+count_up_sector:
+	INC	E
+	LD	A,16
+	CP	E
+	RET	NC	;セクタ番号2～16
+
+;	トラックのカウント･アップ
+	LD	E,1
+	PUSH	HL
+	LD	HL,disk_unit_number
+	LD	A,(HL)
+	XOR	00010000B
+	LD	(HL),A
+	AND	00010000B
+	JR	NZ,BFIOST	;サイド0へ
+	INC	D	;シリンダ番号のカウント･アップ
+	SCF
+BFIOST:
+	LD	C,0FCH	;BC←0FFCH
+	LD	A,(HL)
+	OUT	(C),A	;サイドの更新
+	POP	HL
+	RET
+
+
+
+
+;
+; FDC COMMAND OUT subroutine
+;
+FDCOUT:
+	OUT (FDC_COMMAND_REG),A
+	LD A,30H
+WLOOP: DEC A
+	JR NZ,WLOOP
+LOOP2:
+	IN A,(FDC_STATUS_REG)
+	BIT 0H,A ; BUSY IS CLEAR?
+	JR NZ,LOOP2
+	RET
+;
+; RESTORE subroutine
+;
+RESTORE:
+RESTORE_LOOP:
+	LD A,0BH ; restore command. 15ms, Head load, Verify OFF
+	CALL FDCOUT
+	BIT 7,A ; Not Ready?
+	JR NZ,RESTORE_LOOP
+	AND 98H
+	JR NZ,RESTORE
+	RET
+;
+; SEEK subroutine
+; E is Track No.
+;
+SEEK:
+	LD A,E ; E is Track No.
+	OUT (FDC_DATA_REG),A
+	LD A,1BH  ; seek command. 15ms, Head Load, Verify OFF
+	CALL FDCOUT
+	AND 98H
+	JR NZ,SEEK ; retry
+	RET
+;
+; DMA setting & Go
+; HL is Address of DMA Command chain
+;		but top value is No of DMA Command chain
+DMA_ON:
+	PUSH HL
+	PUSH BC
+	LD B,(HL)
+	INC HL
+	LD C,DMA_ADDRESS
+	OTIR
+	POP BC
+	POP HL
+	RET
+;
+; DMA setting & FDD read FOR SIDE 0
+; C is Sector No.
+;
+GO_DMA_AND_READ0:
+	LD A,C
+	OUT (FDC_SECTOR_REG),A
+READ0_RETRY:
+	LD HL,DMA_COMMANDS
+	CALL DMA_ON
+	LD A,80H ; READ DATA COMMAND for Side 0
+DO_FDC0:
+	CALL FDCOUT
+
+	PUSH AF
+	LD A,83H ; DMA STOP
+	OUT (DMA_ADDRESS),A
+	POP AF
+
+	AND 03CH
+	JR Z, READ0_SUCCESS
+	JR READ0_RETRY
+READ0_SUCCESS:
+	RET
+;
+; DMA setting & FDD write FOR SIDE 0
+; C is Sector No.
+;
+GO_DMA_AND_WRITE0:
+	LD A,C
+	OUT (FDC_SECTOR_REG),A
+	LD HL,DMA_WRITE_COMMANDS
+	CALL DMA_ON
+	LD A,0A0H ; WRITE DATA COMMAND for Side 0
+DO_FDC_WR0:
+	CALL FDCOUT
+	AND 0FCH
+	RET
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; FDC 初期化ルーチン
+;
+FDC_INIT:
+	LD A,51H
+	LD (FDC_CONTROL_REG),A
+	RET
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; DMA COMMAND CHAIN
+;
+
+DMA_COMMANDS:
+	DB 15H,0C3H,0C3H,0C3H,0C3H,0C3H,0C3H
+	DB 0BBH,01H,0BFH
+	DB 6DH
+	DB 0C3H,0FFH,00H,2CH,010H,8DH
+dma_read_out_address_L:	DB BUFFER.@L; DMAで読み込む先のバッファのアドレスL
+dma_read_out_address_H:	DB BUFFER.@H ; DMAで読み込む先のバッファのアドレスH。これが256byte毎にインクリメントされる。
+	DB 8AH
+	DB 0CFH,87H
+DMA_WRITE_COMMANDS:
+	DB 16H,0C3H,0C3H,0C3H,0C3H,0C3H,0C3H
+	DB 83H ; STOP DMA
+	DB 79H ; B->A
+dma_write_in_address_L:	DB BUFFER.@L
+dma_write_in_address_H:	DB BUFFER.@H  ; this address is buffer address !!!
+	DB 00H,0FFH ; 256yte transfer
+	DB 14H,28H,8DH
+	DB 0C3H,00H ; FDC data register
+	DB 8AH
+	DB 0CFH,05H
+	DB 0CFH,87H
+
+;=======================
+;エラー･ジャンプ
+;=======================
+
+
+bad_sector_error:	LD	A,5	;Bad Record
+	DB	01H	;「LD BC,」
+device_offline_error:	LD	A,2	;Device Offline
+	DB	01H	;「LD BC,」
+write_protect_error:	LD	A,4	;Write Protected
+	DB	01H	;「LD BC,」
+device_io_error:	LD	A,1	;Device I/O Error
+	CALL	fdd_motor_off	;モータをオフします
+	LD	SP,(SPBUFF)	;リターン･スタック･ポインタ
+	SCF
+	RET
+
+
+;===============
+;内部ワーク
+;===============
+
+
+DSERJP:	DS	2	;未使用
+SPBUFF:	DS	2	;リターン･スタック･ポインタ
+DSKTRK:	DS	4	;各ユニットのシリンダ･バッファ
+
+
+
+;=======
+;フラグ
+;=======
+
+
+COMF:	DS	1	;＝1で、RAMディスクへメモリ3000H～4BFFHの待避が行われた
+BDEV:	DS	1	;バッチ･ファイルのあるデバイス
+BTRK:	DS	1	;バッチ･ファイルの現在クラスタ番号
+BREC:	DS	2	;バッチ･ファイルの現在レコード番号
+BCNT:	DS	1	;バッチ･ファイルの現在クラスタの残りレコード数＋1
+; BTPNT:	DW	BATBF	;下位はバッチ･ファイルのバッファの前回のリード位置
+BTPNT2:	DS	2	;バッチ変数の現在アドレス
+BATFLG:	DS	1	;＝FFH（0以外）でバッチ･ファイル実行中
+PARAF:	DS	1	;＝1（0以外）でバッチ変数アクセス中
+;AUTNAM:	DB	'A:AUTOEXEC.BAT'	;自動実行ファイル名
+;	DS	4
+AUTNAM:	DB	'AUTOEXEC.BAT',00H	;自動実行ファイル名（カレント･ドライブより）
+	DS	5
 
 
 ;	2D00H～2DFFHはバッチ･ファイル読み込みバッファ
