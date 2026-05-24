@@ -4,11 +4,17 @@
 ; CRTC ports
 ;
 VRAM_TXT_TOP EQU 0F800H ; VRAM上で画面左上を指すアドレス
+VRAM_TXT_END 		EQU FFD0H ; VRAMのテキストエリアの終端アドレス
 VRAM_ATR_TOP EQU 0F000H ; アトリビュートの先頭アドレス
-CRTC_ADD EQU 0F0H ; CRTCアドレス･ポート
-CRTC_VAL EQU 0F1H ; CRTCデータ･ポート
-WIDTH_SCREEN EQU 50H ; 80文字モードの1行のバイト数
-CURSOR_XY_ADDR EQU FF00H ; カーソルのX,Y座標を保存するアドレス
+CRTC_ADDRESS_PORT 	EQU F0H ; CRTCアドレスポート
+CRTC_VALUE_PORT 	EQU F1H ; CRTC値ポート
+; CRTC_ADDRESS_PORT EQU 0F0H ; CRTCアドレス･ポート
+; CRTC_VALUE_PORT EQU 0F1H ; CRTCデータ･ポート
+; NUMBER_OF_CHARACTER_AT_LINE EQU 50H ; 80文字モードの1行のバイト数
+; CURSOR_XY_ADDR EQU FF00H ; カーソルのX,Y座標を保存するアドレス
+
+; Display Constants
+NUMBER_OF_CHARACTER_AT_LINE	EQU 80 ; 80文字モードの1行の文字数
 
 
 ;
@@ -388,9 +394,9 @@ VER:
 ;破壊	F（実際なし）
 
 print_space_character:
-	PUSH	AF
+	PUSH AF
 	LD	A,' '
-	CALL PRINT
+	CALL CONOUT_PROCESS
 	POP	AF
 	RET
 
@@ -404,7 +410,9 @@ print_space_character:
 carriage_return_and_line_feed:
 	PUSH AF
 	LD	A, CR
-	CALL PRINT
+	CALL CONOUT_PROCESS
+	LD	A, LF
+	CALL CONOUT_PROCESS
 	POP	AF
 	RET
 
@@ -420,15 +428,9 @@ carriage_return_and_line_feed:
 carriage_return_if_not_at_head_of_line:
 	PUSH DE
 	PUSH BC
-
-	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
-	; cursor_XY_ADDRからX座標を取得
-	LD	HL,(cursor_XY_ADDR+2)		; HLにX座標をロード (2バイト)
-	; cursor_XY_ADDR+2からY座標を取得
-	LD	DE,(cursor_XY_ADDR)		; DEにY座標をロード (2バイト)
-	OR	A ; フラグをクリア
-	CP	L ; X座標が0かチェック
-	JR	Z,NLRET	; X座標が0ならリターン
+	LD A,(CURSOR_X)
+	AND A
+	JR	Z,NLRET ; 行頭ならリターン
 	CALL carriage_return_and_line_feed ; 改行を実行
 NLRET:
 	POP	BC
@@ -454,7 +456,7 @@ MSGLP:
 	LD	A,(DE)	; 文字を取得
 	CP	CR 		; 改行コードか？
 	JR	Z,MSGSKP; 改行コードなら終了へ
-	CALL PRINT ; 文字を表示
+	CALL CONOUT_PROCESS ; 文字を表示
 	INC	DE		; アドレスを一つ進める
 	JR	MSGLP
 MSGSKP:	
@@ -480,8 +482,7 @@ MSXLP:
 	LD	A,(DE) ; 文字を取得
 	CP	00H ; 終了コードか？
 	JR	Z,MSXSKP	; 終了コードなら終了へ
-
-	CALL PRINT ; 文字を表示
+	CALL CONOUT_PROCESS ; 文字を表示
 	INC	DE	; アドレスを一つ進める
 	JR	MSXLP
 MSXSKP:	
@@ -500,27 +501,25 @@ MSXSKP:
 ; 00Hは表示しません。
 ; 「REDA」などがDE保存を期待しているので、DEを保存します。
 ; このサブルーチンを完成させてください。
-
 print_string_from_next_call_address:
-	EX	(SP),HL	; CALLの次のアドレスをHLにロード
+	EX (SP),HL	; CALLの次のアドレスをHLにロード
 	PUSH DE
 	PUSH BC
-	EX	DE,HL ; DEとHLを入れ替えて、DEに表示すべきデータの先頭アドレスが入る
-	LD	A,(DE) ; 最初の文字を取得
+	EX DE,HL ; DEとHLを入れ替えて、DEに表示すべきデータの先頭アドレスが入る
+	LD A,(DE) ; 最初の文字を取得
 	CP 00H ; もし最初の文字が00Hなら終了
-	JR	Z,mprint_end ; もし最初の文字が00Hなら何も表示せずにリターン
+	JR Z,mprint_end ; もし最初の文字が00Hなら何も表示せずにリターン
 
-	PUSH	AF
-	PUSH	HL
-	PUSH	BC
+	PUSH AF
+	PUSH HL
+	PUSH BC
 mprint_loop:
-	LD	A,(DE) ; 文字を取得
-	CP	00H ; 終了コードか？
-	JR	Z,mprint_terminate	; 終了コードなら終了へ
-
-	CALL PRINT ; 文字を表示
+	LD A,(DE) ; 文字を取得
+	CP 00H ; 終了コードか？
+	JR Z,mprint_terminate	; 終了コードなら終了へ
+	CALL CONOUT_PROCESS ; 文字を表示
 	INC	DE	; アドレスを一つ進める
-	JR	mprint_loop
+	JR mprint_loop
 mprint_terminate:
 	INC DE ; 終了コードの次のアドレスへ
 	POP	BC
@@ -542,21 +541,20 @@ TAB:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
-	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
-	; cursor_XY_ADDRからX座標を取得
-	LD	HL,(cursor_XY_ADDR+2)		; HLにX座標をロード (2バイト)
-	; Bレジスタの値とX座標との差を計算
-	LD	A,B
+
+	LD A,(CURSOR_X) ; LにカーソルのX座標をロード
+	LD L,A
+	LD A,B
 	SUB	L	; A = B - X座標
-	JR	C,TABERR	; 結果が負ならエラー
-	LD	L,A	; Lにスペース数をセット
+	JR C,TABERR	; 結果が負ならエラー
+	LD L,A	; Lにスペース数をセット
 	TABLP2:
-	LD	A,' '
-	CALL	PRINT
+	LD A,' '
+	CALL CONOUT_PROCESS
 	DEC	L
-	JR	NZ,TABLP2 ; スペース数分ループ
+	JR NZ,TABLP2 ; スペース数分ループ
 	XOR	A	; CY=0
-	JR	TABRET
+	JR TABRET
 TABERR:
 	SCF	; CY=1
 TABRET:
@@ -588,11 +586,11 @@ print_hex_2_digit:
 	SRL	A	; さらに1ビット右シフト
 	SRL	A	; さらに1ビット右シフト
 	CALL convert_data_to_ascii_code	; 上位4ビットを16進数アスキーコードに変換
-	CALL PRINT ; 2桁目文字表示
+	CALL CONOUT_PROCESS ; 2桁目文字表示
 	POP	AF	; 復元
 	AND	0FH	; 下位4ビットを取得
 	CALL convert_data_to_ascii_code	; 下位4ビットを16進数アスキーコードに変換
-	CALL PRINT	; 1桁目文字表示
+	CALL CONOUT_PROCESS	; 1桁目文字表示
 	; Aレジスタは破壊されたままリターンする。
 	RET
 
@@ -722,11 +720,12 @@ convert_4_digit_data_to_hex_binary_ascii_code:
 ;破壊	HL
 ;注：CALC_CURSOR_XYを呼び出します。
 CSR:
-	PUSH	AF
-	PUSH	DE
-	PUSH	BC
-	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
-	LD	HL,(cursor_XY_ADDR)		; LにX座標をロード (2バイト)
+	PUSH AF
+	PUSH DE
+	PUSH BC
+	CALL GET_X_Y_FROM_VRAM_ADDRESS
+	LD H,B ; BにY座標が入っているので、Hにロード
+	LD L,C ; CにX座標が入っているので、Lにロード
 	POP	BC
 	POP	DE
 	POP	AF
@@ -743,17 +742,11 @@ CSR:
 ; 「ELFES IV」「TANGERINE」などでCYクリアが必要。
 
 LOC:
-	PUSH	AF
-	PUSH	HL
-	PUSH	DE
-	PUSH	BC
-	; 現在HLが移動したいカーソルの位置を指さしている。
-	; PRINT_CURSORはDEに現在のカーソルの位置が入っていることを期待している。
-	EX DE,HL	; DE←移動先カーソル位置
-	CALL	PRINT_CURSOR ; カーソル位置を設定
-	POP	BC
-	POP	DE
-	POP	HL
+	PUSH AF
+	LD A,H
+	LD (CURSOR_Y),A ; Y座標を保存
+	LD A,L
+	LD (CURSOR_X),A ; X座標を保存
 	POP	AF
 	OR A	;CY←0
 	RET
@@ -771,9 +764,12 @@ SCRN:
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
+	LD	B,H ; Y座標をBにロード
+	LD	C,L ; X座標をCにロード
+	CALL GET_VRAM_ADDRESS_FROM_X_Y ; XY座標からVRAMアドレスをHLにロード
 ; VRAMにアクセスして、カーソル位置DEにある通常文字のアスキーコードを得る。
 	OUT (0D2H),A ; access to RAM page 1
-	LD A,(DE) ; get character
+	LD A,(HL) ; get character
 	POP	BC
 	POP	DE
 	POP	HL
@@ -1551,7 +1547,7 @@ GETL_LOOP:
 	PUSH DE
 	PUSH BC
 
-	CALL PUTCHAR
+	CALL CONOUT_PROCESS
 
 	POP	BC
 	POP	DE
@@ -2022,10 +2018,9 @@ SETPRN:
 ;BC	ライン･ターミナル･テーブルの先頭＋y座標
 ;HL	論理桁位置カウンタ
 get_logical_column:
-	;テキストVRAMのスタートアドレスがF800Hであり、一行の桁数は80dであるので、
-	;論理桁位置は、(y座標×80d)+x座標で求められます。
-	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
-	LD	HL,(cursor_XY_ADDR) ; 
+	CALL GET_X_Y_FROM_VRAM_ADDRESS ; VRAMアドレスからX,Y座標を求める。
+	LD L,C
+	LD H,0
 	RET
 
 ;論理行頭の座標を得ます
@@ -2033,8 +2028,9 @@ get_logical_column:
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
 get_Y_top_of_logical_line:
-	CALL CALC_CURSOR_XY ; CURSOR_LOCATEからX,Y座標を計算して、cursor_XY_ADDRに保存する。
-	LD	HL,(cursor_XY_ADDR+2) ;
+	CALL GET_X_Y_FROM_VRAM_ADDRESS ; VRAMアドレスからX,Y座標を求める。
+	LD H,B
+	LD L,0
 	RET
 
 
@@ -2043,6 +2039,10 @@ get_Y_top_of_logical_line:
 ;出力	L←0、H←論理行頭のy座標
 ;破壊	AF，HL
 get_Y_next_logical_line:
+	CALL GET_X_Y_FROM_VRAM_ADDRESS ; VRAMアドレスからX,Y座標を求める。
+	INC B
+	LD H,B
+	LD L,0
 	RET
 
 
@@ -2371,28 +2371,10 @@ get_character_XY_entity:
 CLS:
 	PUSH HL
 	PUSH BC
-
-	LD HL,0F000H
-	LD BC,0800H
-
-	LD B,050H
-	LD DE,0FFFFH
-	LD A,20H ; スペースキャラクタ
-; CLEAR_ALL_LINE_CLS:
-CLS_LOOP:
-	OUT (0D2H),A ; VRAMへアクセスするためのポート
-	LD (HL),A ; VRAMへ20Hデータを書き込む
-	INC HL ; 書き込むべきアドレスをインクリメント
-	SBC HL,DE ; HL - DE
-	; JR NZ,CLEAR_ALL_LINE_CLS ; 全てのアドレスを書き込むまでループ
-	JR NZ, CLS_LOOP ; 全てのアドレスを書き込むまでループ
-
-	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
-	LD (CURSOR_LOCATE),DE ; カーソル位置を左上隅に設定 F800H
-	LD (TOP_VIEW),DE
-	LD DE, 0FFD0H ; 画面最終文字位置
-	LD (NEED_DO_SCROLL_POINT),DE ; スクロールポイントを設定
-
+	LD A,NP ; 画面全体をスペースでクリアします。
+	CALL CONOUT_PROCESS
+	POP BC
+	POP HL
 	RET
 
 
@@ -2450,44 +2432,12 @@ PRINT:
 	PUSH HL
 	PUSH DE
 	PUSH BC
-
-	CALL PUTCHAR
-
-	; Aレジスタに格納された値がCR（0DH）かどうかをチェック
-	CP	CR
-	JR	Z,ADD_LF; CRならLFの処理もする。SOSはCRをCR+LFとして扱うため。
-
-PRINT_END:
-
+	CALL CONOUT_PROCESS
 	POP	BC
 	POP	DE
 	POP	HL
 	POP	AF
-
-	; PUSH HL
-	; PUSH BC
-	; PUSH DE
-	; LD	HL,CSRNX ;10t
-	; INC (HL) ;4ts	
-	; POP	BC
-	; POP	DE
-	; POP	HL
-
-	RET ; 
-
-ADD_LF:
-	PUSH AF
-	PUSH HL
-	PUSH DE
-	PUSH BC
-	LD A, LF; LFのASCIIコード
-	CALL PUTCHAR
-	POP	BC
-	POP	DE
-	POP	HL
-	POP AF
-	JR	PRINT_END
-
+	RET
 
 ;===============================
 ;キー入力関係（機種依存）
@@ -2585,19 +2535,7 @@ read_character_offset_address:
 ;出力	[locate_of_cursor_overlap_character]←カーソル位置の文字
 ;破壊	AF，HL，DE，BC
 display_cursor:
-	CALL	get_cursor_XY_entity
-	CALL	get_offset_from_cursor_XY
-	LD	C,L
-	LD	A,20H	;アトリビュートVRAM先頭（2000H）
-	ADD	A,H
-	LD	B,A	;BC←アトリビュートVRAMアドレス
-	IN	A,(C)
-	XOR	00001000B	;b3を反転
-	LD	L,A
-	LD	A,(insert_mode_flag)
-	AND	00010000B	;b4
-	XOR	L	;[insert_mode_flag]＝FFHなら、ブリンク
-	OUT	(C),A
+	CALL PRINT_CURSOR
 	RET
 
 
@@ -2606,16 +2544,6 @@ display_cursor:
 ;出力	なし
 ;破壊	AF，HL，DE，BC
 erase_cursor:
-	CALL	get_cursor_XY_entity
-	CALL	get_offset_from_cursor_XY
-	LD	C,L
-	LD	A,20H	;アトリビュートVRAM先頭（2000H）
-	ADD	A,H
-	LD	B,A	;BC←アトリビュートVRAMアドレス
-	IN	A,(C)
-	XOR	00001000B	;b3を反転
-	AND	11101111B	;b4をクリア
-	OUT	(C),A
 	RET
 
 
@@ -2624,36 +2552,6 @@ erase_cursor:
 ;出力	[attribute_data]←アトリビュート･データ
 ;破壊	AF，HL，DE，BC
 change_color:
-	LD	A,(foreground_color)
-	CALL	CCLSUB
-	LD	L,A	;L←前景色
-	LD	A,(background_color)
-	CALL	CCLSUB
-	LD	H,A	;H←後景色
-	OR	A
-	JR	Z,CCLBK0	;背景色が0の場合
-	LD	A,H
-	CP	7
-	JR	Z,CCLBK7	;反転色指定
-
-;	後景色が0の場合
-CCLBK0:	LD	A,L
-CCLRET:	LD	(attribute_data),A
-	RET
-
-;	反転で、色を指定します
-CCLBK7:	LD	A,L
-	XOR	111B
-	OR	1000B	;色反転
-	JR	CCLRET
-
-;色コードを0～7に圧縮します
-;入力	Acc←色コード
-;出力	Acc←色コード（0～7）
-;破壊	AF
-CCLSUB:	CP	8
-	RET	C
-	LD	A,7
 	RET
 
 
@@ -2710,11 +2608,9 @@ VBLLP:
 ;出力	BC←テキストVRAMアドレス
 ;破壊	AF，HL，BC
 get_vram_address_from_cursor_XY:
-	CALL	get_offset_from_cursor_XY
-	LD	C,L
-	LD	A,30H	;テキストVRAM先頭（3000H）
-	ADD	A,H
-	LD	B,A	;BC←テキストVRAMアドレス
+	CALL GET_X_Y_FROM_VRAM_ADDRESS ; VRAMアドレスからX,Y座標を求める。
+	LD B,H
+	LD C,L
 	RET
 
 
@@ -2730,12 +2626,12 @@ get_vram_address_from_cursor_XY:
 ;破壊	AF，DE
 ;注：小文字を大文字に変換します。
 get_character_from_string:
-	CALL	space_char_skip
-	LD	A,(DE)
-	OR	A
+	CALL space_char_skip
+	LD A,(DE)
+	OR A
 	RET	Z	;文字列の終わりの達した
 	INC	DE
-	JP	convert_lower_case_to_upper_case
+	JP convert_lower_case_to_upper_case
 
 
 ;文字列のスペース･キャラをスキップします
@@ -2745,12 +2641,11 @@ get_character_from_string:
 space_char_skip_loop:
 	INC	DE
 space_char_skip:
-	LD	A,(DE)
-	CP	' '
-	JR	Z,space_char_skip_loop
-	CP	09H	;TAB
-	JR	Z,space_char_skip_loop
-
+	LD A,(DE)
+	CP ' '
+	JR Z,space_char_skip_loop
+	CP 09H	;TAB
+	JR Z,space_char_skip_loop
 	RET
 
 
@@ -3447,26 +3342,26 @@ CRT_INIT:
 ; カーソル座標を00Hに設定する。
 ; 注：画面左上がカーソル座標では0000Hになる。VRAMにおけるテキスト画面左上(F800H)ではないことに注意。
 	LD A,0EH ; R14 (cursor H)
-	OUT (CRTC_ADD),A
+	OUT (CRTC_ADDRESS_PORT),A
 	LD A,0H
-	OUT (CRTC_VAL),A
+	OUT (CRTC_VALUE_PORT),A
 	LD A,0FH ; R15 (cursor L)
-	OUT (CRTC_ADD),A
+	OUT (CRTC_ADDRESS_PORT),A
 	LD A,00H
-	OUT (CRTC_VAL),A
+	OUT (CRTC_VALUE_PORT),A
 
 ; カーソルの形状と点滅の設定
 	LD A,0AH ; R10 (cursor start address)
-	OUT (CRTC_ADD),A
+	OUT (CRTC_ADDRESS_PORT),A
 ;	LD A,C0H ; 点滅、豆腐カーソル
 	LD A,C7H ; 点滅、アンスコカーソル
 ;	LD A,0H ; 表示せず。
-	OUT (CRTC_VAL),A
+	OUT (CRTC_VALUE_PORT),A
 	LD A,0BH ; R11 (cursor end address)
-	OUT (CRTC_ADD),A
+	OUT (CRTC_ADDRESS_PORT),A
 	LD A,0AH
 ;	LD A,0H ; 表示せず。
-	OUT (CRTC_VAL),A
+	OUT (CRTC_VALUE_PORT),A
 
 ;
 ; 	一度画面全てを消す(スペースで埋める)。
@@ -3483,11 +3378,10 @@ CLEAR_LOOP:
 	; JR NZ,CLEAR_ALL_LINE
 	JR NZ,CLEAR_LOOP
 
-	LD DE, VRAM_TXT_TOP ; 最初の文字列表示位置(左上隅)
-	LD (CURSOR_LOCATE),DE
-	LD (TOP_VIEW),DE
-	LD DE, 0FFD0H
-	LD (NEED_DO_SCROLL_POINT),DE
+
+	XOR A ; コントロールコードの処理が行われたことを示すフラグをリセットする
+	LD (CURSOR_X),A ; カーソルのX座標を0にする
+	LD (CURSOR_Y),A ; カーソルのY座標を0にする
 
 	RET ; 初期化処理終了
 
@@ -3504,440 +3398,698 @@ CLEAR_LOOP:
 ; CR_BASE_ADDRESS : CR後のカーソル位置
 ; CR_NEW_ORIGIN : FFFFHの境界を越え、更に画面右端を超えた時にCRアドレス計算の原点になるアドレス
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; １文字表示サブルーチン
-; A regに表示するアスキーコードが入っている。
-;
 
-PUTCHAR:
-	PUSH HL
-	PUSH AF
-	PUSH DE
+;==============================================================
+; SORD M23 CP/M ディスプレイドライバ
+; CPU:  Z80
+; CRTC: HD46505 (MC6845)
+; テキストモード: 80桁 × 25行
+;==============================================================
+;
+; [提供サブルーチン一覧]
+;
+;   GET_VRAM_ADDRESS_FROM_X_Y  … (X,Y) → VRAM アドレス
+;   GET_X_Y_FROM_VRAM_ADDRESS  … VRAM アドレス → (X,Y)
+;   SCROLL_UP                  … 画面を 1行上スクロール
+;   WRITE_CHAR_AT_XY           … (X,Y) の位置に 1文字書き込む
+;
+;==============================================================
 
-	AND A
-	JR Z, PUTCHAR_RET ; NULL文字なら何もしないで戻る
-	LD DE,(CURSOR_LOCATE) ; 現在のカーソル位置をDEにロード
-	CP CR ; キャリッジリターンか？
-	JP Z, DO_CR ; CRの処理
-	CP LF ; ラインフィードか？
-	JP Z, DO_LF ; LFの処理
-	CP BS ; バックスペースか？
-	JP Z, DO_BS ; BSの処理
-	CP HT ; タブか？
-	JP Z, DO_HT ; HTの処理
-	CP ESC ; エスケープか？
-	JP Z, DO_ESC ; ESCの処理
 
-; 通常文字の表示処理
-DO_NORMAL:
-	OUT (0D2H),A ; access to RAM page 1
-	LD (DE),A ; put character
-;
-; 越境判定。FFFFHの次はF800Hになる
-;
-	PUSH AF
-	LD A,D ; DEの上位バイト
-	CP 0FFH
-	JR NZ,CURSOR_BOUNDARY_END ; オーバーフローしていなければジャンプ
-	LD A,E ; DEの下位バイト
-	CP 0FFH
-	JR NZ,CURSOR_BOUNDARY_END ; オーバーフローしていなければジャンプ
-	LD DE, VRAM_TXT_TOP-1	  ; 現在のカーソル位置 = F800H - 1 
-CURSOR_BOUNDARY_END:
-	POP AF
-	INC DE ; カーソル位置を1つ進める
-DO_CR_LF_BS_RETURN: ; CR,LF,BSの処理で戻ってくる
-	CALL DO_SCROLL ; 1行スクロール処理
-	; LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新。 <-  バグだった。これをコメントアウトしないとスクロールが正しく動作しない。
-	CALL PRINT_CURSOR ; カーソル表示
-	; CALL CALC_CURSOR_XY ; カーソルのX,Y座標計算
-PUTCHAR_RET:
-	POP DE
-	POP AF
-	POP HL
-	RET
+;--------------------------------------------------------------
+; 定数 ― I/O ポート
+;--------------------------------------------------------------
+VRAM_BANK_PORT      EQU 0D2H    ; VRAMバンク切替ポート
+                                ;   → このポートに書くと【次の1命令】が
+                                ;     VRAM ページへのアクセスになる
 
+;--------------------------------------------------------------
+; 定数 ― HD46505 レジスタ番号
+;--------------------------------------------------------------
+CRTC_R12_START_H    EQU 0CH     ; Start Address High  (画面先頭アドレス上位)
+CRTC_R13_START_L    EQU 0DH     ; Start Address Low   (画面先頭アドレス下位)
+CRTC_R14_CURSOR_H   EQU 0EH     ; Cursor Address High
+CRTC_R15_CURSOR_L   EQU 0FH     ; Cursor Address Low
+
+;--------------------------------------------------------------
+; データ領域
+;--------------------------------------------------------------
+
+;------------------------------------------------------------
+; CURRENT_TOP_LEFT_ADDRESS  (2 バイト)
 ;
-; カーソルをCURSOR_LOCATE=DEの位置に表示する(HD46505Sの機能)
+; 現在の画面左上端の VRAM 絶対アドレス。
+; 初期値 = F800H。
+; スクロールのたびに +80 進み、FFFFH を超えると
+; 旧コードの算法で F800H 付近へ折り返す。
 ;
+; TLA は常に 16 の倍数のオフセットを持つ:
+;   F800H, F810H, F820H, ..., FFFOH の 128 種類が循環する。
+;   (GCD(80, 2048) = 16 より)
+;------------------------------------------------------------
+CURRENT_TOP_LEFT_ADDRESS:
+    DW  VRAM_TXT_TOP        ; 初期値: F800H
+
+
+;==============================================================
+; GET_VRAM_ADDRESS_FROM_X_Y
+;
+; 仮想座標 (X, Y) から VRAM アドレスを計算する。
+; VRAM リング (F800H-FFFFH = 2048 バイト) の折り返しを考慮。
+;
+; 入力:  B = Y 論理行 (0-24)   C = X 論理列 (0-79)
+; 出力:  HL = VRAM アドレス
+; 破壊:  A, DE
+;
+; 計算式:
+;   offset  = Y × 80 + X              [0 ～ 1999]
+;   raw     = TLA + offset             [16 ビット加算]
+;
+;   キャリーなし: VRAM = raw           (raw ∈ F800H..FFFFH)
+;   キャリーあり: VRAM = raw + F800H   (raw = TLA+offset-10000H を
+;                                       VRAM_TXT_TOP で補正)
+;
+; [Y × 80 の計算]
+;   80 = 64 + 16 = 2^6 + 2^4
+;   Y × 80 = Y×64 + Y×16
+;   中間値 Y×16 を DE に保存し、Y×64 後に加算する。
+;==============================================================
+GET_VRAM_ADDRESS_FROM_X_Y:
+
+    ;----------------------------------------------------------
+    ; ① Y × 80 (シフト + 加算)
+    ;----------------------------------------------------------
+    LD  H, 0
+    LD  L, B            ; HL = Y
+    ADD HL, HL          ; HL = 2Y
+    ADD HL, HL          ; HL = 4Y
+    ADD HL, HL          ; HL = 8Y
+    ADD HL, HL          ; HL = 16Y
+    LD  D, H
+    LD  E, L            ; DE = 16Y を保存
+    ADD HL, HL          ; HL = 32Y
+    ADD HL, HL          ; HL = 64Y
+    ADD HL, DE          ; HL = 64Y + 16Y = 80Y
+
+    ;----------------------------------------------------------
+    ; ② X を加算 → offset (0 ～ 1999)
+    ;----------------------------------------------------------
+    LD  D, 0
+    LD  E, C
+    ADD HL, DE          ; HL = Y×80 + X
+
+    ;----------------------------------------------------------
+    ; ③ CURRENT_TOP_LEFT_ADDRESS (TLA) を加算
+    ;----------------------------------------------------------
+    LD  DE, (CURRENT_TOP_LEFT_ADDRESS)
+    ADD HL, DE          ; HL = TLA + offset  [16 ビット加算]
+
+    ;----------------------------------------------------------
+    ; ④ VRAM リング折り返し補正
+    ;
+    ;   キャリーなし: HL ∈ [F800H, FFFFH] → そのまま返す
+    ;   キャリーあり: HL = TLA + offset - 10000H  (∈ [0000H, ~07CEH])
+    ;                 正しい VRAM = HL + F800H
+    ;
+    ;   例: TLA=F850H, Y=24, X=0 → offset=1920
+    ;     F850H + 0780H = FFD0H (キャリーなし) → FFD0H ✓
+    ;   例: TLA=FF80H, Y=24, X=0 → offset=1920
+    ;     FF80H + 0780H = 10700H (キャリーあり) → HL=0700H
+    ;     0700H + F800H = FF00H ✓
+    ;----------------------------------------------------------
+    RET NC                      ; キャリーなし → HL は有効 VRAM アドレス
+    LD  DE, VRAM_TXT_TOP        ; F800H
+    ADD HL, DE                  ; HL = (TLA + offset - 10000H) + F800H
+    RET
+
+;==============================================================
+; GET_X_Y_FROM_VRAM_ADDRESS
+;
+; VRAM アドレスから仮想座標 (X, Y) を逆算する。
+; (表示中の有効な VRAM アドレスを入力すること)
+;
+; 入力:  HL = VRAM アドレス
+; 出力:  B = Y 論理行 (0-24)   C = X 論理列 (0-79)
+; 破壊:  A, DE, HL
+;
+; 計算式:
+;   CRTC_offset = (VRAM - TLA) mod 2048
+;
+;   VRAM >= TLA のとき: CRTC_offset = VRAM - TLA
+;   VRAM <  TLA のとき: CRTC_offset = VRAM - TLA + 2048
+;                                    = (VRAM - TLA + 10000H) - F800H
+;
+;   Y = CRTC_offset ÷ 80  (繰り返し減算、最大 24 回)
+;   X = CRTC_offset mod 80
+;
+;   例: TLA=F850H, VRAM=FFD0H
+;     FFD0H - F850H = 0780H = 1920 (キャリーなし)
+;     Y = 24, X = 0 ✓
+;   例: TLA=FF80H, VRAM=F800H
+;     F800H - FF80H → ボロー → HL=F880H, +2048-補正:
+;     F880H - F800H = 0080H = 128 (キャリーあり)
+;     Y = 1, X = 48 ✓
+;==============================================================
+GET_X_Y_FROM_VRAM_ADDRESS:
+
+    ;----------------------------------------------------------
+    ; ① CRTC_offset = (VRAM - TLA) mod 2048
+    ;----------------------------------------------------------
+    LD  DE, (CURRENT_TOP_LEFT_ADDRESS)
+    XOR A                       ; キャリークリア (かつ A=0)
+    SBC HL, DE                  ; HL = VRAM - TLA
+
+    JR  NC, GXYVA_OFFSET_OK     ; VRAM >= TLA: HL = CRTC_offset
+
+    ; VRAM < TLA (リング折り返し):
+    ;   HL = VRAM - TLA + 10000H  (∈ F801H..FFFFH)
+    ;   CRTC_offset = HL - F800H  = VRAM - TLA + 800H
+    ;
+    ;   OR A で CY=0 を保証したうえで SBC することで
+    ;   A の値を変えずに正確に F800H を引く。
+    LD  DE, VRAM_TXT_TOP        ; F800H
+    OR  A                       ; キャリークリア (A=0 のまま保持)
+    SBC HL, DE                  ; HL = (VRAM - TLA + 10000H) - F800H
+                                ;    = VRAM - TLA + 800H = CRTC_offset
+
+GXYVA_OFFSET_OK:
+    ; HL = CRTC_offset  (0 ～ 1999)
+
+    ;----------------------------------------------------------
+    ; ② CRTC_offset ÷ 80 → Y (商),  X (余り)
+    ;    繰り返し減算: 最大 24 回のループで完了
+    ;----------------------------------------------------------
+    LD  B, 0                    ; Y カウンタ
+GXYVA_DIV:
+    LD  A, H
+    OR  A
+    JR  NZ, GXYVA_SUB          ; H ≠ 0 → HL ≧ 256 > 80 → まだ引ける
+    LD  A, L
+    CP  NUMBER_OF_CHARACTER_AT_LINE               ; L < 80 ?
+    JR  C,  GXYVA_DONE         ; L < 80 → 除算完了
+GXYVA_SUB:
+    LD  A, L
+    SUB NUMBER_OF_CHARACTER_AT_LINE               ; A = L - 80
+    LD  L, A
+    JR  NC, GXYVA_INC
+    DEC H                       ; ボロー補正
+GXYVA_INC:
+    INC B                       ; Y++
+    JR  GXYVA_DIV
+GXYVA_DONE:
+    LD  C, L                    ; C = X (余り = 論理列)
+    ; B = Y (商 = 論理行) ← 出力確定
+    RET
+
+
+
+;==============================================================
+; SCROLL_UP
+;
+; 画面を 1 行上スクロールする。
+;
+; [処理概要]
+;   [1] CURRENT_TOP_LEFT_ADDRESS から 80 文字をスペースで消去
+;       (FFFFH → F800H の境界越えを考慮)
+;   [2] CURRENT_TOP_LEFT_ADDRESS を 80 進める
+;       (境界越え時は旧コードの算法 + -2 補正)
+;   [3] HD46505 R12/R13 に新 TLA を書き込む (絶対 VRAM アドレス)
+;
+; 入力:  なし
+; 出力:  なし
+; 破壊:  なし (AF, BC, DE, HL をすべて保存・復元)
+;
+; [TLA 進め方の算法 --- 境界越え時]
+;   TLA + 50H > FFFFH のとき、旧コードの算法を用いる:
+;     A      = FFFFH - TLA - 1  (CY=1 を受け取って SBC)
+;     result = 50H - A - CY2    (CY2 は上記 SBC の繰り越し)
+;     new_TLA = VRAM_TXT_TOP + result - 2
+;   末尾の -2 はキャリー伝播に起因する算法固有の補正値。
+;
+;   例: TLA=FFD0H → new_TLA=F820H
+;     FFFFH - FFD0H - 1 = 2EH
+;     50H - 2EH = 22H
+;     F800H + 22H - 2 = F820H ✓  (期待値: (2000+80) mod 2048 = 32 → F820H)
+;==============================================================
+SCROLL_UP:
+    PUSH AF
+    PUSH BC
+    PUSH DE
+    PUSH HL
+
+    ;----------------------------------------------------------
+    ; [1] 旧最上行 (TLA から 80 文字) をスペースで消去
+    ;
+    ;     1 文字書くたびに PUSH HL / OR A / SBC HL, FFFFH / POP HL で
+    ;     HL = FFFFH かどうかを判定する (OR A で CY=0 を保証)。
+    ;     FFFFH 書き込み後: DJNZ が未実行のため DEC B で補正してから
+    ;     F800H へ折り返し、残り文字数分を書き続ける。
+    ;----------------------------------------------------------
+    LD  HL, (CURRENT_TOP_LEFT_ADDRESS)
+    LD  DE, 0FFFFH          ; 境界判定用
+    LD  B, NUMBER_OF_CHARACTER_AT_LINE        ; B = 80 (ループカウンタ)
+    LD  A, 20H              ; スペース文字
+
+SU_CLEAR:
+    OUT (VRAM_BANK_PORT), A ; 次の命令 (LD(HL),A) を VRAM ページへ
+    LD  (HL), A             ; VRAM にスペースを書き込む
+    PUSH HL
+    OR  A                   ; キャリークリア (OR A は A=20H を保持, CY=0 保証)
+    SBC HL, DE              ; HL - FFFFH: Z=1 のとき HL=FFFFH
+    POP HL
+    JR  Z, SU_CLEAR_WRAP    ; FFFFH に達したら折り返し
+    INC HL
+SU_CLEAR_NEXT:
+    DJNZ SU_CLEAR           ; B--、B≠0 ならループ
+    JR  SU_CLEAR_DONE
+
+SU_CLEAR_WRAP:
+    ; FFFFH への書き込みは完了。この反復では DJNZ を実行していないため
+    ; B をデクリメントして補正する。
+    DEC B
+    JR  Z, SU_CLEAR_DONE    ; B=0 → 80 文字消去完了
+    LD  HL, VRAM_TXT_TOP    ; F800H へ折り返し
+SU_CLEAR_WRAP_LOOP:
+    OUT (VRAM_BANK_PORT), A
+    LD  (HL), A
+    INC HL
+    DJNZ SU_CLEAR_WRAP_LOOP
+
+SU_CLEAR_DONE:
+
+    ;----------------------------------------------------------
+    ; [2] CURRENT_TOP_LEFT_ADDRESS を NUMBER_OF_CHARACTER_AT_LINE (80) 進める
+    ;----------------------------------------------------------
+    LD  HL, (CURRENT_TOP_LEFT_ADDRESS)
+    LD  DE, NUMBER_OF_CHARACTER_AT_LINE           ; 50H = 80
+    ADD HL, DE                  ; HL = TLA + 80
+    JR  NC, SU_UPDATE_TLA       ; オーバーフローなし → そのまま
+
+    ; TLA + 80 > FFFFH の場合 (CY=1 を保持したまま以降の SBC へ渡す)
+    LD  DE, 0FFFFH
+    LD  HL, (CURRENT_TOP_LEFT_ADDRESS)  ; TLA を再ロード
+    EX  DE, HL                  ; HL = FFFFH,  DE = TLA
+    SBC HL, DE                  ; HL = FFFFH - TLA - 1  (CY=1 を使用)
+    LD  DE, NUMBER_OF_CHARACTER_AT_LINE           ; 50H
+    EX  DE, HL                  ; HL = 50H,  DE = (FFFFH - TLA - 1)
+    SBC HL, DE                  ; HL = 50H - (FFFFH-TLA-1) - CY
+    LD  DE, VRAM_TXT_TOP        ; F800H
+    ADD HL, DE
+    DEC HL                      ; -2 補正 (算法固有)
+    DEC HL
+
+SU_UPDATE_TLA:
+    LD  (CURRENT_TOP_LEFT_ADDRESS), HL
+
+    ;----------------------------------------------------------
+    ; [3] HD46505 R12/R13 に新 TLA を書き込む
+    ;     H → R12 (上位),  L → R13 (下位)
+    ;     絶対 VRAM アドレスをそのまま書き込む (旧コードと同方式)
+    ;----------------------------------------------------------
+    LD  A, CRTC_R12_START_H
+    OUT (CRTC_ADDRESS_PORT), A
+    LD  A, H
+    OUT (CRTC_VALUE_PORT), A
+
+    LD  A, CRTC_R13_START_L
+    OUT (CRTC_ADDRESS_PORT), A
+    LD  A, L
+    OUT (CRTC_VALUE_PORT), A
+
+    POP HL
+    POP DE
+    POP BC
+    POP AF
+    RET
+
+
+;==============================================================
+; WRITE_CHAR_AT_X_Y
+;
+; 仮想座標 (X, Y) の位置に 1文字を VRAM へ書き込む。
+; カーソル位置は変更しない。
+;
+; 入力:	B = Y 論理行 (0-24)
+;		C = X 論理列 (0-79)
+;      	A = 書き込む文字コード
+; 出力:  なし
+; 破壊:  A, DE, HL
+;         (BC は GET_VRAM_ADDRESS_FROM_X_Y が保存するため変化なし)
+;
+; 【カーソル表示との連携について】
+;   本ルーチンは VRAM への文字書き込みのみ行う。
+;   画面上のカーソル位置を更新したい場合は、呼び出し側が
+;   CURRENT_CURSOR_LOCATE を更新したうえで PRINT_CURSOR を呼ぶこと。
+;==============================================================
+WRITE_CHAR_AT_X_Y:
+    ;----------------------------------------------------------
+    ; GET_VRAM_ADDRESS_FROM_X_Y は A を破壊するため、
+    ; 書き込む文字コードを PUSH AF でスタックに退避する。
+    ; CALL 後に POP AF で復元してから VRAM へ書き込む。
+    ;----------------------------------------------------------
+    PUSH AF                         ; 文字コード (A) を退避
+    CALL GET_VRAM_ADDRESS_FROM_X_Y  ; HL = VRAM アドレス  (A, DE 破壊)
+    POP  AF                         ; A = 文字コード を復元
+
+    OUT  (VRAM_BANK_PORT), A        ; 次の命令 (LD(HL),A) を VRAM ページへ
+    LD   (HL), A                    ; VRAM に文字を書き込む
+    RET
+
+
+;==============================================================
+; CONOUT_PROCESS  (S-OS BIOS コンソール出力)
+;
+; S-OS BIOS インターフェース:
+;   C = 出力文字コード
+;
+; 破壊: なし (AF, BC, DE, HL をすべて保存・復元)
+;
+; 制御コード処理:
+;   0AH (LF) : X = 0 (行頭へ)、Y 変化なし
+;   0DH (CR) : Y += 1 (次行へ)、X 変化なし
+;              Y = 24 (最下行) の場合は SCROLL_UP を呼び Y を 24 に維持
+;   20H 未満の他の制御コード : 無視 (カーソル位置更新のみ)
+;   20H 以上の印字文字       : 現在位置に書き込み後 X += 1
+;              X = 80 (行末超え) の場合: X=0 にして CR 相当の処理
+;==============================================================
+CONOUT_PROCESS:
+    PUSH AF
+    PUSH BC
+    PUSH DE
+    PUSH HL
+
+    ;----------------------------------------------------------
+    ; 制御コード分岐
+    ;----------------------------------------------------------
+	CP  BEL
+	JP  Z, CO_BEL   ; BEL (07H): 無視
+	CP  HT
+	JP  Z, CO_HT    ; 水平タブ
+    CP  LF
+    JP  Z, CO_LF    ; LF (0AH): X=0、Y 変化なし
+    CP  VT
+    JP  Z, CO_VT    ; 垂直タブ
+    CP  NP
+    JP  Z, CO_FF    ; NewPage = フォームフィード(FF)
+    CP  CR
+    JP  Z, CO_CR    ; CR (0DH): Y+1 (最下行ならスクロール)
+	CP  BS
+	JP  Z, CO_BS    ; BS (08H): バックスペース
+    CP  20H
+    JP  C, CO_CURSOR_UPDATE    ; 00H-19H のその他の制御コード: 無視
+
+    ;----------------------------------------------------------
+    ; 印字可能文字 (20H 以上)
+    ;
+    ; WRITE_CHAR_AT_X_Y は A, DE, HL を破壊するため
+    ; 文字コードを D に退避してから呼ぶ
+    ;----------------------------------------------------------
+    LD  D, A                    ; D = 文字コードを退避
+    LD  A, (CURSOR_Y)
+    LD  B, A                    ; B = Y
+    LD  A, (CURSOR_X)
+    LD  C, A                    ; C = X
+    LD  A, D                    ; A = 文字コードを復元
+    CALL WRITE_CHAR_AT_X_Y      ; (X,Y) の位置に文字を書き込む
+
+    ; X を進める
+    LD  A, (CURSOR_X)
+    INC A
+    CP  80                      ; X = 80 (行末超え)?
+    JR  C, CO_SAVE_X            ; X < 80: そのまま保存してカーソル更新へ
+    ; 行末折り返し: X=0 にして CR 相当の処理 (Y+1 またはスクロール) へ
+    XOR A
+    LD  (CURSOR_X), A
+    JR  CO_CR
+
+CO_SAVE_X:
+    LD  (CURSOR_X), A
+    JP  CO_CURSOR_UPDATE
+
+    ;----------------------------------------------------------
+    ; LF (0AH): X = 0、Y 変化なし
+    ;----------------------------------------------------------
+CO_LF:
+    XOR A
+    LD  (CURSOR_X), A
+    JP  CO_CURSOR_UPDATE
+
+    ;----------------------------------------------------------
+    ; CR (0DH): Y += 1、X = 0 ; S-OSのCRはCR+LFの動作なので、CRのときはLFの処理も行う
+    ; ※ 行末折り返し (X=80) のときもここに合流する
+    ;----------------------------------------------------------
+CO_CR:
+    LD  A, (CURSOR_Y)
+    CP  24                      ; 最下行 (Y=24)?
+    JR  Z, CO_SCROLL            ; Yes → スクロール (Y は 24 のまま)
+    INC A
+    LD  (CURSOR_Y), A
+	; S-OSのCRはCR+LFの動作なので、CRのときはLFの処理も行う
+    XOR A
+    LD  (CURSOR_X), A
+	;
+    JR  CO_CURSOR_UPDATE
+
+;----------------------------------------------------------
+    ; CO_BS  バックスペース (08H)
+    ;
+    ; カーソルを 1 つ戻し、その位置をスペースで消去する。
+    ;
+    ; 処理:
+    ;   X > 0          : X -= 1
+    ;   X = 0, Y > 0   : X = 79, Y -= 1  (前行末へ折り返し)
+    ;   X = 0, Y = 0   : 何もしない (画面左上端、戻れない)
+    ;----------------------------------------------------------
+CO_BS:
+    LD  A, (CURSOR_X)
+    OR  A                       ; X = 0?
+    JR  NZ, CO_BS_DEC_X        ; No → X を 1 減らすだけ
+
+    ; X = 0 のとき
+    LD  A, (CURSOR_Y)
+    OR  A                       ; Y = 0?
+    JR  Z, CO_BS_IGNORE        ; Yes → 左上端、何もしない
+
+    ; X=0, Y>0: 前行末 (X=79, Y-1) へ
+    DEC A
+    LD  (CURSOR_Y), A           ; Y -= 1
+    LD  A, 79
+    LD  (CURSOR_X), A           ; X = 79
+    JR  CO_BS_ERASE
+
+CO_BS_DEC_X:
+    DEC A
+    LD  (CURSOR_X), A           ; X -= 1
+
+    ;----------------------------------------------------------
+    ; 戻った位置をスペース (20H) で消去
+    ; 参考コードの OUT(D2H)+LD(DE),A に相当する処理を
+    ; WRITE_CHAR_AT_X_Y 経由で行う
+    ;----------------------------------------------------------
+CO_BS_ERASE:
+    LD  A, (CURSOR_Y)
+    LD  B, A                    ; B = Y
+    LD  A, (CURSOR_X)
+    LD  C, A                    ; C = X
+    LD  A, 20H                  ; A = スペース
+    CALL WRITE_CHAR_AT_X_Y      ; (X,Y) の位置をスペースで消去
+
+CO_BS_IGNORE:
+    JP  CO_CURSOR_UPDATE        ; CONOUT の CO_CURSOR_UPDATE ラベルへ
+
+;----------------------------------------------------------
+    ; CO_HT  水平タブ (09H)  タブ幅 4
+    ;
+    ; 次の 4 の倍数列へ X を進める。
+    ;
+    ; タブストップ: X = 0, 4, 8, 12, ... , 76
+    ;
+    ; 計算式:
+    ;   new_X = (CURSOR_X & FCH) + 4
+    ;   ※ AND FCH で下 2 ビットをクリア(4 の倍数へ切り捨て)
+    ;     → そこに 4 を加えて次のタブストップを得る
+    ;
+    ;   例: X=0  → (00H & FCH)+4 = 04H
+    ;       X=3  → (00H & FCH)+4 = 04H
+    ;       X=4  → (04H & FCH)+4 = 08H
+    ;       X=77 → (4CH & FCH)+4 = 50H=80 → 行末超え → X=0 かつ CO_CR へ
+    ;----------------------------------------------------------
+CO_HT:
+    LD  A, (CURSOR_X)
+    AND 0FCH                    ; X を 4 の倍数に切り捨て
+    ADD A, 4                    ; 次のタブストップ (4..80)
+    CP  80                      ; 80 以上 (行末超え)?
+    JR  C, CO_HT_SAVE           ; No → そのまま保存してカーソル更新へ
+    ; 行末超え: X=0 にして CR 相当 (Y+1 またはスクロール) へ
+    XOR A
+    LD  (CURSOR_X), A
+    JR  CO_CR                   ; CONOUT の CO_CR ラベルへ
+CO_HT_SAVE:
+    LD  (CURSOR_X), A
+    JR  CO_CURSOR_UPDATE        ; CONOUT の CO_CURSOR_UPDATE ラベルへ
+
+
+    ;----------------------------------------------------------
+    ; CO_VT  垂直タブ (0BH)
+    ;
+    ; Y を 1 増やす。X は変化しない。
+    ; 最下行 (Y=24) の場合は SCROLL_UP。
+    ; → CR (0DH) と動作が同じなので CO_CR に合流する。
+    ;----------------------------------------------------------
+CO_VT:
+    JR  CO_CR                   ; CONOUT の CO_CR ラベルへ
+
+	;----------------------------------------------------------
+    ; CO_FF  フォームフィード (0CH)
+    ;
+    ; 画面全消去 + カーソルを (0,0) へ。
+    ;
+    ; 処理内容:
+    ;   [1] CURRENT_TOP_LEFT_ADDRESS を F800H にリセット
+    ;   [2] HD46505 R12/R13 を F800H に戻す
+    ;   [3] VRAM テキスト領域 (F800H-FFFFH, 2048 バイト) を
+    ;       スペース (20H) で埋める
+    ;       ※ 余り領域 (FFD0H-FFFFH, 48 バイト) も含めて全消去
+    ;   [4] CURSOR_X, CURSOR_Y を 0 にリセット
+    ;----------------------------------------------------------
+CO_FF:
+    ; [1] CURRENT_TOP_LEFT_ADDRESS を F800H にリセット
+    LD  HL, VRAM_TXT_TOP
+    LD  (CURRENT_TOP_LEFT_ADDRESS), HL
+
+    ; [2] HD46505 R12/R13 を F800H に戻す (絶対アドレス)
+    LD  A, CRTC_R12_START_H
+    OUT (CRTC_ADDRESS_PORT), A
+    LD  A, 0F8H                 ; F800H 上位
+    OUT (CRTC_VALUE_PORT), A
+    LD  A, CRTC_R13_START_L
+    OUT (CRTC_ADDRESS_PORT), A
+    XOR A                       ; F800H 下位 = 00H
+    OUT (CRTC_VALUE_PORT), A
+
+    ; [3] VRAM テキスト領域を全消去 (F800H-FFFFH = 2048 バイト)
+    ;     2000 バイトではなく 2048 バイトを消去する。
+    ;     余り領域 (FFD0H-FFFFH) をクリアしないと、
+    ;     スクロール後にその 48 バイトが行頭に見えてしまうため。
+    LD  HL, VRAM_TXT_TOP        ; HL = F800H
+    ; LD  BC, VRAM_SIZE           ; BC = 0800H (2048 バイト)
+    LD  BC, 0800H           ; BC = 0800H (2048 バイト)
+CO_FF_CLEAR:
+    LD  A, 20H
+    OUT (VRAM_BANK_PORT), A     ; 次の命令を VRAM ページへ
+    LD  (HL), A
+    INC HL                      ; FFFFH の後は 0000H へ (16 ビット折り返し)
+    DEC BC                      ; BC=0000H になったとき HL=0000H だが未使用
+    LD  A, B
+    OR  C
+    JR  NZ, CO_FF_CLEAR
+
+    ; [4] カーソルを (0,0) へ
+    XOR A
+    LD  (CURSOR_X), A
+    LD  (CURSOR_Y), A
+    JR  CO_CURSOR_UPDATE
+
+
+
+CO_BEL:
+	; BEL (07H): 無視
+	JR  CO_CURSOR_UPDATE        ; カーソル位置は変わらないが、更新しておく
+
+
+    ;----------------------------------------------------------
+    ; スクロール
+    ; CURSOR_Y は 24 のまま。SCROLL_UP が最下行をクリアする。
+    ;----------------------------------------------------------
+CO_SCROLL:
+    CALL SCROLL_UP
+    ; fall through
+
+    ;----------------------------------------------------------
+    ; ハードウェアカーソル更新
+    ; (X,Y) → VRAM アドレス → CURRENT_CURSOR_LOCATE → PRINT_CURSOR
+    ;----------------------------------------------------------
+CO_CURSOR_UPDATE:
+    LD  A, (CURSOR_Y)
+    LD  B, A
+    LD  A, (CURSOR_X)
+    LD  C, A
+    CALL GET_VRAM_ADDRESS_FROM_X_Y  ; HL = カーソル位置の VRAM アドレス
+    LD  (CURRENT_CURSOR_LOCATE), HL
+    CALL PRINT_CURSOR
+
+    POP HL
+    POP DE
+    POP BC
+    POP AF
+    RET
+
+
+;==============================================================
+; PRINT_CURSOR
+;
+; カーソルをCURRENT_CURSOR_LOCATEの位置に表示する(HD46505Sの機能)
+;
+;==============================================================
 PRINT_CURSOR:
 	PUSH AF
 	PUSH DE
 	PUSH HL
-	EX DE,HL ; HL=CURSOR_LOCATE
+	LD HL,(CURRENT_CURSOR_LOCATE) ; 現在のカーソル位置をHLにロード
 	LD A,0EH ; R14 (cursor H)
-	OUT (CRTC_ADD),A
+	OUT (CRTC_ADDRESS_PORT),A
 	LD A,H
-	OUT (CRTC_VAL),A ; カーソルの上位アドレス設定
+	OUT (CRTC_VALUE_PORT),A ; カーソルの上位アドレス設定
 	LD A,0FH ; R15 (cursor L)
-	OUT (CRTC_ADD),A
+	OUT (CRTC_ADDRESS_PORT),A
 	LD A,L
-	OUT (CRTC_VAL),A ; カーソルの下位アドレス設定
+	OUT (CRTC_VALUE_PORT),A ; カーソルの下位アドレス設定
 	POP HL
 	POP DE
 	POP AF
 	RET
 
+;==============================================================
+; STRING_OUT
 ;
-; CURSOR_LOCATE=DEから、カーソルのX,Y座標を計算して、特定のメモリ領域に保存する。
+; 文字列をヌル終端 (00H) まで連続して VRAM へ書き込む。
+; 1文字ごとに WRITE_CHAR_AT_XY を呼ぶ。
 ;
-CALC_CURSOR_XY:
-	PUSH AF
-	PUSH BC
-	PUSH DE
-	PUSH HL
-	LD HL,VRAM_TXT_TOP ; 画面左上端アドレスをHLにロード
-	EX DE,HL ; DEとHLを交換。HL=CURSOR_LOCATE, DE=VRAM_TXT_TOP
-	SBC HL,DE ; HL = CURSOR_LOCATE - VRAM_TXT_TOP
-	OR A ; フラグをクリア
-	LD BC,0 ; B=Y座標カウンタ初期化
-Y_CALC_LOOP:
-	LD DE,WIDTH_SCREEN ; 50H = 画面の桁数(80d)
-	SBC HL,DE ;	HL - 50H
-	JR C,Y_CALC_END ; HLが負ならループ終了
-	INC B ; Y座標カウンタをインクリメント
-	JR Y_CALC_LOOP
-Y_CALC_END:
-	ADD HL,DE ; 余り復元（これがX座標）
-    LD A,B
-    LD (cursor_XY_ADDR),A   ; Y座標保存
-    LD A,L
-    LD (cursor_XY_ADDR+2),A   ; X座標保存
-	POP HL
-	POP DE
-	POP BC
-	POP AF
-	RET
+; 入力:
+;   B  = Y  論理行 (0-24)
+;   C  = X  論理列 (0-79)  ※表示開始列
+;   HL = 文字列先頭アドレス
+;
+; 出力: なし
+; 破壊: A, DE, HL
+;         (BC は WRITE_CHAR_AT_XY が保存するため変化なし)
+;==============================================================
+STRING_OUT:
+    LD   A, (HL)            ; 次の文字を読み出す
+    OR   A                  ; ヌル終端 (00H) か?
+    RET  Z                  ; 00H なら終了
 
-;
-; 
-;
+    PUSH HL                 ; 文字列ポインタを退避
+							; (WRITE_CHAR_AT_XY は HL を破壊するため)
+    CALL WRITE_CHAR_AT_X_Y  ; B=Y, C=X, A=文字 → VRAM へ書き込む
+    POP  HL                 ; 文字列ポインタを復元
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; CR処理ルーチン(スクロール処理対応版)
-;
-
-DO_CR:
-	PUSH HL
-	PUSH BC
-	XOR A ; A=0にする
-	LD (CR_NOW_CURSOR_LOCATE),DE ; 現在のカーソル位置保存
-	LD HL,(TOP_VIEW) ; 左上端をロード
-	EX DE,HL
-	SBC HL,DE ; 左上端アドレス - 現在のカーソル位置
-	JR NC,CONTINUE_CR ; オーバーフローしていないなら単純処理
-;
-;   TOP_VIEWがCR_NOW_CURSOR_LOCATEよりも大きいとき。
-;	この状況は、スクロールされた時に発生する。
-;	つまり、殆どの場合、この処理が実行される。
-;
-	LD HL,(TOP_VIEW)
-	LD DE,(CR_NOW_CURSOR_LOCATE) ; CRコードが入った時のカーソル位置
-	LD BC,WIDTH_SCREEN ;  50H =  画面の桁数(80d)
-	LD (CR_BASE_ADDRESS),HL ; 初期値は左上端アドレス
-CR_SCAN_0:
-	LD HL,(CR_BASE_ADDRESS)
-	LD (CR_BASE_ADDRESS_PRE),HL
-	ADD HL,BC ; 50H(80d)づつ足していく
-	LD (CR_BASE_ADDRESS),HL
-	JP NC,CR_SCAN_0 	; 越境をチェックしている。
-						; オーバーフローまでループする。
-	LD HL,(CR_BASE_ADDRESS_PRE) ; ループを抜けたときHLはオーバーフロー後の値になっている。
-								; 足し算前の値に戻す
-	; FFFFHを超えた値がいくつかを調べる。
-	; FFFFHまでの値と合わせて、それが1行の桁数50H(80d)を
-	; 超えたなら、CR後の現在カーソル位置は
-	; その新しい行の先頭アドレスにならなくてはならない。
-	; 
-	LD DE,0FFFFH ; 境界値
-	EX DE,HL
-	SBC HL,DE ; FFFFH - CR_BASE_ADDRESS_PRE = A
-			  ; オーバーフローする一つ前の値でFFFFHを引く
-	LD DE,WIDTH_SCREEN ; 50H(80d)
-	EX DE,HL
-	SBC HL,DE ; 50H(80d) - A = X ; Xは境界を越えた数
-	LD DE,VRAM_TXT_TOP ; VRAM_TXT_TOP = F800H
-	ADD HL,DE ; F800H + X ; この値が境界を含む行の右端のアドレス
-	DEC HL 	; -1する
-	DEC HL 	; この引き算二回の処理がないと正しい左端のアドレスが出ない。
-			; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
-	LD (CR_NEW_ORIGIN),HL ; 新しいCR評価位置になる
-	LD (CR_BASE_ADDRESS),HL ; CR_BASE_ADDRESSに新しい値を入れる
-	LD DE,(CR_NOW_CURSOR_LOCATE) ; CR命令を受けた時のカーソル位置
-
-	;
-	; 例えば現在カーソル位置がF819Hで新しいCR評価位置がF820Hのときに、
-	; CR_2_NEW_SCAN_0のループを通ると+50Hされてしまうので、バイパスする処理。
-	SBC HL,DE ; (CR_NEW_ORIGIN) > CR_NOW_CURSOR_LOCATE ?
-	JP P,CR_BOUNDARY_RETURN ; 正であれば、ジャンプ
-	;
-	;
-	LD HL,(CR_NEW_ORIGIN) ; 負であれば、そのまま処理を進める。
-	LD BC,WIDTH_SCREEN ;  50H(80d)
-CR_NEW_SCAN_0:
-	LD HL,(CR_BASE_ADDRESS)
-	LD (CR_BASE_ADDRESS_PRE),HL ; HL=CR_NEW_ORIGIN
-	ADD HL,BC ; CR_NEW_ORIGIN + 50H +...
-	LD (CR_BASE_ADDRESS),HL
-	SBC HL,DE ; (CR_NEW_ORIGIN + 50H +...) > CR_NOW_CURSOR_LOCATE ?
-	JP M, CR_NEW_SCAN_0 ; DEの方が大きければループ
-	JP Z, CR_NEW_SCAN_0 ; 完全に一致したときも1回ループを回す
-	LD HL,(CR_BASE_ADDRESS_PRE) ; HL>DE。50Hを足す一つ前の値をHLに入れる。
-	LD (CR_BASE_ADDRESS),HL
-	LD DE,(CR_BASE_ADDRESS) ; CR後のアドレスをDEに入れる。
-	JR CR_END
-;
-;	TOP_VIEWがCR_NOW_CURSOR_LOCATEよりも小さいとき
-;
-CONTINUE_CR:
-	LD HL,(TOP_VIEW) ; 左上端アドレスをロード
-	LD DE,(CR_NOW_CURSOR_LOCATE) ; CRコードが入った時のカーソル位置
-	LD BC,WIDTH_SCREEN ; 50H(80d) = 画面の桁数(80d)
-	LD (CR_BASE_ADDRESS),HL ; 初期値は左上端アドレス
-CR_SCAN_1:
-	LD HL,(CR_BASE_ADDRESS)
-	LD (CR_BASE_ADDRESS_PRE),HL ; 
-	ADD HL,BC ; 50H(80d)づつ足していく
-	LD (CR_BASE_ADDRESS),HL
-	SBC HL,DE	; HLが現在のカーソル位置を超えるかチェック
-	JP M,CR_SCAN_1 ; 超えていなければループ
-	JP Z,CR_SCAN_1 ; 完全に一致したときも1回ループを回す。
-	LD HL,(CR_BASE_ADDRESS_PRE) ; HLが現在のカーソル位置を超えたので、1つ前の値に戻す
-	LD (CR_BASE_ADDRESS),HL ; CR後のカーソル位置をセット
-	LD DE,(CR_BASE_ADDRESS) ; CR後のカーソル位置をDEにセット
-CR_END:
-	POP BC
-	POP HL
-	JP DO_CR_LF_BS_RETURN; CR,LF,BSの処理の終了
-
-CR_BOUNDARY_RETURN:
-	LD DE,(CR_BASE_ADDRESS_PRE) ; DEに現在のカーソル位置を超える前の値(CR_BASE_ADDRESS_PRE)を戻す
-	JR CR_END
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; LINE_FEED 処理(スクロール処理対応版)
-;
-
-DO_LF:
-	PUSH HL
-	PUSH BC
-	EX DE,HL ; HL <-> DE DE=現在のカーソル位置
-	LD BC,WIDTH_SCREEN ; 50H(80d)
-	ADD HL,BC ; HL = DE + 50H
-	JR NC,CONTINUE_LF ; オーバーフローしていなければジャンプ
-;
-;	BEYOND FFFFH BOUNDARY
-;
-	LD HL,(CURSOR_LOCATE)
-	LD DE,0FFFFH
-	EX DE,HL ; HL - CURSOR_LOCATE
-	SBC HL,DE ; FFFFH - CURSOR_LOCATE = A
-	LD DE,50H ; 50H(80d)
-	EX DE,HL ; DE - A
-	SBC HL,DE ; 50H - A = X
-;
-	DEC HL ; この引き算二回の処理がないと正しい左端のアドレスが出ない。
-	DEC HL ; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
-;
-	LD DE,VRAM_TXT_TOP
-	ADD HL,DE
-CONTINUE_LF:
-	EX DE,HL ; DE <-> HL
-	POP BC
-	POP HL
-	JP DO_CR_LF_BS_RETURN
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; BACK SPACE 処理
-;
-DO_BS:
-	LD A, 20H ; 20H -> Space ASCII CODE
-	DEC DE ; カーソル位置を1つ戻す
-	OUT (0D2H),A ; access to RAM page 1
-	LD (DE),A ; 20H(スペース)を表示させる。
-	JP DO_CR_LF_BS_RETURN ; BSの為の復帰点に戻る。
-
-;
-; Horizontal Tab
-;
-DO_HT:
-	PUSH AF
-	PUSH HL
-	PUSH BC
-
-	; PUTCHARルーチンを4回呼び出してスペースを表示させる。
-	LD A,20H ; 20H is Space CODE
-	LD B,04H	; 4回ループ
-HT_LOOP:
-		PUSH AF
-		CALL PUTCHAR
-		POP AF
-		DEC B
-		JR NZ, HT_LOOP
-	POP BC
-	POP HL
-	POP AF
-	RET
-
-DO_VT:
-	RET
-
-DO_NP:
-	RET
-
-DO_ESC:
-	RET
-
-DO_BEL:
-	RET
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; スクロール処理
-; SORD M23のCRTCであるHD4650SPはスクロール機能がある。
-; 具体的には表示したい画面左上端のアドレスを、R12、R13に上位、下位アドレスとして入れることで実行される。
-; SORD M23のVRAMのテキストエリアはF800H～FFFFHであるが、画面に表示される文字は80桁×25行の2000(7D0H)文字である。
-; よって、余りが生じるため、スクロール処理は殆どがこの余りの処理に費やされる。
-;
-
-DO_SCROLL:
-	LD (CURSOR_LOCATE),DE ; 現在のカーソル位置を更新
-	LD HL,(TOP_VIEW) ; 左上端アドレス
-	LD DE,7D0H ; 全画面文字数
-	ADD HL,DE ; TOP_VIEW + 7D0H ; TOP_VIEWは更新される。
-	JR C,SCROLL_POINT_BEYOND_FFFF ; 境界値をまたいでいる、オーバーフローしたらジャンプ。
-	JR SCROLL_POINT ; スクロールすべきカーソル位置の更新へ
-SCROLL_POINT_BEYOND_FFFF:
-	LD HL,(TOP_VIEW)
-	LD DE,0FFFFH
-	EX DE,HL ; HL - TOP_VIEW
-	SBC HL,DE ; FFFFH - TOP_VIEW = A
-	LD DE,7CEH ; 7D0H - 2H = 7CEH
-	EX DE,HL ; DE - A
-	SBC HL,DE ; 7CEH - A = X
-	LD DE,VRAM_TXT_TOP
-	ADD HL,DE ; X + F800H = 新しいTOP_VIEW
-	;
-SCROLL_POINT:
-	; update need_do_scroll_point
-	LD (NEED_DO_SCROLL_POINT),HL ; need_do_scroll_point = 新しいTOP_VIEW
-	LD DE,(CURSOR_LOCATE) ; 現在のカーソル位置
-	LD A,D ; need_do_scroll_point == CURSOR_LOCATE?
-	CP H
-	RET NZ
-	LD A,E ; need_do_scroll_point == CURSOR_LOCATE?
-	CP L
-	RET NZ ; スクロール不要なら終了
-;
-; TOP_VIEWの更新
-;
-
-; スクロールから外れた行をスペースで埋める。
-	LD HL,(TOP_VIEW) ; スクロール直前の左上端アドレス
-	PUSH BC
-	PUSH DE
-	PUSH AF
-	LD B,04FH ; 4FH=79d
-	LD DE,0FFFFH ; 境界値
-	LD A,20H ; 20H is Space CODE
-CLEAR_1_LINE:
-	OUT (0D2H),A
-	LD (HL),A ; スペースで埋める
-	PUSH HL ; HL < FFFFHのとき、下の引き算はオーバーフローするが、
-			; HL=F800Hの時に実行すると、HL=F801となり、
-			; その後INC HLでF802Hになるため、スペースによる穴埋めがF801Hのみ実行されないことになる。
-			; なので、一度、HLを退避して、引き算してFFFFHでないか判定したのち、POPして戻している。
-			; このコードは遅いが、現状、これを採用する。20221229
-	SBC HL,DE ; HL - FFFFH = HL
-	POP HL
-	JR Z, CLEAR_BEYOND_BOUNDARY ; HL = FFFFHのときは境界を越えた
-	INC HL
-	DJNZ CLEAR_1_LINE
-	JR CLEAR_1_LINE_END
-	; 越境時の処理
-CLEAR_BEYOND_BOUNDARY:
-	LD HL,VRAM_TXT_TOP ; HLをVRAMの先頭(F800H)にセット
-CLEAR_1_LINE_BOUNDARY: ; B回ループする
-	OUT (0D2H),A
-	LD (HL),A
-	INC HL
-	DJNZ CLEAR_1_LINE_BOUNDARY
-CLEAR_1_LINE_END:
-	POP AF
-	POP DE
-	POP BC
-;
-;
-	LD HL,(TOP_VIEW) ; TOP_VIEWの更新
-	LD DE,50H ; 50H=80d
-	ADD HL,DE ; TOP_VIEW + 50H
-	JR NC,UPDATE_TOP_VIEW
-;
-;	BEYOND FFFFH BOUNDARY
-;
-	LD DE,0FFFFH ; 境界値
-	LD HL,(TOP_VIEW) ; TOP_VIEW
-	EX DE,HL
-	SBC HL,DE ; FFFFH - TOP_VIEW = A
-	LD DE,50H ; 50H(80d)
-	EX DE,HL ; DE - A
-	SBC HL,DE ; 50H - A = X
-	LD DE,VRAM_TXT_TOP ; VRAM_TXT_TOP
-	ADD HL,DE ; F800H + X = TOP_VIEW
-;
-	DEC HL ; この引き算二回の処理がないと正しい左端のアドレスが出ない。
-	DEC HL ; これはCP/Mでは常にプロンプト(a>)の2文字が出ているため。
-;
-UPDATE_TOP_VIEW:
-	LD (TOP_VIEW),HL
-	;
-	; 1行スクロール
-	;
-	PUSH AF
-	LD A,0CH ; START ADDRESS HIGH
-	OUT (CRTC_ADD),A
-	LD A,H ; スクロールしたときに左隅になるVRAMの上位アドレス
-	OUT (CRTC_VAL),A
-	LD A,0DH ; START ADDRESS LOW
-	OUT (CRTC_ADD),A
-	LD A,L ; スクロールしたときに左隅になるVRAMの下位アドレス
-	OUT (CRTC_VAL),A
-	POP AF
-SCROLL_END:
-	RET
-
-
-
-;
+    INC  HL                 ; 次の文字へ
+    INC  C                  ; X を +1 (次の列へ)
+    JR   STRING_OUT
+;==============================================================
 ; for CRT control
-;
+;==============================================================
+;==============================================================
+; データ領域 (CONOUT が使用)
+;==============================================================
+CURSOR_X:
+    DB  0                   ; 現在のカーソル X 座標 (0-79)
+CURSOR_Y:
+    DB  0                   ; 現在のカーソル Y 座標 (0-24)
+CURRENT_CURSOR_LOCATE:
+    DW  F800H              ; カーソルの VRAM アドレス (PRINT_CURSOR が参照)
 
-CURSOR_LOCATE: ; カーソル位置を保存する変数
-	DS 02H
-
-TOP_VIEW: ; 画面左上端のアドレスを保存する変数
-	DS 02H
-
-NEED_DO_SCROLL_POINT: ;	スクロールすべきポイントアドレスを保存する変数
-	DS 02H
-
-CR_BASE_ADDRESS: ; CRTコントローラのベースアドレス保存変数
-	DS 02H
-
-CR_BASE_ADDRESS_PRE: ; CRTコントローラのベースアドレス保存変数（前回値）
-	DS 02H
-
-CR_NOW_CURSOR_LOCATE: ; 現在のカーソル位置保存変数
-	DS 02H
-
-CR_NEW_ORIGIN: ; 新しい表示開始アドレス保存変数
-	DS 02H
 
 
 	ORG	2B00H
@@ -4748,7 +4900,8 @@ SAVE:
 	JR	C,SAVE1
 	LD	(_EXADR),HL	;実行アドレス
 
-SAVE1:	CALL	_WOPEN
+SAVE1:
+	CALL	_WOPEN
 	RET	C	;エラー
 	CALL	_WRD
 	RET	C
@@ -4764,28 +4917,29 @@ SNERR:
 
 ;モニタ Lコマンド処理
 LOAD:
-	LD	A,1
-	CALL	FILE
-	LD	A,(DE)
-	OR	A
-	LD	(LDWORK+2),A	;ロード･アドレス存在フラグ
-	JR	Z,LOAD1	;ロード･アドレスの指定なし
+	LD A,1
+	CALL FILE
+	LD A,(DE)
+	OR A
+	LD (LDWORK+2),A	;ロード･アドレス存在フラグ
+	; JR Z,LOAD1	;ロード･アドレスの指定なし
+	JR Z,SNERR	;ロード･アドレスの指定なし
 ;	ロード･アドレスの指定あり
 	INC	DE
-	CALL	convert_4_digit_data_to_hex_binary_ascii_code
-	JR	C,SNERR	;ロード･アドレスが不正
-	LD	(LDWORK),HL	;←ロード･アドレス
+	CALL convert_4_digit_data_to_hex_binary_ascii_code
+	JR C,SNERR	;ロード･アドレスが不正
+	LD (LDWORK),HL	;←ロード･アドレス
 
 LOAD1:
-	CALL	ROPEN ;ディスクではファイルの存在のチェック。
-	RET	C	;エラー
-	CALL	NZ,SKPRT	;テープのスキップしているファイル名を表示します
-	JR	NZ, LOAD1
+	CALL ROPEN ;ディスクではファイルの存在のチェック。
+	RET	C ;エラー
+	; CALL NZ,SKPRT	;テープのスキップしているファイル名を表示します
+	; JR NZ, LOAD1
 
-	CALL	print_string_from_next_call_address
+	CALL print_string_from_next_call_address
 	DB	'Loading ',00H
-	CALL	print_file_name
-	CALL	carriage_return_if_not_at_head_of_line
+	CALL print_file_name
+	CALL carriage_return_if_not_at_head_of_line
 
 ;	ロード･アドレスの設定
 	LD	A,(LDWORK+2) ; ロードアドレスフラグをセット
@@ -4856,25 +5010,20 @@ DEVST1:	LD	(_DSK),A
 
 ;モニタ Nコマンド処理
 MNAME:
-	CALL	skip_space_characters	;文字列の空白を読み飛ばします
-	CALL	_FILE
-	LD	A,(DE)
+	CALL skip_space_characters	;文字列の空白を読み飛ばします
+	CALL _FILE
+	LD A,(DE)
 	INC	DE
-	CP	':'
-	JP	Z,_NAME
-	LD	A,13	;Syntax Error
+	CP ':'
+	JP Z,_NAME
+	LD A,13	;Syntax Error
 	SCF
 	RET
 
 
 ;モニタ Wコマンド処理
 ;注：80桁モード以外なら40桁モードにしています。
-MWIDTH:	LD	A,(_WIDTH)
-	CP	80
-	JR	NZ,MWDTH1
-	LD	A,40
-	JP	_WIDCH
-MWDTH1:	LD	A,80
+MWIDTH:
 	JP	_WIDCH
 
 
@@ -4893,7 +5042,6 @@ skip_space_characters:
 ;=======================================
 ;拡張されたS-OSファンクション本体
 ;=======================================
-
 
 ;文字列からデバイス名を得ます
 ;入力	DE←文字列のアドレス
@@ -5253,7 +5401,8 @@ DIR:
 	LD	B,16
 	LD	DE,(_DIRPS)
 
-DIRL:	LD	HL,(_DTBUF) ; ディスクリードバッファ
+DIRL:
+	LD	HL,(_DTBUF) ; ディスクリードバッファ
 	LD	A,1
 	CALL	sequential_sector_read_disk	;=#DRDSB（2000H）
 	RET	C	;エラー
@@ -5271,25 +5420,24 @@ DIRL:	LD	HL,(_DTBUF) ; ディスクリードバッファ
 ;出力	ZF＝1ならブレイクされた
 ;破壊	AF，HL
 DIRPRT:
-	PUSH	BC
-	PUSH	DE
-	LD	B,8
+	PUSH BC
+	PUSH DE
+	LD B,8
 
 DIRPL:
-	LD	A,(HL)
-	OR	A	;＝00Hで未使用
-	JR	Z,DIRN
-	CP	0FFH	;＝FFHで未使用領域
-	JR	Z,DIRPE
-	CALL	print_file_information ;ファイル情報を表示します
-	CALL	carriage_return_and_line_feed
-	CALL	PAUSE
+	LD A,(HL)
+	OR A	;＝00Hで未使用
+	JR Z,DIRN
+	CP FFH	;＝FFHで未使用領域
+	JR Z,DIRPE
+	CALL print_file_information ;ファイル情報を表示します
+	CALL carriage_return_and_line_feed
+	CALL PAUSE
 	DW	DIRPE
 DIRN:
 	LD	DE,20H
 	ADD	HL,DE
-	DJNZ	DIRPL
-
+	DJNZ DIRPL
 	DB	3EH
 DIRPE:
 	XOR	A
@@ -6148,30 +6296,30 @@ HLBUF:	DS	2	;参照FCBのアドレスの一時保存場所
 ;出力	なし
 ;破壊	AF
 print_file_information:
-	PUSH	BC
-	PUSH	DE
-	PUSH	HL
-	LD	DE,(_IBFAD);1F74H ファイルのインフォメーションブロックの先頭アドレス。
+	PUSH BC
+	PUSH DE
+	PUSH HL
+	LD DE,(_IBFAD);1F74H ファイルのインフォメーションブロックの先頭アドレス。
 					;同時にファイル属性のアドレスでもある。
-	LD	BC,0020H
+	LD BC,0020H
 	LDIR ;DEにファイル情報をコピーします
-	CALL	print_file_attribute ;属性情報を表示します。BINやBASなど
+	CALL print_file_attribute ;属性情報を表示します。BINやBASなど
 	LD	A,(_DSK)
-	CALL	PRINT
+	CALL PRINT
 	LD	A,':'
-	CALL	PRINT
-	CALL	print_file_name
+	CALL PRINT
+	CALL print_file_name
 ADRPRT:
-	CALL	_PARSC	;Fileのアドレス情報を、S-OSのワークに転送します
-	LD	BC,(_SIZE) ;1F72H ファイルサイズ。
-	LD	HL,(_DTADR) ;1F70H ファイルの先頭アドレス。
-	LD	DE,(_EXADR) ;1F76H ファイルの実行アドレス。
-	CALL	PHEX	;まず、ファイルの先頭アドレスを表示します
+	CALL _PARSC		;Fileのアドレス情報を、S-OSのワークに転送します
+	LD BC,(_SIZE)	;1F72H ファイルサイズ。
+	LD HL,(_DTADR)	;1F70H ファイルの先頭アドレス。
+	LD DE,(_EXADR)	;1F76H ファイルの実行アドレス。
+	CALL PHEX		;まず、ファイルの先頭アドレスを表示します
 	ADD	HL,BC
 	DEC	HL
-	CALL	PHEX	;次に、ファイルサイズを表示します
+	CALL PHEX		;次に、ファイルサイズを表示します
 	EX	DE,HL
-	CALL	PHEX	;次に、実行アドレスを表示します
+	CALL PHEX		;次に、実行アドレスを表示します
 	POP	HL
 	POP	DE
 	POP	BC
