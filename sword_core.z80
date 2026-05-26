@@ -499,37 +499,30 @@ MSXSKP:
 ; 「REDA」などがDE保存を期待しているので、DEを保存します。
 ; このサブルーチンを完成させてください。
 print_string_from_next_call_address:
-	EX (SP),HL	; CALLの次のアドレスをHLにロード
-	PUSH DE
-	PUSH BC
-	EX DE,HL ; DEとHLを入れ替えて、DEに表示すべきデータの先頭アドレスが入る
-	LD A,(DE) ; 最初の文字を取得
-	CP 00H ; もし最初の文字が00Hなら終了
-	JR Z,mprint_end ; もし最初の文字が00Hなら何も表示せずにリターン
+    EX   (SP), HL           ; HL = 文字列先頭アドレス（CALL の次）
+                            ;      スタック: [旧HL, ...]
+    PUSH DE                 ; DE を保存  スタック: [旧DE, 旧HL, ...]
+    LD   D, H
+    LD   E, L               ; DE = 文字列先頭アドレス
 
-	PUSH AF
-	PUSH HL
-	PUSH BC
 mprint_loop:
-	LD A,(DE) ; 文字を取得
-	CP 00H ; 終了コードか？
-	JR Z,mprint_terminate	; 終了コードなら終了へ
-	CALL CONOUT_PROCESS ; 文字を表示
-	INC	DE	; アドレスを一つ進める
-	JR mprint_loop
-mprint_terminate:
-	INC DE ; 終了コードの次のアドレスへ
-	POP	BC
-	POP	HL
-	POP	AF
+    LD   A, (DE)            ; 次の文字を取得
+    OR   A                  ; 00H チェック (CP 00H と等価)
+    JR   Z, mprint_done     ; 00H → 終了（空文字列も含む）
+    CALL CONOUT_PROCESS     ; 表示（内部で AF/BC/DE/HL をすべて保存・復元）
+    INC  DE                 ; 次の文字へ
+    JR   mprint_loop
 
-mprint_end:
-	EX	DE,HL ; DEは表示すべきデータの末尾の次のアドレスが入っている。つまりリターンアドレスが入っている
-	; POP	BC ; SPを進めるためにPOPする必要はない
-	POP	DE
-	EX	(SP),HL	;HLをスタックに戻す（リターン先アドレス）
-;	XOR	A
-	RET
+mprint_done:
+    INC  DE                 ; DE = 00H の次 = 新リターンアドレス
+                            ; ※ 空文字列でもここで正しく INC される
+
+    EX   DE, HL             ; HL = 新リターンアドレス
+    POP  DE                 ; DE を復元  スタック: [旧HL, ...]
+    EX   (SP), HL           ; スタック: [新リターンアドレス]
+                                ;      HL = 旧HL (呼び出し元の HL を復元)
+    RET                     ; 00H の次のアドレスへリターン
+
 
 ; TAB(1FDFH)の本体
 ; Bレジスタの値と、カーソルのX座標との差を計算して、その結果の数だけスペースを表示する。
@@ -860,7 +853,7 @@ LPTOF:
 GETKY:
 	PUSH DE
 	PUSH IX
-	CALL KEY_ONECE_SCAN
+	CALL real_time_input_key_entity
 	POP IX
 	POP DE
 	RET
@@ -2506,27 +2499,67 @@ INKRT:
 ;破壊	AF，HL，DE，BC
 ;注：ジョイスティック対応。
 real_time_input_key_entity:
-	OR	A
-	RET	NZ
+    ; --- 競合保護区間 ---
+    DI
 
-	DI
-	CALL	clear_key_buffer
-	EI
-	LD	A,(real_time_key)
-	RET
+    ;----------------------------------------------------------
+    ; バッファが空なら即 0 を返す（非ブロッキング）
+    ;----------------------------------------------------------
+    LD   A, (pointer_for_write_key_buffer)
+    OR   A
+    JR   NZ, REALTIME_HAS_KEY
+    XOR  A                          ; A = 0（キーなし）
+    RET
+
+REALTIME_HAS_KEY:
+    ; buffer[0] を読み出す
+    LD   A, (input_key_buffer)
+    PUSH AF
 
 
+    ; buffer[1..pointer-1] → buffer[0..pointer-2] へシフト
+    LD   A, (pointer_for_write_key_buffer)
+    DEC  A                          ; シフト数 = pointer - 1
+    JR   Z, REALTIME_SKIP_SHIFT     ; 1 文字のみ → シフト不要
+
+    LD   B, 0
+    LD   C, A                       ; BC = シフト数（1～126、必ず正）
+    LD   HL, input_key_buffer+1
+    LD   DE, input_key_buffer
+    LDIR
+
+REALTIME_SKIP_SHIFT:
+    LD   A, (pointer_for_write_key_buffer)
+    DEC  A
+    LD   (pointer_for_write_key_buffer), A
+
+    EI
+    ; --- 競合保護区間 終了 ---
+
+    POP  AF                         ; A = 読み出した ASCII コード
+    RET
+
+
+;==============================================================
+;
 ;キー入力バッファをクリアします
 ;入力	なし
 ;出力	なし
 ;破壊	AF，HL，DE，BC
 ;注：割り込み禁止して実行してください。
+;
+; pointer_for_write_key_buffer = 0 にするだけでよい。
+; バッファ本体のゼロ埋めは不要（pointer=0 が「空」を意味するため）。
+; ISR との競合を防ぐため DI/EI で保護する。
+;
+; 破壊レジスタ: A
+;==============================================================
 clear_key_buffer:
-	XOR	A
-	LD	(pointer_for_write_key_buffer),A	;キー入力バッファをクリアします
-	RET
-
-
+    DI
+    XOR  A
+    LD   (pointer_for_write_key_buffer), A
+    EI
+    RET
 
 ;===============================
 ;スクリーン制御補助（機種依存）
@@ -4178,25 +4211,54 @@ DUMMY_ISR:
 ; CTC Ch0割り込みサービスルーチン
 ;==============================================================
 SOFT_TICKS: DB  0       ; ソフトウェアカウンタ (0-4)
-
+;==============================================================
+; CTC Ch0 ISR ─ リングバッファへの書き込み
+;==============================================================
 CTC_CH0_ISR:
         PUSH AF
+        PUSH BC
+        PUSH DE
+        PUSH HL
 
+        ; 2回に1回 → 20ms 周期
         LD   A, (SOFT_TICKS)
         INC  A
-        CP   2                  ; 2 回 = 2 × 9.984ms = 19.968ms ≈ 20ms
-        JR   C, ISR_END         ; まだ 2 未満 → スキップ
-
-        XOR  A                  ; カウンタリセット
         LD   (SOFT_TICKS), A
+        AND  01H
+        JR   NZ, ISR_END            ; 奇数回 → スキップ
 
-        ; ここに 50ms 周期の処理を書く
+        ; キースキャン
+	    LD   HL, PORT_INDEX
+    	LD   BC, 0FDFH          ; B=0Fh (内側スキャン回数), C=DFh (ポート番号)
+    	CALL KEY_SCAN			; A = ASCIIコード (0=キーなし)
+        OR   A
+        JR   Z, ISR_END              ; キーなし
+
+        ; バッファ満杯チェック
+        LD   C, A                    ; C = ASCIIコード退避
+        LD   A, (pointer_for_write_key_buffer)
+        CP   07FH                    ; pointer = 7FH (127) → 満杯
+        JR   Z, ISR_END              ; 満杯 → 破棄
+
+        ; input_key_buffer[pointer] へ書き込み
+        LD   HL, input_key_buffer
+        LD   D, 0
+        LD   E, A                    ; DE = pointer (オフセット)
+        ADD  HL, DE                  ; HL = &input_key_buffer[pointer]
+        LD   (HL), C                 ; ASCIIコードを格納
+
+        ; ポインタを進める
+        INC  A
+        LD   (pointer_for_write_key_buffer), A
 
 ISR_END:
-        LD   (SOFT_TICKS), A    ; 更新値（またはリセット値）を保存
+        POP  HL
+        POP  DE
+        POP  BC
         POP  AF
         EI
         RETI
+
 
 ;=======================
 ;S-OSワーク･エリア
@@ -4822,17 +4884,17 @@ GETFCB:
 	JR	NZ,GETFC1	;テープ以外
 
 ;	テープの場合
-	CALL	TRDVSW	;#DVSWからテープのデバイス名を求めます
+	CALL TRDVSW	;#DVSWからテープのデバイス名を求めます
 	LD	(_DSK),A
 	JP	_RDI	;カセットのインフォメーション･ファイルをロードします
 
 ;	テープ以外
 GETFC1:
-	CALL	_GETKY
-	CP	1BH	;ESC
-	JP	Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
-	CP	0DH	;RET
-	JR	NZ,GETFC2
+	CALL GETKY
+	CP 1BH	;ESC
+	JP Z,DEND	;[_DIRNO]と[RETPOI]をクリアしてエラーNo.8でリターン
+	CP 0DH	;RET
+	JR NZ,GETFC2
 
 ;	RETキーが押された場合
 	LD	A,(RETPOI)	;以前正しいFCBがロードされたかのフラグ
