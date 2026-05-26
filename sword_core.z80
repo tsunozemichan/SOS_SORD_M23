@@ -1,25 +1,22 @@
-﻿
+﻿;=========================================================
+; S-OS SYSTEM Subroutines for SORD M23
+;=========================================================
 
-;
+;==============
 ; CRTC ports
-;
+;==============
 VRAM_TXT_TOP EQU 0F800H ; VRAM上で画面左上を指すアドレス
 VRAM_TXT_END 		EQU FFD0H ; VRAMのテキストエリアの終端アドレス
 VRAM_ATR_TOP EQU 0F000H ; アトリビュートの先頭アドレス
 CRTC_ADDRESS_PORT 	EQU F0H ; CRTCアドレスポート
 CRTC_VALUE_PORT 	EQU F1H ; CRTC値ポート
-; CRTC_ADDRESS_PORT EQU 0F0H ; CRTCアドレス･ポート
-; CRTC_VALUE_PORT EQU 0F1H ; CRTCデータ･ポート
-; NUMBER_OF_CHARACTER_AT_LINE EQU 50H ; 80文字モードの1行のバイト数
-; CURSOR_XY_ADDR EQU FF00H ; カーソルのX,Y座標を保存するアドレス
 
 ; Display Constants
 NUMBER_OF_CHARACTER_AT_LINE	EQU 80 ; 80文字モードの1行の文字数
 
-
-;
+;================
 ; FDC I/O ports
-;
+;================
 FDC_COMMAND_REG EQU 0C0H
 FDC_STATUS_REG 	EQU FDC_COMMAND_REG
 FDC_TRACK_REG 	EQU 0C1H
@@ -29,9 +26,9 @@ DMA_ADDRESS 	EQU 0C4H
 FDC_CONTROL_REG EQU 0C5H
 DMA_BANK_SEL 	EQU 0C6H
 
-
-
+;================
 ; Ascii code Constants
+;================
 CR	EQU	0DH ; Carriage Return
 LF	EQU	0AH ; Line Feed
 BS	EQU	08H ; Back Space
@@ -42,16 +39,15 @@ BEL EQU 07H ; Bell
 NP  EQU 0CH ; Formfeed (also: New page NP)
 ESC EQU 1BH ; Escape
 
-
-
+;=============================================
+; CTC I/O ports and constants
 ; CTC Timer Initialization for S-OS
 ; Ch0を10ms周期のタイマーとして設定（IM2割り込み）
-
+;=============================================
 CTC_CH0     EQU 0FCh        ; CTC Ch0ポート
 VEC_BASE    EQU 00h         ; CTCベクタベース
 IM2_TABLE   EQU 0FF00h      ; IM2割り込みベクタテーブル
 CTC_VEC_CH0 EQU 00h         ; Ch0のベクタオフセット
-
 
 ;〈SLANGについて〉
 ; SLANGは、特殊ワークのサイズによっては動作しません。
@@ -67,21 +63,14 @@ CTC_VEC_CH0 EQU 00h         ; Ch0のベクタオフセット
 
 	ORG	0100H
 
-
 ;=======================
 ;汎用バッファ
 ;=======================
-
-
 ;	0100H（256バイト）
 BUFFER:	DS	256
-
-
 ;=======================
 ;文字列入力バッファ
 ;=======================
-
-
 ;	0100Hバイト
 keyboard_buffer:	DS	256
 ;
@@ -90,16 +79,11 @@ keyboard_buffer:	DS	256
 ; 末尾1バイトのアドレスが00であることを期待している。
 ;
 	; org KEYBOARD_SCAN_BUFFER
-
 PORT_INDEX:
 	DS 16
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
+;=============================================
 ; Keyboard map
-;
-
+;=============================================
 KEY_MAP:
 	DB 0H,'1234567890-=',5CH,08H,0H
 	DB 0H,'QWERTYUIOP@',5BH,0DH,0DH,0H
@@ -109,18 +93,13 @@ KEY_MAP:
 ;=======================
 ;キー入力バッファ
 ;=======================
-
-
 ;	0080H（128バイト）
 input_key_buffer:	DS	127	;キー入力バッファ（127文字分）
 pointer_for_write_key_buffer:	DS	1	;キーを書き込むポインタ（＝0でカラ、＝7FHでいっぱい）
 
-
 ;=======================================
 ;コントロール･コード･ジャンプ･テーブル
 ;=======================================
-
-
 ;	0040H（64バイト）
 control_code_jump_tabel:
 	DW	control_code_NULL	;^＠
@@ -156,50 +135,35 @@ control_code_jump_tabel:
 	DW	control_code_Up		;^＾ ↑
 	DW	control_code_Down	;^＿ ↓
 
-
 ;=======================================
 ;カーソル･オフセット計算用テーブル下位
 ;=======================================
 ;y座標に対応するカーソル･オフセットを得ます
 ;カーソル･オフセット←[cursor_offset_for_Y_table＋256＋y座標]×256＋[cursor_offset_for_Y_table＋y座標]
-
-
 ;	0020H（32バイト）
 cursor_offset_for_Y_table:	DS	32
-
 
 ;===============================
 ;システム･スタック･エリア
 ;===============================
-
-
 ;	00CCH（204バイト）
 	DS	256-52
 system_stack_area:
 
-
 ;*******	256バイト境界	********
-
 
 ;=======================================
 ;カーソル･オフセット計算用テーブル上位
 ;=======================================
 ; y座標に対応するカーソル･オフセットを得ます。
 ;カーソル･オフセット←[cursor_offset_for_Y_table＋256＋y座標]×256＋[cursor_offset_for_Y_table＋y座標]
-
-
 ;	0020H（32バイト）
 	DS	32
-
-
 ;=======================
 ;内部ワーク･エリア
 ;=======================
-
-
 ;	0050H（80バイト）
 fcb_buffer:	DS	32	;S-OSのFCBバッファ（[_IBFAD]でポイント）
-
 ;	通常（42バイト）
 total_number_of_character_display:	DS	2	;画面の表示文字数
 cursor_offset_last_top_of_line:		DS	2	;最終行先頭のカーソル･オフセット
@@ -224,31 +188,23 @@ GRAFLG:				DS	1	;＝FFHでグラフィック表示（未使用の場合あり）
 
 vram_size:			DS	2	;VRAMのサイズ÷100H
 
-
-
 	ORG	(($+0FFH) & 0FF00H)
-
 
 ;===============================
 ;ライン･ターミナル･テーブル
 ;===============================
-
-
 ; 先頭行の行連結情報はxx00Hのアドレスに格納されます。
 ;行連結情報←lineterminal_table＋y座標（0～）
 ; FFHで次の行と連結。
 ;	0020H（32バイト）
 lineterminal_table:	DS	32
 
-
-;-----------------------
+;=======================
 ;S-OSルーチン
-;-----------------------
-
+;=======================
 ;=======================
 ;システム･ルーチン
 ;=======================
-
 
 ;#COLD（1FFDH）の本体
 ; コールド･スタートして、[_USR]のアドレスにジャンプします。
@@ -263,7 +219,6 @@ COLD:
 ;	初期化
 	LD	SP,(_STKAD)
 	DI
-	; IM	2
 	CALL CTC_INIT			;CTCの初期化
 	CALL CRT_INIT			;CRTCの初期化
 	CALL FDC_INIT			;FDCの初期化
@@ -275,9 +230,8 @@ COLD:
 	LD	HL,system_stack_area
 	LD	(_STKAD),HL
 
-
 ;	キー入力バッファのクリア
-	CALL	clear_key_buffer ; インデックスポインタを0にしているだけ。
+	CALL clear_key_buffer ; インデックスポインタを0にしているだけ。
 
 ;	ディスクのパラメータの初期化
 	LD	HL,000EH ;  FATは第0トラック、第15セクタにある。HuBASIC準拠。
@@ -294,12 +248,9 @@ COLD:
 ;	ディスクI／O初期化
 	; CALL	SOSSI
 
-
-
 ;	タイトル表示
 	LD	DE,title_message
 	CALL 	print_string_until_00H_from_DE_register
-
 
 ;	文字列入力バッファの80バイトをクリア
 	LD	HL,(_KBFAD)
@@ -322,19 +273,16 @@ COLD:
 
 	JP	(HL)	;旧[_USR]の内容にジャンプ
 
-
 ;コールド･スタート時のメッセージ
 title_message:
 	DB	'<<<<< S-OS  SWORD >>>>>',CR
 	DB	00H
-
 
 ;#BOOT（2036H）の本体
 ; S-OSを終えます。
 ;注：フィジカル･ルーチンboot_entity（全レジスタ破壊）を呼び出します。
 BOOT:
 	JP	boot_entity
-
 
 ;===============================
 ;バージョン･ナンバーの取り出し
@@ -379,17 +327,14 @@ VER:
 	POP	AF
 	RET
 
-
 ;===============
 ;表示ルーチン
 ;===============
-
 ;#PRNTS（1FF1H）の本体
 ; スペースを1つ表示します。
 ;入力	なし
 ;出力	なし
 ;破壊	F（実際なし）
-
 print_space_character:
 	PUSH AF
 	LD	A,' '
@@ -397,13 +342,11 @@ print_space_character:
 	POP	AF
 	RET
 
-
 ;#LTNL（1FFEH）の本体
 ; 改行します。
 ;入力	なし
 ;出力	なし
 ;破壊	なし
-
 carriage_return_and_line_feed:
 	PUSH AF
 	LD	A, CR
@@ -413,7 +356,6 @@ carriage_return_and_line_feed:
 	POP	AF
 	RET
 
-
 ;#NL（1FEBH）の本体
 ; 行頭でなければ、改行します。
 ;入力	なし
@@ -421,7 +363,6 @@ carriage_return_and_line_feed:
 ;破壊	なし
 ;注：
 ; 行頭でなければ改行します。
-
 carriage_return_if_not_at_head_of_line:
 	PUSH DE
 	PUSH BC
@@ -434,7 +375,6 @@ NLRET:
 	POP	DE
 	RET
 
-
 ;
 ;#MSG（1FE8H）の本体
 ; DEレジスタの示すアドレスから0DHが出現するまでアスキーコードとみなし文字列表示する。
@@ -443,7 +383,6 @@ NLRET:
 ;破壊	F（実際なし）
 ;注：0DHは表示しません。
 ; このサブルーチンを完成させてください。
-
 print_string_pointed_by_DE_register:
 	PUSH	AF
 	PUSH	HL
@@ -469,7 +408,6 @@ MSGSKP:
 ;出力	なし
 ;破壊	F（実際なし）
 ;注：00Hは表示しません。
-
 print_string_until_00H_from_DE_register:
 	PUSH	AF
 	PUSH	HL
@@ -523,7 +461,6 @@ mprint_done:
                                 ;      HL = 旧HL (呼び出し元の HL を復元)
     RET                     ; 00H の次のアドレスへリターン
 
-
 ; TAB(1FDFH)の本体
 ; Bレジスタの値と、カーソルのX座標との差を計算して、その結果の数だけスペースを表示する。
 TAB:
@@ -568,7 +505,6 @@ LPRINT:
 ;入力	Acc←データ
 ;出力	なし
 ;破壊	AF
-
 print_hex_2_digit:
 	PUSH AF	;保存
 	SRL	A	; 上位4ビットを取得
@@ -584,13 +520,11 @@ print_hex_2_digit:
 	; Aレジスタは破壊されたままリターンする。
 	RET
 
-
 ;#print_hex_4_digit（1FBEH）の本体
 ; HLレジスタの値を16進4桁で表示する。
 ;入力	HL←データ
 ;出力	なし
 ;破壊	AF
-
 print_hex_4_digit:
 	LD	A,H ; HLの上位バイトをAにロード
 	CALL print_hex_2_digit ; 2桁表示
@@ -598,13 +532,11 @@ print_hex_4_digit:
 	CALL print_hex_2_digit ; 2桁表示
 	RET
 
-
 ;#ASC（1FBBH）の本体
 ; Aレジスタの下位4ビットの値を16進数で表したときのアスキーコードに変換してAレジスタに格納する。
 ;入力	Acc下位4ビット←データ
 ;出力	Acc←16進数表示のアスキーコード
 ;破壊	AF
-
 convert_data_to_ascii_code:
 	AND	0FH	; 下位4ビットを取得
 	CP	10 ; 10未満か？
@@ -652,9 +584,7 @@ HEXERR:	LD	A,14	;Bad Data
 ;	CY＝1ならエラー
 ;破壊	AF，DE
 ;注：小文字に対応。
-
 convert_2_digit_data_to_hex_binary_ascii_code:
-
 	LD	A,(DE) ; 16進1桁目取得
 	CALL	convert_data_to_hex_binary_ascii_code ; 1桁目変換
 	JR	C,HEXERR ; エラーならリターン
@@ -675,9 +605,7 @@ convert_2_digit_data_to_hex_binary_ascii_code:
 	ADD	A,L ; Lに加算
 	LD	L,A ; Lに格納
 	INC	DE ; DEカウントアップ
-	
 	RET
-
 
 ;#HLHEX（1FB2H）の本体
 ; DEレジスタの示すアドレスから4バイトの内容を、4桁の16進数で表現するアスキーコードとしてバイナリに変換し、
@@ -688,7 +616,6 @@ convert_2_digit_data_to_hex_binary_ascii_code:
 ;	CY＝1ならエラー
 ;破壊	AF，HL，DE
 ;注：小文字に対応。
-
 convert_4_digit_data_to_hex_binary_ascii_code:
 	CALL convert_2_digit_data_to_hex_binary_ascii_code ; 先頭2桁を変換
 	JR	C,HEXERR ; エラーならリターン
@@ -697,11 +624,9 @@ convert_4_digit_data_to_hex_binary_ascii_code:
 	JR	C,HEXERR ; エラーならリターン
 	RET
 
-
 ;===============
 ;スクリーン制御
 ;===============
-
 
 ;#CSR（2018H）の本体
 ; カーソル座標を読み出します。
@@ -721,7 +646,6 @@ CSR:
 	POP	AF
 	RET
 
-
 ;#LOC（201EH）の本体
 ; HLレジスタの値(L=X座標、H=Y座標)で指定するXY座標へカーソルの位置をセットする。
 ;入力	L←x座標、H←y座標
@@ -730,7 +654,6 @@ CSR:
 ;注：
 ; 「WALRUS」がAccの保存を期待しているので、Accは保存します。
 ; 「ELFES IV」「TANGERINE」などでCYクリアが必要。
-
 LOC:
 	PUSH AF
 	LD A,H
@@ -741,7 +664,6 @@ LOC:
 	OR A	;CY←0
 	RET
 
-
 ;#SCRN（201BH）の本体
 ; HレジスタにY座標、LレジスタにX座標を格納してコールすると、画面上におけるその座標の文字を読み込み、Aレジスタに格納する。
 ;入力	L←x座標、H←y座標
@@ -749,7 +671,6 @@ LOC:
 ;破壊	AF
 ;注：
 ; CYをクリアします。
-
 SCRN:
 	DI
 	PUSH	HL
@@ -768,7 +689,6 @@ SCRN:
 	EI
 	RET
 
-
 ;#WIDCH（2030H）の本体
 ; 表示桁数を変更します。SORD M23ではサポートしません。
 ;入力	Acc←桁数
@@ -779,6 +699,8 @@ WIDCH:
 	OR A	;CY←0
 	RET
 
+;#ERROR (2033H)の本体
+; エラーを表示します。
 RSERR:
 	RET
 
@@ -794,8 +716,6 @@ LINCH0:
 ;=======================
 ;ビープ音を鳴らします
 ;=======================
-
-
 ;#BELL（1FC4H）の本体
 ; ビープ音を鳴らします。
 ;入力	なし
@@ -804,12 +724,9 @@ LINCH0:
 BELL:
 	RET
 
-
 ;=======================
 ;プリンタ･ルーチン
 ;=======================
-
-
 ;#LPRNT（1FDCH）本体
 ; プリンタ1文字出力。SORD M23ではサポートしません。
 ;入力	Acc←文字
@@ -820,7 +737,6 @@ BELL:
 ; 00H、0AH、1AHは、無視します。
 LPRNT:
 	RET
-
 ;#LPTON（1FD9H）の本体
 ; 表示をプリンタ出力モードにします。SORD M23ではサポートしません。
 ;入力	なし
@@ -829,7 +745,6 @@ LPRNT:
 ;注：
 LPTON:
 	RET
-
 ;#LPTOF（1FD6H）の本体
 ; 表示を非プリンタ出力モードにします。SORD M23ではサポートしません。
 ;入力	なし
@@ -838,11 +753,9 @@ LPTON:
 LPTOF:
 	RET
 
-
 ;===============
 ;入力ルーチン
 ;===============
-
 ;#GETKY（1FD0H）の本体
 ; キーボードからリアルタイムキー入力をする。入力したでデータはAレジスタに格納され、
 ; 何も押されていない時は、Aレジスタに0をセットして、リターンする。
@@ -857,23 +770,6 @@ GETKY:
 	POP IX
 	POP DE
 	RET
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; キースキャン サブルーチン
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-KEY_ONECE_SCAN:
-	PUSH HL
-	PUSH BC
-	LD B,1H
-	CALL KEY_SCAN_REPEAT
-	POP BC
-	POP HL
-	RET
-
 
 ;----------------------------------------------------------
     ; B = 繰り返し回数 (1-255) をセットしてから呼ぶ
