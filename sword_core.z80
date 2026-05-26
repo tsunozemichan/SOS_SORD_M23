@@ -672,7 +672,6 @@ LOC:
 ;注：
 ; CYをクリアします。
 SCRN:
-	DI
 	PUSH	HL
 	PUSH	DE
 	PUSH	BC
@@ -680,13 +679,14 @@ SCRN:
 	LD	C,L ; X座標をCにロード
 	CALL GET_VRAM_ADDRESS_FROM_X_Y ; XY座標からVRAMアドレスをHLにロード
 ; VRAMにアクセスして、カーソル位置DEにある通常文字のアスキーコードを得る。
+	DI
 	OUT (VRAM_BANK_PORT),A ; access to RAM page 1
 	LD A,(HL) ; get character
+	EI
 	POP	BC
 	POP	DE
 	POP	HL
 	OR	A	;CY←0
-	EI
 	RET
 
 ;#WIDCH（2030H）の本体
@@ -771,28 +771,18 @@ GETKY:
 	POP DE
 	RET
 
-;----------------------------------------------------------
-    ; B = 繰り返し回数 (1-255) をセットしてから呼ぶ
-    ;
-    ; 例: LD B, 10
-    ;       CALL KEY_SCAN_REPEAT
-    ;
-    ; 設計のポイント:
-    ;   元コードの PUSH BC / POP BC が外側の DJNZ カウンタ (B) を
-    ;   KEY_SCAN 内部の DJNZ から守る二重の役割を担っている。
-    ;   追加の PUSH / POP は不要。
-    ;----------------------------------------------------------
-KEY_SCAN_REPEAT:
-    PUSH HL
-    PUSH BC                 ; B (残り回数) をスタックに退避
-    LD   HL, PORT_INDEX
-    LD   BC, 0FDFH          ; B=0Fh (内側スキャン回数), C=DFh (ポート番号)
-    CALL KEY_SCAN
-    POP  BC                 ; B (残り回数) を復元
-    POP  HL
-    DJNZ KEY_SCAN_REPEAT    ; B-- して 0 でなければ継続
-    RET
-
+;========================================
+; キー入力ルーチン
+; KEY_SCAN_WRAPPERは、何かが押されているときにKEY_SCANを呼び出すルーチンです。
+; 何も押されていないときはループしてキー入力を待ちます。
+; 一回だけ、16個のキーマトリックスI/Oポートをスキャンしたい場合には、以下のようにKEY_SCANをコールします。
+;
+; 	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
+;	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
+;	CALL KEY_SCAN ; キースキャンを実行する。
+;
+;  KEY_SCANルーチン内で、DJNZを使って、16個のキーマトリックスI/Oポートをスキャンするため、BCレジスタに値が設定されていないと正しく動きません。
+;========================================
 KEY_SCAN_WRAPPER:
 	PUSH HL
 	PUSH BC
@@ -814,7 +804,9 @@ KEY_SCAN:
 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
 SCAN_LOOP:
 	INC C ; 初回の処理で、C=0xDF+1=0xE0となる。
+	DI
 	IN A,(C)
+	EI
 	AND (HL) ; INIでスキャンした結果と照合。
 	LD (HL),A ; 値を、INIで入れたアドレスと同じところに格納する。
 	INC HL ; メモリアドレスをインクリメント。
@@ -1009,7 +1001,9 @@ KEY_BREAK_WAIT:
 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
 BREAK_SCAN_LOOP:
 	INC C ; 初回の処理で、C=0xDF+1=0xE0となる。
+	DI
 	IN A,(C)
+	EI
 	AND (HL) ; INIでスキャンした結果と照合。
 	LD (HL),A ; 値を、INIで入れたアドレスと同じところに格納する。
 	INC HL ; メモリアドレスをインクリメント。
@@ -1042,7 +1036,9 @@ SHIFT_KEY_NEXT_GET:
 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
 SHIFT_SCAN_LOOP:
 	INC C ; 初回の処理で、C=0xDF+1=0xE0となる。
+	DI
 	IN A,(C)
+	EI
 	LD (HL),A ; 値を、INIで入れたアドレスと同じところに格納する。
 	INC HL ; メモリアドレスをインクリメント。
 	DJNZ SHIFT_SCAN_LOOP ; 16回繰り返す
@@ -1221,7 +1217,9 @@ CONTROL_KEY_NEXT_GET:
 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
 CONTROL_SCAN_LOOP:
 	INC C ; 初回の処理で、C=0xDF+1=0xE0となる。
+	DI
 	IN A,(C)
+	EI
 	LD (HL),A ; 値を、INIで入れたアドレスと同じところに格納する。
 	INC HL ; メモリアドレスをインクリメント。
 	DJNZ CONTROL_SCAN_LOOP ; 16回繰り返す
@@ -1334,74 +1332,97 @@ CODE_Z_CONTROL:
 ;入力	なし
 ;出力	ZF＝1なら^Cが押されています
 ;破壊	AF
-;注：
-; 常にオート･リピートがかかっています。
-; フィジカル･ルーチンreal_time_input_key_entity（AF，HL，DE，BC破壊）を呼び出します。
 ; ^C（03H）とESC（1BH）をブレイク･キーとみなします。
+;#BRKEY（1FCDH）本体
+; ^C（03H）またはESC（1BH）が押されているかチェックします。
+; キーバッファおよびポインタは変更しません。
+; 入力: なし
+; 出力: ZF=1 → ^C または ESC が押されている
+;       ZF=0 → ブレイクキーなし（またはバッファ空）
+; 破壊: AF
 check_break_key:
-	CALL	GETKY
-	CP	03H	;^C
-	JR	Z,BRKRET
-	CP	1BH	;ESC
-	JR	Z,BRKRET
-	OR	0FFH	;ZF←0，CY←0
-BRKRET:
-	; POP	BC
-	; POP	DE
-	; POP	HL
-	RET
+        PUSH HL
+        PUSH DE
 
+        ; バッファ空チェック
+        LD   A, (pointer_for_write_key_buffer)
+        OR   A
+        JR   Z, BRKEY_NONE              ; pointer=0 → 空 → ZF=0 で戻る
+
+        ; 最新文字 = buffer[pointer-1] を読む（バッファ変更なし）
+        LD   HL, input_key_buffer
+        LD   D, 0
+        DEC  A                          ; A = pointer-1（最新エントリのインデックス）
+        LD   E, A
+        ADD  HL, DE                     ; HL = &buffer[pointer-1]
+        LD   A, (HL)                    ; A = 最新の ASCII コード
+
+        POP  DE
+        POP  HL
+
+        CP   03H                        ; ^C ?
+        RET  Z                          ; 一致 → ZF=1 で戻る
+        CP   1BH                        ; ESC ?
+        RET  Z                          ; 一致 → ZF=1 で戻る
+        OR   0FFH                       ; ZF←0（ブレイクキーでない）
+        RET
+
+BRKEY_NONE:
+        POP  DE
+        POP  HL
+        OR   0FFH                       ; ZF←0（バッファ空）
+        RET
 
 ;#PAUSE（1FC7H）の本体
 ; ポーズ処理。
 ; どのタイミングでも、
-;^Cが入力されればインライン･パラのアドレスにジャンプします。
-;何もキーが押されていなければ、そのままリターンします。
+; ^Cが入力されればインライン･パラのアドレスにジャンプします。
+; 何もキーが押されていなければ、そのままリターンします。
 ; スペースが押されれば一時停止し、他のキーが押されればリターンします。
 ;入力	「CALL ＃PAUSE」の次のアドレス←^C入力時の飛び先
 ;出力	なし
 ;破壊	AF
 PAUSE:
-	EX	(SP),HL	;スタック←HL，HL←インライン･パラのアドレス
-	PUSH	DE
-	PUSH	BC
-	LD	E,(HL)
-	INC	HL
-	LD	D,(HL)
-	INC	HL
-	LD	(PAURET),HL	;リターン･アドレス
-	LD	(PAUREB),DE	;インライン･パラ
-	CALL	check_break_key
-	JR	Z,PAUBRK
-	CALL	GETKY ;リアルタイムキー。何も押されていない時は、Aレジスタに0をセットして、リターンする。
-	CP	' ' ;スペースか？
-	JR	NZ,PAUESC
-
+	EX (SP),HL	;スタック←HL，HL←インライン･パラのアドレス
+	PUSH DE
+	PUSH BC
+	LD E,(HL)
+	INC HL
+	LD D,(HL)
+	INC HL
+	LD (PAURET),HL	;リターン･アドレス
+	LD (PAUREB),DE	;インライン･パラ
+	CALL check_break_key
+	JR Z,PAUBRK
+	CALL GETKY ;リアルタイムキー。何も押されていない時は、Aレジスタに0をセットして、リターンする。
+	CP ' ' ;スペースか？
+	JR NZ,PAUESC
 PAULP:
-	CALL	check_break_key
-	JR	Z,PAUBRK
-	CALL	GETKY
-	OR	A
-	JR	Z,PAULP
-	CP	' '
-	JR	Z,PAULP
-
-PAUESC:	POP	BC
+	CALL check_break_key
+	JR Z,PAUBRK
+	CALL GETKY
+	OR A
+	JR Z,PAULP
+	CP ' '
+	JR Z,PAULP
+PAUESC:
+	POP	BC
 	POP	DE
 	POP	HL
 	XOR	A
 	DB	0C3H	;「JP」
 PAURET:	DS	2
 
-PAUBRK:	POP	BC
+PAUBRK:
+	POP	BC
 	POP	DE
 	POP	HL
 	XOR	A
 	DB	0C3H	;「JP」
 PAUREB:	DS	2
 
-
-;#INKEY（1FCAH）の本体
+;===============================
+; #INKEY（1FCAH）の本体
 ; 何かキーを押すまでキー入力待ちをする。キー入力があるとリターンする。
 ; キー入力（入力待ちあり、エコー･バックなし）。
 ;入力	なし
@@ -1414,13 +1435,14 @@ INKEY:
 INKEY_WAIT_LOOP:
 	CALL KEY_SCAN_WRAPPER
 	; Accにキーコードが入っているか？
-	CP	0
-	JR	Z,INKEY_WAIT_LOOP ; 0なら、キー入力待ちループ
+	; CP	0
+	; JR	Z,INKEY_WAIT_LOOP ; 0なら、キー入力待ちループ
 	POP IX
 	POP DE
 	RET
 
 
+;===============================
 ;#FLGET（2021H）の本体
 ; カーソル表示つき、キー入力（入力待ちあり、エコー･バックなし）。
 ;入力	なし
@@ -1434,6 +1456,7 @@ FLGET:
 	POP DE
 	RET
 
+;===============================
 ;#GETL（1FD3H）の本体
 ; 文字列入力。
 ;入力	DE←キー入力バッファの先頭アドレス
@@ -1473,7 +1496,6 @@ GETL_END:
 
 	POP	DE
 	RET
-
 GETL_BS:
 	; バッファの先頭なら何もしない。
 	LD	A,(DE)
@@ -1481,11 +1503,11 @@ GETL_BS:
 	JR	Z,GETL_LOOP
 	DEC	DE ; バッファ･ポインタを1つ戻す
 	JR	GETL_LOOP
+
 ;===============================
 ;ファイル操作（ファイル名処理）
 ;===============================
-
-
+;===============================
 ;#FPRNT（1F9DH）の本体
 ; S-OSのFCBバッファのファイル名を表示します（改行しません）。
 ; ポーズ機能あり。
@@ -1520,6 +1542,7 @@ FPRLP2:	LD	A,(DE)
 	RET
 
 
+;===============================
 ;#FSAME（1FA0H）の本体
 ; ＃FILE（1FA3H）でセットされたファイル名、ファイル属性と、
 ;DE～にセットされた解析されてないないファイル名（エンド･コード00H）、
@@ -1563,7 +1586,7 @@ FSMERR:	LD	A,8	;File not Found
 	SCF
 	RET
 
-
+;===============================
 ;#FILE（1FA3H）の本体
 ; ファイル名を解析して、各ワークにパラメータをセットします。
 ;入力	Acc←ファィル属性、DE←文字列（ファイル名）の先頭
@@ -1600,7 +1623,7 @@ FILE:
 ;ファイル名処理補助ルーチン
 ;===============================
 
-
+;===============================
 ;ファイル名を比較します
 ;入力	DE←比較されるファイル名の先頭、HL←比較するファイル名の先頭、
 ;	Acc←カウンタ
@@ -1625,7 +1648,7 @@ CPFSKP:	INC	DE
 	XOR	A	;ZF←1
 	RET
 
-
+;===============================
 ;ファイル名を解析します
 ;入力	DE←文字列（ファイル名）の先頭
 ;出力	[BUFFER]←デバイス名、[BUFFER＋1～]←変換されたファイル名
@@ -2393,47 +2416,79 @@ INKRT:
 ;入力	なし
 ;出力	Acc←アスキー･コード
 ;破壊	AF，HL，DE，BC
-;注：ジョイスティック対応。
 real_time_input_key_entity:
     ; --- 競合保護区間 ---
     DI
 
-    ;----------------------------------------------------------
-    ; バッファが空なら即 0 を返す（非ブロッキング）
-    ;----------------------------------------------------------
     LD   A, (pointer_for_write_key_buffer)
     OR   A
     JR   NZ, REALTIME_HAS_KEY
-    XOR  A                          ; A = 0（キーなし）
+    XOR  A                              ; キーなし → 0 を返す
+    EI
     RET
 
 REALTIME_HAS_KEY:
-    ; buffer[0] を読み出す
-    LD   A, (input_key_buffer)
-    PUSH AF
-
-
-    ; buffer[1..pointer-1] → buffer[0..pointer-2] へシフト
-    LD   A, (pointer_for_write_key_buffer)
-    DEC  A                          ; シフト数 = pointer - 1
-    JR   Z, REALTIME_SKIP_SHIFT     ; 1 文字のみ → シフト不要
-
-    LD   B, 0
-    LD   C, A                       ; BC = シフト数（1～126、必ず正）
-    LD   HL, input_key_buffer+1
-    LD   DE, input_key_buffer
-    LDIR
-
-REALTIME_SKIP_SHIFT:
+    ; 最新キー = buffer[pointer - 1] を読む
+    LD   HL, input_key_buffer
+    LD   D, 0
     LD   A, (pointer_for_write_key_buffer)
     DEC  A
+    LD   E, A
+    ADD  HL, DE                         ; HL = &buffer[pointer-1]
+    LD   A, (HL)                        ; A = 最新の ASCII コード
+    PUSH AF                             ; 戻り値を退避
+
+    ; バッファを全クリア（ポインタを 0 に戻すだけで十分）
+    XOR  A
     LD   (pointer_for_write_key_buffer), A
 
     EI
     ; --- 競合保護区間 終了 ---
 
-    POP  AF                         ; A = 読み出した ASCII コード
-    RET
+    POP  AF                             ; A = ASCII コード
+	RET
+
+
+; real_time_input_key_entity:
+;     ; --- 競合保護区間 ---
+;     DI
+
+;     ;----------------------------------------------------------
+;     ; バッファが空なら即 0 を返す（非ブロッキング）
+;     ;----------------------------------------------------------
+;     LD   A, (pointer_for_write_key_buffer)
+;     OR   A
+;     JR   NZ, REALTIME_HAS_KEY
+;     XOR  A                          ; A = 0（キーなし）
+; 	EI
+;     RET
+
+; REALTIME_HAS_KEY:
+;     ; buffer[0] を読み出す
+;     LD   A, (input_key_buffer)
+;     PUSH AF
+
+;     ; buffer[1..pointer-1] → buffer[0..pointer-2] へシフト
+;     LD   A, (pointer_for_write_key_buffer)
+;     DEC  A                          ; シフト数 = pointer - 1
+;     JR   Z, REALTIME_SKIP_SHIFT     ; 1 文字のみ → シフト不要
+
+;     LD   B, 0
+;     LD   C, A                       ; BC = シフト数（1～126、必ず正）
+;     LD   HL, input_key_buffer+1
+;     LD   DE, input_key_buffer
+;     LDIR
+
+; REALTIME_SKIP_SHIFT:
+;     LD   A, (pointer_for_write_key_buffer)
+;     DEC  A
+;     LD   (pointer_for_write_key_buffer), A
+
+;     EI
+;     ; --- 競合保護区間 終了 ---
+
+;     POP  AF                         ; A = 読み出した ASCII コード
+;     RET
 
 
 ;==============================================================
@@ -3580,7 +3635,6 @@ GXYVA_DONE:
 ;     F800H + 22H - 2 = F820H ✓  (期待値: (2000+80) mod 2048 = 32 → F820H)
 ;==============================================================
 SCROLL_UP:
-	DI
     PUSH AF
     PUSH BC
     PUSH DE
@@ -3600,8 +3654,10 @@ SCROLL_UP:
     LD  A, 20H              ; スペース文字
 
 SU_CLEAR:
+	DI
     OUT (VRAM_BANK_PORT), A ; 次の命令 (LD(HL),A) を VRAM ページへ
     LD  (HL), A             ; VRAM にスペースを書き込む
+	EI
     PUSH HL
     OR  A                   ; キャリークリア (OR A は A=20H を保持, CY=0 保証)
     SBC HL, DE              ; HL - FFFFH: Z=1 のとき HL=FFFFH
@@ -3619,8 +3675,10 @@ SU_CLEAR_WRAP:
     JR  Z, SU_CLEAR_DONE    ; B=0 → 80 文字消去完了
     LD  HL, VRAM_TXT_TOP    ; F800H へ折り返し
 SU_CLEAR_WRAP_LOOP:
+	DI
     OUT (VRAM_BANK_PORT), A
     LD  (HL), A
+	EI
     INC HL
     DJNZ SU_CLEAR_WRAP_LOOP
 
@@ -3655,6 +3713,7 @@ SU_UPDATE_TLA:
     ;     H → R12 (上位),  L → R13 (下位)
     ;     絶対 VRAM アドレスをそのまま書き込む (旧コードと同方式)
     ;----------------------------------------------------------
+	DI
     LD  A, CRTC_R12_START_H
     OUT (CRTC_ADDRESS_PORT), A
     LD  A, H
@@ -3663,12 +3722,12 @@ SU_UPDATE_TLA:
     OUT (CRTC_ADDRESS_PORT), A
     LD  A, L
     OUT (CRTC_VALUE_PORT), A
+	EI
 
     POP HL
     POP DE
     POP BC
     POP AF
-	EI
     RET
 
 
@@ -3696,14 +3755,15 @@ WRITE_CHAR_AT_X_Y:
     ; 書き込む文字コードを PUSH AF でスタックに退避する。
     ; CALL 後に POP AF で復元してから VRAM へ書き込む。
     ;----------------------------------------------------------
-	DI
     PUSH AF                         ; 文字コード (A) を退避
     CALL GET_VRAM_ADDRESS_FROM_X_Y  ; HL = VRAM アドレス  (A, DE 破壊)
     POP  AF                         ; A = 文字コード を復元
 
+	DI
     OUT  (VRAM_BANK_PORT), A        ; 次の命令 (LD(HL),A) を VRAM ページへ
     LD   (HL), A                    ; VRAM に文字を書き込む
 	EI
+
     RET
 
 
@@ -3932,6 +3992,7 @@ CO_FF_CLEAR:
     LD  A, 20H
     OUT (VRAM_BANK_PORT), A     ; 次の命令を VRAM ページへ
     LD  (HL), A
+	EI
     INC HL                      ; FFFFH の後は 0000H へ (16 ビット折り返し)
     DEC BC                      ; BC=0000H になったとき HL=0000H だが未使用
     LD  A, B
@@ -3942,7 +4003,6 @@ CO_FF_CLEAR:
     XOR A
     LD  (CURSOR_X), A
     LD  (CURSOR_Y), A
-	EI
     JR  CO_CURSOR_UPDATE
 
 
@@ -6273,8 +6333,10 @@ DRDSB:
 
 	; LD	A,5	;リトライ･カウンタ
 	; DMA Bank Select
+	DI
 	XOR A ; A=0
 	OUT (DMA_BANK_SEL), A
+	EI
 	POP DE ; 読み込み開始セクタを復帰
 	POP AF ; レコード数をAレジスタに取り出す
 
@@ -6349,8 +6411,10 @@ do_write_disk:
 
 	; LD	A,5	;リトライ･カウンタ
 	; DMA Bank Select
+	DI
 	XOR A ; A=0
 	OUT (DMA_BANK_SEL), A
+	EI
 	POP AF ; レコード数をAレジスタに取り出す
 
 	LD B,A ; Aレジスタのレコード数を読み込むセクタ数として、Bレジスタに設定
@@ -6500,7 +6564,9 @@ set_sector_number_and_execute_FDC_coomand:
 	PUSH BC
 	LD C,E
 	LD A,C
+	DI
 	OUT (FDC_SECTOR_REG),A
+	EI
 ;	31μs（124ts）待ちます
 	LD	A,7	;7ts
 J3:	DEC	A	;---ts
@@ -6571,12 +6637,17 @@ BFIOST:
 ; FDC COMMAND OUT subroutine
 ;
 FDCOUT:
+	DI
 	OUT (FDC_COMMAND_REG),A
+	EI
 	LD A,30H
-WLOOP: DEC A
+WLOOP:
+	DEC A
 	JR NZ,WLOOP
 LOOP2:
+	DI
 	IN A,(FDC_STATUS_REG)
+	EI
 	BIT 0H,A ; BUSY IS CLEAR?
 	JR NZ,LOOP2
 	RET
@@ -6597,8 +6668,10 @@ RESTORE_LOOP:
 ; E is Track No.
 ;
 SEEK:
+	DI
 	LD A,E ; E is Track No.
 	OUT (FDC_DATA_REG),A
+	EI
 	LD A,1BH  ; seek command. 15ms, Head Load, Verify OFF
 	CALL FDCOUT
 	AND 98H
@@ -6623,8 +6696,10 @@ DMA_ON:
 ; C is Sector No.
 ;
 GO_DMA_AND_READ0:
+	DI
 	LD A,C
 	OUT (FDC_SECTOR_REG),A
+	EI
 READ0_RETRY:
 	LD HL,DMA_COMMANDS
 	CALL DMA_ON
@@ -6633,8 +6708,10 @@ DO_FDC0:
 	CALL FDCOUT
 
 	PUSH AF
+	DI
 	LD A,83H ; DMA STOP
 	OUT (DMA_ADDRESS),A
+	EI
 	POP AF
 
 	AND 03CH
@@ -6647,8 +6724,10 @@ READ0_SUCCESS:
 ; C is Sector No.
 ;
 GO_DMA_AND_WRITE0:
+	DI
 	LD A,C
 	OUT (FDC_SECTOR_REG),A
+	EI
 	LD HL,DMA_WRITE_COMMANDS
 	CALL DMA_ON
 	LD A,0A0H ; WRITE DATA COMMAND for Side 0
