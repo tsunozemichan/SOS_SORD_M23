@@ -4414,7 +4414,116 @@ MNAME:
 ;モニタ Wコマンド処理
 ;注：80桁モード以外なら40桁モードにしています。
 MWIDTH:
-	JP	_WIDCH
+
+; R0 55d
+; R1 40d
+; R2 45d
+; R3 52d
+; R4 31d
+; R5 2d
+; R6 25d
+; R7 28d
+; R8 0d
+; R9 7d
+; R10 --
+; R11 --
+; R12 00
+; R13 00
+; R14 --
+; R15 --
+; R16 --
+; R17 --
+
+
+	LD A,00H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,40H;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,01H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,28H;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,02H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,2EH;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,03H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,34H;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,04H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,1FH;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,05H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,02H;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,06H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,19H;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,07H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,1CH;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,08H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,50H;
+	OUT (CRTC_VALUE_PORT),A
+	LD A,09H
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,07H;
+	OUT (CRTC_VALUE_PORT),A
+
+
+; カーソルの形状と点滅の設定
+	LD A,0AH ; R10 (cursor start address)
+	OUT (CRTC_ADDRESS_PORT),A
+;	LD A,C0H ; 点滅、豆腐カーソル
+	LD A,C7H ; 点滅、アンスコカーソル
+;	LD A,0H ; 表示せず。
+	OUT (CRTC_VALUE_PORT),A
+	LD A,0BH ; R11 (cursor end address)
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,0AH
+;	LD A,0H ; 表示せず。
+	OUT (CRTC_VALUE_PORT),A
+
+; カーソル座標を00Hに設定する。
+; 注：画面左上がカーソル座標では0000Hになる。VRAMにおけるテキスト画面左上(F800H)ではないことに注意。
+	LD A,0EH ; R14 (cursor H)
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,00H
+	OUT (CRTC_VALUE_PORT),A
+	LD A,0FH ; R15 (cursor L)
+	OUT (CRTC_ADDRESS_PORT),A
+	LD A,00H
+	OUT (CRTC_VALUE_PORT),A
+
+
+;
+; 	一度画面全てを消す(スペースで埋める)。
+;
+	LD HL,0F000H ; VRAMの左上のアトリビュートアドレス
+	; LD BC,0800H
+
+	LD B,050H
+	LD DE,0FFFFH
+	LD A,20H ; 20Hはアスキーコードでスペース
+WIDTH_CLEAR_LOOP:
+	OUT (VRAM_BANK_PORT),A ; D2Hポートになにか書くと次の命令は別のページ(この場合はVRAMのページ)に行う。
+	LD (HL),A ; F000H～FFFFHまで20Hで埋めている。アトリビュートに20H書いても問題ないみたい。
+	INC HL
+	SBC HL,DE
+	; JR NZ,CLEAR_ALL_LINE
+	JR NZ,WIDTH_CLEAR_LOOP
+
+	XOR A ; コントロールコードの処理が行われたことを示すフラグをリセットする
+	LD (CURSOR_X),A ; カーソルのX座標を0にする
+	LD (CURSOR_Y),A ; カーソルのY座標を0にする
+
+	RET
 ;===============================
 ;文字列の空白を読み飛ばします
 ;入力	DE←文字列の先頭アドレス
