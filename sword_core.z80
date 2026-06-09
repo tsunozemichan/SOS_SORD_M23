@@ -91,10 +91,16 @@ PREV_INDEX:
 ; Keyboard map
 ;=============================================
 KEY_MAP:
-	DB 0H,'1234567890-=',5CH,08H,0H
-	DB 0H,'QWERTYUIOP@',5BH,0DH,0DH,0H
-	DB 0H,'ASDFGHJKL',3BH,3AH,5DH,0H,0H,0H
-	DB 0H,'ZXCVB',20H,'NM',2CH,2EH,2FH,0H,0H,0H
+    DB 0H,'1234567890-^',5CH,08H,0H
+    DB 0H,'QWERTYUIOP@',5BH,0DH,0H,0H
+    DB 0H,'ASDFGHJKL',3BH,3AH,5DH,0H,0H,0H
+    DB 0H,'ZXCVB',20H,'NM',2CH,2EH,2FH,5FH,0H,0H,0H
+
+; KEY_MAP:
+; 	DB 0H,'1234567890-=',5CH,08H,0H
+; 	DB 0H,'QWERTYUIOP@',5BH,0DH,0DH,0H
+; 	DB 0H,'ASDFGHJKL',3BH,3AH,5DH,0H,0H,0H
+; 	DB 0H,'ZXCVB',20H,'NM',2CH,2EH,2FH,0H,0H,0H
 
 ;=======================
 ;キー入力バッファ
@@ -1097,7 +1103,6 @@ SHIFT_KEY_LOOP:
 	CP 20H
 	JP Z, CODE_20_SHIFT
 
-
 CODE_04_SHIFT:
     LD A, L
     AND 0FH
@@ -1119,6 +1124,13 @@ CODE_04_SHIFT:
     JP Z, CODE_8_SHIFT
     CP 09H
     JP Z, CODE_9_SHIFT
+    ; CP 0AH → 0（Shift+0はなし）
+    CP 0BH
+    JP Z, CODE_MINUS_SHIFT      ; - → =
+    CP 0CH
+    JP Z, CODE_CARET_SHIFT      ; ^ → ~
+    CP 0DH
+    JP Z, CODE_BACKSLASH_SHIFT  ; \ → |
     LD A, 0H
     JP SCAN_LOOP_RETURN
 
@@ -1126,9 +1138,9 @@ CODE_08_SHIFT:
     LD A, L
     AND 0FH
     CP 0BH
-    JP Z, CODE_AT_MARK_SHIFT
+    JP Z, CODE_AT_MARK_SHIFT    ; @ → `
     CP 0CH
-    JP Z, CODE_L_SQ_PAR_SHIFT
+    JP Z, CODE_L_SQ_PAR_SHIFT   ; [ → {
     LD A, 0H
     JP SCAN_LOOP_RETURN
 
@@ -1136,11 +1148,11 @@ CODE_10_SHIFT:
     LD A, L
     AND 0FH
     CP 0AH
-    JP Z, CODE_SEMI_COLON_SHIFT
+    JP Z, CODE_SEMI_COLON_SHIFT ; ; → +
     CP 0BH
-    JP Z, CODE_COLON_SHIFT
+    JP Z, CODE_COLON_SHIFT      ; : → *
     CP 0CH
-    JP Z, CODE_R_SQ_PAR_SHIFT
+    JP Z, CODE_R_SQ_PAR_SHIFT   ; ] → }
     LD A, 0H
     JP SCAN_LOOP_RETURN
 
@@ -1148,19 +1160,20 @@ CODE_20_SHIFT:
     LD A, L
     AND 0FH
     CP 09H
-    JP Z, CODE_COMMA_SHIFT
+    JP Z, CODE_COMMA_SHIFT      ; , → 
     CP 0AH
-    JP Z, CODE_PERIOD_SHIFT
-    CP 0BH
-    JP Z, CODE_SLASH_SHIFT
+    JP Z, CODE_PERIOD_SHIFT     ; . → >
+    ; CP 0BH → /（Shift+/はなし）
+    ; CP 0CH → _（Shift+_はなし）
     LD A, 0H
     JP SCAN_LOOP_RETURN
 
+; 文字コード
 CODE_1_SHIFT:
     LD A, '!'
     JP SCAN_LOOP_RETURN
 CODE_2_SHIFT:
-    LD A, 22H
+    LD A, 22H          ; "
     JP SCAN_LOOP_RETURN
 CODE_3_SHIFT:
     LD A, '#'
@@ -1175,13 +1188,22 @@ CODE_6_SHIFT:
     LD A, '&'
     JP SCAN_LOOP_RETURN
 CODE_7_SHIFT:
-    LD A, 27H
+    LD A, 27H          ; '
     JP SCAN_LOOP_RETURN
 CODE_8_SHIFT:
     LD A, '('
     JP SCAN_LOOP_RETURN
 CODE_9_SHIFT:
     LD A, ')'
+    JP SCAN_LOOP_RETURN
+CODE_MINUS_SHIFT:
+    LD A, '='
+    JP SCAN_LOOP_RETURN
+CODE_CARET_SHIFT:
+    LD A, 7EH          ; ~
+    JP SCAN_LOOP_RETURN
+CODE_BACKSLASH_SHIFT:
+    LD A, 7CH          ; |
     JP SCAN_LOOP_RETURN
 CODE_AT_MARK_SHIFT:
     LD A, '`'
@@ -1204,10 +1226,6 @@ CODE_COMMA_SHIFT:
 CODE_PERIOD_SHIFT:
     LD A, '>'
     JP SCAN_LOOP_RETURN
-CODE_SLASH_SHIFT:
-    LD A, '?'
-    JP SCAN_LOOP_RETURN
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
