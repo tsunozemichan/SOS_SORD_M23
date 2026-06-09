@@ -92,15 +92,9 @@ PREV_INDEX:
 ;=============================================
 KEY_MAP:
     DB 0H,'1234567890-^',5CH,08H,0H
-    DB 0H,'QWERTYUIOP@',5BH,0DH,0H,0H
+    DB 0H,'QWERTYUIOP@',5BH,0DH,0DH,0H
     DB 0H,'ASDFGHJKL',3BH,3AH,5DH,0H,0H,0H
     DB 0H,'ZXCVB',20H,'NM',2CH,2EH,2FH,5FH,0H,0H,0H
-
-; KEY_MAP:
-; 	DB 0H,'1234567890-=',5CH,08H,0H
-; 	DB 0H,'QWERTYUIOP@',5BH,0DH,0DH,0H
-; 	DB 0H,'ASDFGHJKL',3BH,3AH,5DH,0H,0H,0H
-; 	DB 0H,'ZXCVB',20H,'NM',2CH,2EH,2FH,0H,0H,0H
 
 ;=======================
 ;キー入力バッファ
@@ -933,6 +927,8 @@ CODE_08:
     AND 0FH
     CP 00H
     JP Z, CODE_TAB
+	CP 0DH              ; RETURNキーのオフセット確認
+    JP Z, CODE_CR       ; ← 追加
 
     LD A, (SHIFT_FLAG)
     AND A
@@ -1018,39 +1014,10 @@ CODE_ESC:
     LD A, ESC
     JP SCAN_LOOP_RETURN
 
+CODE_CR:
+    LD A, 0DH
+    JP SCAN_LOOP_RETURN
 
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; キーの押下が解放されるまで待つサブルーチン
-;
-KEY_BREAK_WAIT:
-    LD HL, PORT_INDEX
-    LD BC, 0FDFH
-BREAK_SCAN_LOOP:
-    INC C
-    DI
-    IN A,(C)
-    EI
-    LD (HL), A
-    INC HL
-    DJNZ BREAK_SCAN_LOOP
-
-    LD HL, PORT_INDEX
-    LD B, 0EH        ; 15→14に変更（PORT_INDEX[0xF]を除外）
-    LD E, 0H
-
-BREAK_KEY_LOOP:
-    LD A, (HL)
-    ADD A, E
-    LD E, A
-    INC HL
-    DJNZ BREAK_KEY_LOOP
-    LD A, E
-    AND A
-    RET Z
-    JR KEY_BREAK_WAIT
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
