@@ -789,7 +789,6 @@ GETKY:
 ;
 ;  KEY_SCANルーチン内で、DJNZを使って、16個のキーマトリックスI/Oポートをスキャンするため、BCレジスタに値が設定されていないと正しく動きません。
 ;========================================
-
 KEY_SCAN_WRAPPER:
     PUSH HL
     PUSH BC
@@ -804,26 +803,32 @@ KEY_SCAN_WRAPPER_LOOP:
     RET
 
 KEY_SCAN:
-    INC C
-    INI
-    JR NZ, KEY_SCAN
-
+    ; 前回の値を保存
     LD HL, PORT_INDEX
-    LD BC, 0FDFH
+    LD DE, PREV_INDEX
+    LD BC, 0010H
+    LDIR
+
+    ; 今回の値をスキャン（LDIRでBC=0になったので再設定）
+    LD HL, PORT_INDEX
+    LD BC, 0FDFH         ; ← これは既にある
 SCAN_LOOP:
     INC C
     DI
     IN A,(C)
     EI
-    ; AND (HL)
     LD (HL), A
     INC HL
     DJNZ SCAN_LOOP
 
-    ; フラグを初期化
-    XOR A
-    LD (SHIFT_FLAG), A
-    LD (CTRL_FLAG), A
+    ; フラグをリセットせず、現在のPORT_INDEX[0]から直接更新
+    LD A, (PORT_INDEX)
+    AND 20H
+    LD (SHIFT_FLAG), A   ; Shift押下中なら0x20、離れていれば0x00
+
+    LD A, (PORT_INDEX)
+    AND 10H
+    LD (CTRL_FLAG), A    ; Ctrl押下中なら0x10、離れていれば0x00
 
     LD HL, PORT_INDEX
     LD D, 0H
@@ -832,99 +837,49 @@ SCAN_LOOP:
 SCAN_LOOP_RETURN:
     RET
 
-
-; KEY_SCAN_WRAPPER:
-; 	PUSH HL
-; 	PUSH BC
-; KEY_SCAN_WRAPPER_LOOP:
-; 	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
-; 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
-; 	CALL KEY_SCAN ; キースキャンを実行する。
-; 	AND A ; 0でないか、つまり、空の値でないかチェック。
-; 	JR Z,KEY_SCAN_WRAPPER_LOOP ; 空でない場合、つまり、何かが押されているならジャンプ
-; 	POP BC
-; 	POP HL
-; 	RET
-
-; KEY_SCAN:
-; 	INC C
-; 	INI ; INIでキーボードポートE0~EFをスキャンする。
-; 	JR NZ,KEY_SCAN ; Cをインクリメントしていくと、1->2->3...e->f->0となって、スキャン終了となる。
-; 	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
-; 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
-; SCAN_LOOP:
-; 	INC C ; 初回の処理で、C=0xDF+1=0xE0となる。
-; 	DI
-; 	IN A,(C)
-; 	EI
-; 	AND (HL) ; INIでスキャンした結果と照合。
-; 	LD (HL),A ; 値を、INIで入れたアドレスと同じところに格納する。
-; 	INC HL ; メモリアドレスをインクリメント。
-; 	DJNZ SCAN_LOOP ; 16回繰り返す
-
-; 	LD HL,PORT_INDEX ; メモリアドレスポインタをPORT_INDEXの先頭に戻す。
-; 	LD D,0H ; インデックスを0にする。
-; 	JR KEY_LOOP_1
-; SCAN_LOOP_RETURN:
-; 	RET
-
 KEY_LOOP_1:
     LD A, (HL)
     AND A
-    JR Z, KEY_LOOP_1_NEXT      ; 0ならスキップ
+    JR Z, KEY_LOOP_1_NEXT
 
-    ; PORT_INDEX[0]（0xE0）の処理
+    ; エッジ検出
+    LD E, A
+    PUSH HL
+    LD A, L
+    ADD A, 12H
+    LD L, A
+    LD A, (HL)
+    POP HL
+    CPL
+    AND E
+    JR Z, KEY_LOOP_1_NEXT
+
+    ; index[0]の場合はShift/Ctrl以外のビットがあるか確認するだけ
     LD A, D
     CP 00H
-    JR NZ, KEY_LOOP_2_DISPATCH ; index[0]以外は即ディスパッチ
+    JR NZ, KEY_LOOP_2_DISPATCH
 
-    ; index[0]の場合：修飾キービットを分離
-    LD A, (HL)
-    AND 20H                     ; Shiftビット確認
-    JR Z, KEY_LOOP_1_CHECK_CTRL
-    LD (SHIFT_FLAG), A          ; Shiftフラグ保存
-
-KEY_LOOP_1_CHECK_CTRL:
-    LD A, (HL)
-    AND 10H                     ; Ctrlビット確認
-    JR Z, KEY_LOOP_1_CHECK_OTHER
-    LD (CTRL_FLAG), A           ; Ctrlフラグ保存
-
-KEY_LOOP_1_CHECK_OTHER:
-    LD A, (HL)
-    AND 0CFH                    ; Shift/Ctrl以外のビット確認
-    JR NZ, KEY_LOOP_2_DISPATCH  ; 修飾キー以外もあれば通常ディスパッチ
+    ; Shift/Ctrl以外のビット確認
+    LD A, E
+    AND 0CFH
+    JR NZ, KEY_LOOP_2_DISPATCH
 
 KEY_LOOP_1_NEXT:
     INC D
     INC HL
     LD A, D
     CP 10H
-    JR Z, KEY_LOOP_NO_KEY       ; 16バイト全部見た
+    JR Z, KEY_LOOP_NO_KEY
     JR KEY_LOOP_1
 
 KEY_LOOP_NO_KEY:
-    ; 通常キーなし。Shift/Ctrlのみ押下中の場合もここに来る。
     LD A, 0H
     JR SCAN_LOOP_RETURN
 
 KEY_LOOP_2_DISPATCH:
-    LD A, (HL)                  ; 押下ビット値をAに再ロード
+    LD A, E
     JR KEY_LOOP_2
 
-
-
-; KEY_LOOP_1:
-; 	LD A, (HL) ; メモリアドレスからキースキャンの値を取り出す。
-; 	AND A ; 0でないか、つまり、空の値でないかチェック。
-; 	JR NZ, KEY_LOOP_2 ; 空でない場合、つまり、何かが押されているならジャンプ
-; 	INC D ; インデックスをインクリメント
-; 	INC HL ; ポインタをインクリメント
-; 	LD A,D
-; 	CP 0FH ; 16バイトチェックしたか？
-; 	LD A,0H ; なにもキーが押されなかったときはAレジスタを0にする。
-; 	JR Z,SCAN_LOOP_RETURN ; 終了
-; 	JR KEY_LOOP_1 
 
 ;
 ; 何かが押されている時に実行される。
@@ -944,55 +899,27 @@ KEY_LOOP_2:
     LD A, 0H
     JR SCAN_LOOP_RETURN
 
-; KEY_LOOP_2: 
-; 	CP 04H ; キーボード1段目のキーが押された。(ESC,1,2,3,4,5,6,7,8,9,0,-,=,BS)
-; 	JP Z, CODE_04
-
-; 	CP 08H ; キーボード2段目のキーが押された。(TAB,q,w,e,r,t,y,u,i,o,p,CR)
-; 	JP Z, CODE_08
-
-; 	CP 10H ; キーボード3段目のキーが押された。(control,a,s,d,f,g,h,j,k,l)
-; 	JP Z, CODE_10
-
-; 	CP 20H ; キーボード4段目のキーが押された。(shift,z,x,c,v,b,n,m,shift)
-; 	JP Z, CODE_20
-
-; 	CP 40H
-; 	JP Z, CODE_40
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;  CODE 04 キーボードの1段目
 ;  (esc,1,2,3,4,5,6,7,8,9,0,-,=,bs)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 CODE_04:
     LD A, L
     AND 0FH
     CP 00H
     JP Z, CODE_ESC
 
-    ; Shiftフラグ確認
     LD A, (SHIFT_FLAG)
     AND A
     JP NZ, CODE_04_SHIFT
 
-    ; Ctrlフラグ確認（04行にCtrl定義があれば）
-    ; LD A, (CTRL_FLAG)
-    ; AND A
-    ; JP NZ, CODE_04_CTRL
-
-    ; 修飾なし
     LD B, L
     LD IX, KEY_MAP
 MAP_ADD_04:
     INC IX
     DJNZ MAP_ADD_04
     LD A, (IX+0)
-    PUSH AF
-    CALL KEY_BREAK_WAIT
-    POP AF
     JP SCAN_LOOP_RETURN
 
 CODE_08:
@@ -1015,16 +942,13 @@ MAP_ADD_08:
     INC IX
     DJNZ MAP_ADD_08
     LD A, (IX+10H)
-    PUSH AF
-    CALL KEY_BREAK_WAIT
-    POP AF
     JP SCAN_LOOP_RETURN
 
 CODE_10:
     LD A, L
     AND 0FH
     CP 00H
-    JP Z, CODE_CTRL_KEY         ; Ctrlキー単独押下（修飾なし通常キーとしては無視）
+    JP Z, CODE_CTRL_KEY
 
     LD A, (SHIFT_FLAG)
     AND A
@@ -1040,16 +964,13 @@ MAP_ADD_10:
     INC IX
     DJNZ MAP_ADD_10
     LD A, (IX+20H)
-    PUSH AF
-    CALL KEY_BREAK_WAIT
-    POP AF
     JP SCAN_LOOP_RETURN
 
 CODE_20:
     LD A, L
     AND 0FH
     CP 00H
-    JP Z, CODE_SHIFT_KEY        ; Shiftキー単独押下（修飾なし通常キーとしては無視）
+    JP Z, CODE_SHIFT_KEY
 
     LD A, (SHIFT_FLAG)
     AND A
@@ -1065,150 +986,34 @@ MAP_ADD_20:
     INC IX
     DJNZ MAP_ADD_20
     LD A, (IX+30H)
-    PUSH AF
-    CALL KEY_BREAK_WAIT
-    POP AF
     JP SCAN_LOOP_RETURN
 
-; Shift/Ctrl単独押下は何もしない
+CODE_40:
+    JP KEY_LOOP_END
+
 CODE_SHIFT_KEY:
 CODE_CTRL_KEY:
     LD A, 0H
     JP SCAN_LOOP_RETURN
 
-; CODE_04:
-; 	LD A, L
-; 	AND 0FH
-
-; 	CP 00H ; ESCキーか？
-; 	JP Z, CODE_ESC ; ESCキー処理へ
-
-; 	LD B,L
-; 	LD IX, KEY_MAP
-; MAP_ADD_04:
-; 	INC IX
-; 	DJNZ MAP_ADD_04
-; 	LD A,(IX+0)
-; 	PUSH AF
-; 	CALL KEY_BREAK_WAIT
-; 	POP AF
-; 	JP SCAN_LOOP_RETURN
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; ;
-; ;  CODE 08 キーボードの2段目
-; ;  (tab,q,w,e,r,t,y,u,i,o,p,cr)
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; CODE_08:
-; 	LD A, L ; ここでPORT_INDEXの下位8ビットのみを取り出している。
-; 			; これをインデックスに使っているので、PORT_INDEXのアドレスの下位8ビットの先頭は0でなくてはならない。
-; 	AND 0FH
-
-; 	CP 00H ; TABキーか？
-; 	JP Z, CODE_TAB ; TABキー処理へ
-
-; 	LD B,L
-; 	LD IX, KEY_MAP
-; MAP_ADD_08:
-; 	INC IX
-; 	DJNZ MAP_ADD_08
-; 	LD A,(IX+10H)
-; 	PUSH AF
-; 	CALL KEY_BREAK_WAIT
-; 	POP AF
-; 	JP SCAN_LOOP_RETURN
-
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; ;
-; ;  CODE 10 キーボードの3段目
-; ;  (control,a,s,d,f,g,h,j,k,l)
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; CODE_10:
-; 	LD A, L ; ここでPORT_INDEXの下位8ビットのみを取り出している。
-; 			; これをインデックスに使っているので、PORT_INDEXのアドレスの下位8ビットの先頭は0でなくてはならない。
-; 	AND 0FH
-
-; 	CP 00H ; コントロールキーか？
-; 	JP Z, CODE_CONTROL ; コントロールキー処理へ
-
-; 	LD B,L
-; 	LD IX, KEY_MAP
-; MAP_ADD_10:
-; 	INC IX
-; 	DJNZ MAP_ADD_10
-; 	LD A,(IX+20H)
-; 	PUSH AF
-; 	CALL KEY_BREAK_WAIT
-; 	POP AF
-
-; 	JP SCAN_LOOP_RETURN
-
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; ;
-; ;  CODE 20 キーボードの4段目
-; ;  (shift,z,x,c,v,b,n,m,shift)
-; ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; CODE_20:
-; 	LD A, L ; ここでPORT_INDEXの下位8ビットのみを取り出している。
-; 			; これをインデックスに使っているので、PORT_INDEXのアドレスの下位8ビットの先頭は0でなくてはならない。
-; 	AND 0FH
-
-; 	CP 00H
-; 	JP Z, CODE_SHIFT ; シフトキー処理へ
-
-; 	LD B,L
-; 	LD IX, KEY_MAP
-; MAP_ADD_20:
-; 	INC IX
-; 	DJNZ MAP_ADD_20
-; 	LD A,(IX+30H)
-; 	PUSH AF
-; 	CALL KEY_BREAK_WAIT
-; 	POP AF
-; 	JP SCAN_LOOP_RETURN
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;  CODE 40 キーボードの5段目
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-CODE_40:
-	JP KEY_LOOP_END
+KEY_LOOP_END:
+    LD A, 0H
+    JP SCAN_LOOP_RETURN
 
 ;
 ; 特殊キー(CONTROL,SHIFT, TAB)の処理
 ;
 
-CODE_CONTROL:
-	CALL CONTROL_KEY_NEXT_GET
-	JP SCAN_LOOP_RETURN
-
-CODE_SHIFT:
-	CALL SHIFT_KEY_NEXT_GET
-	JP SCAN_LOOP_RETURN
-
 CODE_TAB:
-	LD A,09H ; TABキーコード
-	PUSH AF
-	CALL KEY_BREAK_WAIT
-	POP AF
-	JP SCAN_LOOP_RETURN
+    LD A, 09H
+    JP SCAN_LOOP_RETURN
 
 CODE_ESC:
-	LD A,ESC ; ESCキーコード(1BH)
-	PUSH AF
-	CALL KEY_BREAK_WAIT
-	POP AF
-	JP SCAN_LOOP_RETURN
+    LD A, ESC
+    JP SCAN_LOOP_RETURN
 
-KEY_LOOP_END:
-	LD A, ESC ; どれにも該当しないキーを押したときは、エスケープキー(1BH)を押したことにする。
-	JP SCAN_LOOP_RETURN
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -1240,36 +1045,6 @@ BREAK_KEY_LOOP:
     AND A
     RET Z
     JR KEY_BREAK_WAIT
-
-; KEY_BREAK_WAIT:
-; 	LD HL,PORT_INDEX ; キーボードポートの値が入っているメモリアドレスPORT_INDEX~PORT_INDEX+0xFHのポインタを先頭に戻している。
-; 	LD BC,0FDFH ; DJNZを使うので、B=0xf、C=0xDFにしている。Bがスキャン回数。Cがポート番号
-; BREAK_SCAN_LOOP:
-; 	INC C ; 初回の処理で、C=0xDF+1=0xE0となる。
-; 	DI
-; 	IN A,(C)
-; 	EI
-; 	AND (HL) ; INIでスキャンした結果と照合。
-; 	LD (HL),A ; 値を、INIで入れたアドレスと同じところに格納する。
-; 	INC HL ; メモリアドレスをインクリメント。
-; 	DJNZ BREAK_SCAN_LOOP ; 16回繰り返す
-
-; 	LD HL,PORT_INDEX ; メモリアドレスポインタをPORT_INDEXの先頭に戻す。
-; 	LD D,0H ; インデックスを0にする。
-; 	LD B,0FH
-; 	LD E,0H
-
-; BREAK_KEY_LOOP:
-; 	LD A, (HL) ; メモリアドレスからキースキャンの値を取り出す。
-; 	ADD A, E 
-; 	LD E, A ; Eにキースキャンの値を積算する。
-; 	INC D ; インデックスをインクリメント
-; 	INC HL ; ポインタをインクリメント
-; 	DJNZ BREAK_KEY_LOOP
-; 	LD A,E ; キースキャンの値の総和をAに戻す。
-; 	AND A ; ゼロかどうか判定の為、自分自身でANDをとる。
-; 	RET Z ; 全てのキーボードポートが0の時にリターンする。
-; 	JR KEY_BREAK_WAIT
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -1322,6 +1097,7 @@ SHIFT_KEY_LOOP:
 	CP 20H
 	JP Z, CODE_20_SHIFT
 
+
 CODE_04_SHIFT:
     LD A, L
     AND 0FH
@@ -1332,7 +1108,7 @@ CODE_04_SHIFT:
     CP 03H
     JP Z, CODE_3_SHIFT
     CP 04H
-    JP Z, CODE_4_SHIFT          ; 実装漏れ修正
+    JP Z, CODE_4_SHIFT
     CP 05H
     JP Z, CODE_5_SHIFT
     CP 06H
@@ -1380,249 +1156,57 @@ CODE_20_SHIFT:
     LD A, 0H
     JP SCAN_LOOP_RETURN
 
-; 各文字コード（KEY_BREAK_WAITはここで呼ぶ）
 CODE_1_SHIFT:
     LD A, '!'
-    PUSH AF
-    CALL KEY_BREAK_WAIT
-    POP AF
     JP SCAN_LOOP_RETURN
-
 CODE_2_SHIFT:
     LD A, 22H
-    PUSH AF
-    CALL KEY_BREAK_WAIT
-    POP AF
     JP SCAN_LOOP_RETURN
-
-; ; 以下同様にPUSH AF → CALL KEY_BREAK_WAIT → POP AFの順に修正
-
-; CODE_1_SHIFT:
-;     CALL KEY_BREAK_WAIT
-;     LD A, '!'
-;     JP SCAN_LOOP_RETURN
-; CODE_2_SHIFT:
-;     CALL KEY_BREAK_WAIT
-;     LD A, 22H
-;     JP SCAN_LOOP_RETURN
 CODE_3_SHIFT:
     LD A, '#'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_4_SHIFT:
     LD A, '$'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_5_SHIFT:
     LD A, '%'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_6_SHIFT:
     LD A, '&'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_7_SHIFT:
     LD A, 27H
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_8_SHIFT:
     LD A, '('
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_9_SHIFT:
     LD A, ')'
-	PUSH AF	
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_AT_MARK_SHIFT:
     LD A, '`'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_L_SQ_PAR_SHIFT:
     LD A, '{'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_SEMI_COLON_SHIFT:
     LD A, '+'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_COLON_SHIFT:
     LD A, '*'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_R_SQ_PAR_SHIFT:
     LD A, '}'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_COMMA_SHIFT:
     LD A, '<'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_PERIOD_SHIFT:
     LD A, '>'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
 CODE_SLASH_SHIFT:
     LD A, '?'
-	PUSH AF
-    CALL KEY_BREAK_WAIT
-	POP AF
     JP SCAN_LOOP_RETURN
-
-; CODE_04_SHIFT:
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 01H
-; 	JP Z, CODE_1_SHIFT
-; 	CP 02H
-; 	JP Z, CODE_2_SHIFT
-; 	CP 03H
-; 	JP Z, CODE_3_SHIFT
-; 	CP 04H
-; 	JP Z, CODE_4_SHIFT
-; 	CP 05H
-; 	JP Z, CODE_5_SHIFT
-; 	CP 06H
-; 	JP Z, CODE_6_SHIFT
-; 	CP 07H
-; 	JP Z, CODE_7_SHIFT
-; 	CP 08H
-; 	JP Z, CODE_8_SHIFT
-; 	CP 09H
-; 	JP Z, CODE_9_SHIFT
-
-; CODE_08_SHIFT:
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 0BH
-; 	JP Z, CODE_AT_MARK_SHIFT
-; 	CP 0CH
-; 	JP Z, CODE_L_SQ_PAR_SHIFT
-
-; CODE_10_SHIFT:
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 0AH
-; 	JP Z, CODE_SEMI_COLON_SHIFT
-; 	CP 0BH
-; 	JP Z, CODE_COLON_SHIFT
-; 	CP 0CH
-; 	JP Z, CODE_R_SQ_PAR_SHIFT
-
-; CODE_20_SHIFT:
-
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 09H
-; 	JP Z, CODE_COMMA_SHIFT
-; 	CP 0AH
-; 	JP Z, CODE_PERIOD_SHIFT
-; 	CP 0BH
-; 	JP Z, CODE_SLASH_SHIFT
-
-; 	LD A,0H
-; 	RET
-
-; CODE_1_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '!'
-; 	RET
-; CODE_2_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 22H
-; 	RET
-; CODE_3_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '#'
-; 	RET
-; CODE_4_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '$'
-; 	RET
-; CODE_5_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '%'
-; 	RET
-; CODE_6_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '&'
-; 	RET
-; CODE_7_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 27H ; 27Hは "'" 。シングルクォーテーション。
-; 	RET
-; CODE_8_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '('
-; 	RET
-; CODE_9_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, ')'
-; 	RET
-
-; CODE_AT_MARK_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '`'
-; 	RET
-; CODE_L_SQ_PAR_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '{'
-; 	RET
-; CODE_SEMI_COLON_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '+'
-; 	RET
-; CODE_COLON_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '*'
-; 	RET
-; CODE_R_SQ_PAR_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '}'
-; 	RET
-; CODE_COMMA_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '<'
-; 	RET
-; CODE_PERIOD_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '>'
-; 	RET
-; CODE_SLASH_SHIFT:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, '?'
-; 	RET
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1674,7 +1258,6 @@ CONTROL_KEY_LOOP:
 	CP 20H
 	JP Z, CODE_20_CONTROL
 
-
 CODE_08_CONTROL:
     LD A, L
     AND 0FH
@@ -1710,106 +1293,29 @@ CODE_20_CONTROL:
     JP SCAN_LOOP_RETURN
 
 CODE_E_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 05H
     JP SCAN_LOOP_RETURN
 CODE_C_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 03H
     JP SCAN_LOOP_RETURN
 CODE_P_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 10H
     JP SCAN_LOOP_RETURN
 CODE_R_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 12H
     JP SCAN_LOOP_RETURN
 CODE_S_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 13H
     JP SCAN_LOOP_RETURN
 CODE_U_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 15H
     JP SCAN_LOOP_RETURN
 CODE_X_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 18H
     JP SCAN_LOOP_RETURN
 CODE_Z_CONTROL:
-    CALL KEY_BREAK_WAIT
     LD A, 1AH
     JP SCAN_LOOP_RETURN
-
-; CODE_08_CONTROL:
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 03H
-; 	JP Z, CODE_E_CONTROL
-; 	CP 04H
-; 	JP Z, CODE_R_CONTROL
-; 	CP 07H
-; 	JP Z, CODE_U_CONTROL
-; 	CP 0AH
-; 	JP Z, CODE_P_CONTROL
-
-; CODE_10_CONTROL:
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 02H
-; 	JP Z, CODE_S_CONTROL
-
-; CODE_20_CONTROL:
-; 	LD A,L
-; 	AND 0FH
-
-; 	CP 01H
-; 	JP Z, CODE_Z_CONTROL
-; 	CP 02H
-; 	JP Z, CODE_X_CONTROL
-; 	CP 03H
-; 	JP Z, CODE_C_CONTROL
-
-; 	LD A,0H
-; 	RET
-
-
-; CODE_E_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 05H
-; 	RET
-; CODE_C_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 03H
-; 	RET
-; CODE_P_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 10H
-; 	RET
-; CODE_R_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 12H
-; 	RET
-; CODE_S_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 13H
-; 	RET
-; CODE_U_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 15H
-; 	RET
-; CODE_X_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 18H
-; 	RET
-; CODE_Z_CONTROL:
-; 	CALL KEY_BREAK_WAIT
-; 	LD A, 1AH
-; 	RET
-
 
 
 ;#BRKEY（1FCDH）の本体
