@@ -3669,14 +3669,15 @@ CO_LF:
     ; ※ 行末折り返し (X=80) のときもここに合流する
     ;----------------------------------------------------------
 CO_CR:
+	; S-OSのCRはCR+LFの動作なので、CRのときはLFの処理も行う
+    XOR A
+    LD  (CURSOR_X), A
+;
     LD  A, (CURSOR_Y)
     CP  24                      ; 最下行 (Y=24)?
     JP  Z, CO_SCROLL            ; Yes → スクロール (Y は 24 のまま)
     INC A
     LD  (CURSOR_Y), A
-	; S-OSのCRはCR+LFの動作なので、CRのときはLFの処理も行う
-    XOR A
-    LD  (CURSOR_X), A
 	;
     JR  CO_CURSOR_UPDATE
 
